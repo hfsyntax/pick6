@@ -1,0 +1,1 @@
+DROP TABLE IF EXISTS TempGames, Games, Losers, TempPlayerAuth, PlayerAuth, Players, PlayerWeekStats, PlayerSeasonStats, PlayerSelections, Seasons, Weeks, Teams, Winners

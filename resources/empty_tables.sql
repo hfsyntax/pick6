@@ -1,0 +1,10 @@
+TRUNCATE TABLE  Games;
+TRUNCATE TABLE  Losers;
+TRUNCATE TABLE  PlayerAuth;
+TRUNCATE TABLE  Players;
+TRUNCATE TABLE  PlayerSeasonStats;
+TRUNCATE TABLE  PlayerWeekStats;
+TRUNCATE TABLE  PlayerSelections;
+TRUNCATE TABLE  Seasons;
+TRUNCATE TABLE  Weeks;
+TRUNCATE TABLE  Winners;
