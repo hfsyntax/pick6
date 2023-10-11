@@ -37,13 +37,12 @@ for /d %%s in (*) do (
             set "file_extension=.csv"
 
             set "picks_file=Week!week_folder!_!season_folder!_Picks_!file_extension!"
-			set "games_file=Week!week_folder!_!season_folder!_Games_!file_extension!"
+	    set "games_file=Week!week_folder!_!season_folder!_Games_!file_extension!"
 			            
-            REM copy "%%f" "%output_folder%\!destination_file!" 
-			!batch_dir!XlsToCsv "%%~dpnxf" "Picks" "%output_folder%\!picks_file!"
-			echo created "%output_folder%\!picks_file!"
-			!batch_dir!XlsToCsv "%%~dpnxf" "Games" "%output_folder%\!games_file!"
-			echo created "%output_folder%\!games_file!"
+	   !batch_dir!XlsToCsv "%%~dpnxf" "Picks" "%output_folder%\!picks_file!"
+	   echo created "%output_folder%\!picks_file!"
+	   !batch_dir!XlsToCsv "%%~dpnxf" "Games" "%output_folder%\!games_file!"
+	   echo created "%output_folder%\!games_file!"
         )
 
         popd
