@@ -1,9 +1,10 @@
-
+-- Create the Seasons Table
 CREATE TABLE Seasons (
   season_id INT PRIMARY KEY AUTO_INCREMENT,
   season_number INT UNIQUE
 );
 
+-- Create the Teams Table
 CREATE TABLE Teams (
   team_id INT PRIMARY KEY AUTO_INCREMENT,
   team_name VARCHAR(50) UNIQUE
@@ -49,7 +50,7 @@ CREATE TABLE Weeks (
   week_number INT,
   season_number INT,
   UNIQUE KEY (season_number, week_number),
-  FOREIGN KEY (season_number) REFERENCES Seasons (season_number)
+  FOREIGN KEY (season_number) REFERENCES Seasons (season_number) ON DELETE CASCADE
 );
 
 CREATE TABLE Games (
@@ -78,12 +79,7 @@ CREATE TABLE TempGames (
   underdog INT,
   winner INT,
   favorite_score INT,
-  underdog_score INT,
-  UNIQUE KEY (season_number, week_number, favorite, underdog),
-  FOREIGN KEY (season_number, week_number) REFERENCES Weeks (season_number, week_number),
-  FOREIGN KEY (favorite) REFERENCES Teams (team_id),
-  FOREIGN KEY (underdog) REFERENCES Teams (team_id),
-  FOREIGN KEY (winner) REFERENCES Teams (team_id)
+  underdog_score INT
 );
 
 CREATE TABLE PlayerAuth (
@@ -100,17 +96,17 @@ CREATE TABLE PlayerAuth (
 */
 CREATE TABLE TempPlayerAuth (
   auth_id INT PRIMARY KEY AUTO_INCREMENT,
+  type VARCHAR(16),
   username VARCHAR(50) NOT NULL UNIQUE,
   password VARCHAR(255) NOT NULL,
   sha256 BOOLEAN DEFAULT FALSE,
   is_active BOOLEAN DEFAULT TRUE
 );
 
--- Create the Players Table
 CREATE TABLE Players (
   player_id INT PRIMARY KEY,
   name VARCHAR(50) UNIQUE NOT NULL,
-  gp VARCHAR(2),
+  gp VARCHAR(2) NOT NULL,
   picture_url VARCHAR(255) DEFAULT NULL,
   FOREIGN KEY (player_id) REFERENCES PlayerAuth (auth_id) ON DELETE CASCADE
 );
@@ -125,12 +121,12 @@ CREATE TABLE PlayerWeekStats (
   lost INT DEFAULT 0,
   played INT DEFAULT 0,
   win_percentage DECIMAL(5, 2) DEFAULT 0,
+  gp VARCHAR(2) NOT NULL,
   FOREIGN KEY (player_id) REFERENCES Players (player_id) ON DELETE CASCADE ,
   FOREIGN KEY (season_number, week_number) REFERENCES Weeks (season_number, week_number),
   UNIQUE KEY (player_id, season_number, week_number)
 );
 
--- Create a new table to store historical player statistics
 CREATE TABLE PlayerSeasonStats (
   stat_id INT PRIMARY KEY AUTO_INCREMENT,
   player_id INT,
@@ -140,12 +136,12 @@ CREATE TABLE PlayerSeasonStats (
   lost INT DEFAULT 0,
   played INT DEFAULT 0,
   win_percentage DECIMAL(5, 2) DEFAULT 0,
+  gp VARCHAR(2) NOT NULL,
   FOREIGN KEY (player_id) REFERENCES Players (player_id) ON DELETE CASCADE,
   FOREIGN KEY (season_number) REFERENCES Seasons (season_number),
   UNIQUE KEY (player_id, season_number)
 );
 
--- Create the PlayerSelections Table
 CREATE TABLE PlayerSelections (
   selection_id INT PRIMARY KEY AUTO_INCREMENT,
   player_id INT,
@@ -157,7 +153,6 @@ CREATE TABLE PlayerSelections (
   UNIQUE KEY (player_id, game_id)
 );
 
--- Create the Winners Table
 CREATE TABLE Winners (
   winner_id INT PRIMARY KEY AUTO_INCREMENT,
   player_id INT,
@@ -168,7 +163,6 @@ CREATE TABLE Winners (
   UNIQUE KEY (player_id, season_number, week_number)
 );
 
--- Create the Losers Table
 CREATE TABLE Losers (
   loser_id INT PRIMARY KEY AUTO_INCREMENT,
   player_id INT,
