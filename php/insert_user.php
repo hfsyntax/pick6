@@ -1,6 +1,7 @@
 <?php
 require_once "db_login.php";
 require_once "week_timer.php";
+require_once "check_session.php";
 session_status() === PHP_SESSION_NONE ? session_start() : null;
 if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_SESSION["type"]) && $_SESSION["type"] === "admin") {
         $conn = connectToDatabase();
@@ -37,13 +38,18 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_SESSION["type"]) && $_SESSI
         $stmt->close();
 
         // Single user insertion
-        if (!empty($_POST["username"]) && !empty($_POST["password"]) && !empty($_POST["userType"]) && !empty($_POST["userGp"])) {
+        if (!empty($_POST["username"]) &&
+            !empty($_POST["password"]) &&
+            !empty($_POST["userType"]) &&
+            !empty($_POST["userGp"]) && 
+            !empty($_POST["userGpNumber"])) {
             $username = $_POST["username"];
             $username = trim($username);
             $username = strtolower(preg_replace('/[^a-zA-Z0-9]/', '', $username));
             $password = $_POST["password"];
             $userType = strtolower($_POST["userType"]);
             $userGp = strtoupper($_POST["userGp"]);
+            $groupNumber = $_POST["userGpNumber"];
 
             if (!preg_match('/^[a-zA-Z0-9]+$/', $username)) {
                 $_SESSION["message"] = "Username can only contain letters and numbers";
@@ -57,7 +63,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_SESSION["type"]) && $_SESSI
                 exit();
             }
 
-            $sql = "SELECT * FROM PlayerAuth WHERE username = ?";
+            $sql = "SELECT username FROM PlayerAuth WHERE username = ?";
             $stmt = $conn->prepare($sql);
             $stmt->bind_param("s", $username);
             $stmt->execute();
@@ -83,9 +89,15 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_SESSION["type"]) && $_SESSI
                 exit();
             }
 
+            if (!is_numeric($groupNumber)) {
+                $_SESSION["message"] = "group number must be a number";
+                header("Location: ../admin_utility.php");
+                exit();
+            }
+
         
             $hashed_password = password_hash($password, PASSWORD_DEFAULT);
-            $sql = "INSERT INTO PlayerAuth (type, username, password) VALUES (?, ?, ?)";
+            $sql = "INSERT IGNORE INTO PlayerAuth (type, username, password) VALUES (?, ?, ?)";
             $stmt = $conn->prepare($sql);
             $stmt->bind_param("sss", $userType, $username, $hashed_password);
             $stmt->execute();
@@ -101,21 +113,21 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_SESSION["type"]) && $_SESSI
             $authID = $row["auth_id"];
             $stmt->close();
             
-            $sql = "INSERT INTO Players (player_id, name, gp) VALUES (?, ?, ?)";
+            $sql = "INSERT IGNORE INTO Players (player_id, name, gp, group_number) VALUES (?, ?, ?, ?)";
             $stmt = $conn->prepare($sql);
-            $stmt->bind_param("iss", $authID, $username, $userGp);
+            $stmt->bind_param("issi", $authID, $username, $userGp, $groupNumber);
             $stmt->execute();
             $stmt->close();
 
-            $sql = "INSERT INTO PlayerSeasonStats (player_id, season_number) VALUES (?, ?)";
+            $sql = "INSERT IGNORE INTO PlayerSeasonStats (player_id, season_number, gp, group_number) VALUES (?, ?, ?, ?)";
             $stmt = $conn->prepare($sql);
-            $stmt->bind_param("ii", $authID, $season);
+            $stmt->bind_param("iisi", $authID, $season, $userGp, $groupNumber);
             $stmt->execute();
             $stmt->close();
 
-            $sql = "INSERT INTO PlayerWeekStats (player_id, season_number, week_number) VALUES (?, ?, ?)";
+            $sql = "INSERT IGNORE INTO PlayerWeekStats (player_id, season_number, week_number, gp, group_number) VALUES (?, ?, ?, ?, ?)";
             $stmt = $conn->prepare($sql);
-            $stmt->bind_param("iii", $authID, $season, $week);
+            $stmt->bind_param("iiisi", $authID, $season, $week, $userGp, $groupNumber);
             $stmt->execute();
             $stmt->close();
 
@@ -140,27 +152,13 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_SESSION["type"]) && $_SESSI
                 $stmt->close();
 
                 $createdUsers = array();
-
-                $sql = "SELECT MAX(auth_id) AS auth_id FROM PlayerAuth";
-                $stmt = $conn->prepare($sql);
-                $stmt->execute();
-                $result = $stmt->get_result();
-                if ($row = $result->fetch_assoc()) {
-                    $authID = $row["auth_id"];
-                } else {
-                    $authID = 0;
-                }
-                
-                $currentAuthID = $authID + 1;
-                $createTempUserSql = "INSERT INTO TempPlayerAuth (username) VALUES ";
+                $createTempUserSql = "INSERT INTO TempPlayerAuth (type, username, password, sha256) VALUES ";
                 $createTempValues = [];
-                $createUserSql = "INSERT IGNORE INTO PlayerAuth (type, username, password) VALUES ";
-                $createUserValues = [];
-                $createPlayerSql = "INSERT IGNORE INTO Players (player_id, name, gp) VALUES ";
+                $createPlayerSql = "INSERT IGNORE INTO Players (player_id, name, gp, group_number) VALUES ";
                 $createPlayerValues = [];
-                $createStatSql = "INSERT IGNORE INTO PlayerSeasonStats (player_id, season_number) VALUES ";
+                $createStatSql = "INSERT IGNORE INTO PlayerSeasonStats (player_id, season_number, gp, group_number) VALUES ";
                 $createStatValues = [];
-                $createWeekStatSql = "INSERT IGNORE INTO PlayerWeekStats (player_id, season_number, week_number) VALUES ";
+                $createWeekStatSql = "INSERT IGNORE INTO PlayerWeekStats (player_id, season_number, week_number, gp, group_number) VALUES ";
                 $createWeekStatValues = [];
 
                 $skippedLines = array();
@@ -168,7 +166,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_SESSION["type"]) && $_SESSI
                 $handle = fopen($file, "r");
                 while (($line = fgets($handle)) !== false) {
                     $line = trim($line);
-                    if (preg_match('/^[a-zA-Z0-9]+,[a-zA-Z0-9]+,[a-zA-Z0-9]+,(admin|user)$/', $line)) {
+                    if (preg_match('/^[a-zA-Z0-9]+,[a-zA-Z0-9]+,[a-zA-Z0-9]+,(admin|user),[0-9]+$/', $line)) {
                         $userData = explode(",", $line);
                         $username = strtolower(trim($userData[0]));
                         $password = trim($userData[1]);
@@ -177,18 +175,23 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_SESSION["type"]) && $_SESSI
                             $skippedLines[] = $line . "(password must contain at least 6 characters, 1 uppercase letter and 1 number)";
                             continue;
                         }
-
+                        
+                        $password_hash = hash("sha256", $password);
                         $userGp = trim($userData[2]);
-                        $user_type = trim($userData[3]);
+                        $userType = trim($userData[3]);
+                        $groupNumber = trim($userData[4]);
                                                 
                         if (!isset($createdUsers[$username])) {
                             $createdUsers[$username] = [
                                 "username" => $username,
-                                "password" => $password,
-                                "type" => $user_type,
-                                "gp" => $userGp
+                                "password" => $password_hash,
+                                "type" => $userType,
+                                "gp" => $userGp,
+                                "group_number" => $groupNumber,
+                                "auth_id" => ""
                             ];
-                            $createTempValues[] = "('$username')";
+
+                            $createTempValues[] = "('$userType', '$username', '$password_hash', '1')";
                         }  
                     } else {
                         $skippedLines[] = $line . "(Invalid format)";
@@ -197,6 +200,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_SESSION["type"]) && $_SESSI
                 
                 fclose($handle);
 
+                echo var_dump($createdUsers);
                 if (count($createdUsers) > 0) {
                     $batchSize = 1000000;
                     for ($i = 0; $i < count($createTempValues); $i += $batchSize) {
@@ -219,33 +223,48 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_SESSION["type"]) && $_SESSI
                     while ($row = $result->fetch_assoc()) {
                         $existingUser = $row["username"];
                         $skippedLines[] = $existingUser . "(Username Already Exists)";
-                        if (isset($createdUsers[$existingUser]))
-                            unset($createdUsers[$existingUser]);
                     }
 
                     $stmt->close();
 
-                    foreach ($createdUsers as $user) {
-                        $type = $user["type"];
-                        $username = $user["username"];
-                        $password = $user["password"];
-                        $password_hash = password_hash($password, PASSWORD_DEFAULT);
-                        $gp = $user["gp"];
-                        $createUserValues[] = "('$type', '$username', '$password_hash')";
-                        $createPlayerValues[] = "('$currentAuthID', '$username', '$gp')";
-                        $createStatValues[] = "('$currentAuthID', '$season')";
-                        $createWeekStatValues[] = "('$currentAuthID', '$season', '$week')";
-                        $currentAuthID++;
-                        $successfulEntries[] = $username;
+                    // insert new players
+                    $sql = "INSERT IGNORE INTO PlayerAuth (type, username, password, sha256)
+                    SELECT ta.type, ta.username, ta.password, 1
+                    FROM TempPlayerAuth ta
+                    LEFT JOIN PlayerAuth pa ON ta.username = pa.username
+                    WHERE pa.username IS NULL";
+                    $stmt = $conn->prepare($sql);
+                    $stmt->execute();
+                    $stmt->close();
+
+                    // set auth_id for all new users
+                    $sql = "SELECT username, auth_id, sha256
+                    FROM PlayerAuth
+                    WHERE (username) IN (
+                        SELECT username
+                        FROM TempPlayerAuth
+                    )";
+                    $stmt = $conn->prepare($sql);
+                    $stmt->execute();
+                    $result = $stmt->get_result();
+                    while ($row = $result->fetch_assoc()) {
+                        $user = $row["username"];
+                        $authID = $row["auth_id"];
+                        $createdUsers[$user]["auth_id"] = $authID;
+                        $gp = $createdUsers[$user]["gp"];
+                        $groupNumber = $createdUsers[$user]["group_number"];
+                        $createPlayerValues[] = "('$authID', '$user', '$gp', '$groupNumber')";
+                        $createStatValues[] = "('$authID', '$season', '$gp', '$groupNumber')";
+                        $createWeekStatValues[] = "('$authID', '$season', '$week', '$gp', '$groupNumber')";
+                        $successfulEntries[] = $user;
                     }
-                    
-                    for ($i = 0; $i < count($createUserValues); $i += $batchSize) {
-                        $batch = array_slice($createUserValues, $i, $batchSize);
-                        $sql = $createUserSql . implode(',', $batch);
-                        $stmt = $conn->prepare($sql);
-                        $stmt->execute();
-                        $stmt->close();
-                    }
+                    $stmt->close();
+
+                    //empty out temp inserts after processing users
+                    $sql = "TRUNCATE TABLE TempPlayerAuth";
+                    $stmt = $conn->prepare($sql);
+                    $stmt->execute();
+                    $stmt->close();
                     
                     for ($i = 0; $i < count($createPlayerValues); $i += $batchSize) {
                         $batch = array_slice($createPlayerValues, $i, $batchSize);
@@ -257,7 +276,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_SESSION["type"]) && $_SESSI
 
                     for ($i = 0; $i < count($createStatValues); $i += $batchSize) {
                         $batch = array_slice($createStatValues, $i, $batchSize);
-                        $sql = $createStatSql . implode(',', $batch);
+                        $sql = $createStatSql . implode(',', $batch);;
                         $stmt = $conn->prepare($sql);
                         $stmt->execute();
                         $stmt->close();
@@ -272,20 +291,21 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_SESSION["type"]) && $_SESSI
                     }
                 }
 
-                if (empty($skippedLines) && count($successfulEntries) >= 1) {
-                    $_SESSION["message"] = "All users from file created:\n" . implode("\n", $successfulEntries);
+                if (empty($skippedLines)) {
+                    $_SESSION["message"] = "All users from file created. \n";
+                    header("Location: ../admin_utility.php");
+                    exit();
+                } else {
+                    if ($successfulEntries > 0) {
+                        $_SESSION["message"] = "Some users not created. \n Skipped lines:\n" . implode("\n", $skippedLines);
+                        header("Location: ../admin_utility.php");
+                        exit();
+                    } else {
+                        $_SESSION["message"] = "No users were created. \n Skipped lines:\n" . implode("\n", $skippedLines);
+                        header("Location: ../admin_utility.php");
+                        exit();
+                    }
                 }
-                
-                else if (!empty($skippedLines) && count($successfulEntries) >= 1) {
-                    $_SESSION["message"] = "Users from file created: "  . implode("\n", $successfulEntries) . "\nSome users from file were not processed. Format is (user,password,gp,type) \n Skipped lines:\n" . implode("\n", $skippedLines);
-                } 
-
-                else {
-                    $_SESSION["message"] = "No users from file processed. Format is (user,password,gp,type) per line \n Skipped lines:\n" . implode("\n", $skippedLines);
-                }
-                
-                header("Location: ../admin_utility.php");
-                exit();
         } else {
             $_SESSION["message"] = "Not every required input was filled";
             header("Location: ../admin_utility.php");
