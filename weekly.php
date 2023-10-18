@@ -26,6 +26,7 @@ $sql = "SELECT DISTINCT
 subquery.stat_id,
 subquery.name,
 subquery.gp,
+subquery.group_number,
 subquery.player_id,
 subquery.season_number,
 subquery.week_number,
@@ -69,7 +70,8 @@ FROM (
 SELECT
     pw.stat_id,
     p.name,
-    p.gp,
+    pw.gp,
+    pw.group_number,
     pw.player_id,
     pw.season_number,
     pw.week_number,
@@ -173,6 +175,7 @@ if ($gameCount >= 6)
                     
                     <table id="weeks_table">
                         <tr>
+                            <th>Rank</th>
                             <th>#</th>
                             <th>GP</th>
                             <th>Player</th>
@@ -187,6 +190,7 @@ if ($gameCount >= 6)
                         <?php while ($row = $result->fetch_assoc()) : ?>
                         <tr>
                             <td><?php echo $row["rank"];?></td>
+                            <td><?php echo $row["group_number"];?></td>
                             <td><?php echo $row["gp"];?></td>
                             <td>
                                 <?php 
@@ -215,6 +219,5 @@ if ($gameCount >= 6)
         </div>
         <script src="js/savePicks.js"></script>
         <script src="js/pagination.js"></script>
-        <script src="js/sessionTimer.js"></script>
     </body>
 </html>
