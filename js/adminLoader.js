@@ -15,6 +15,8 @@ window.addEventListener("load", function(){
     const userTypeInput = document.getElementById("userTypeInput")
     const userGpLabel = document.getElementById("userGpLabel")
     const userGpInput = document.getElementById("userGpInput")
+    const userGpNumberLabel = document.getElementById("userGpNumberLabel")
+    const userGpNumberInput = document.getElementById("userGpNumberInput")
     const timerLabel = document.getElementById("timerLabel")
     const timerInput = document.getElementById("timerInput")
     const weekLabel = document.getElementById("weekLabel")
@@ -22,8 +24,6 @@ window.addEventListener("load", function(){
     const seasonLabel = document.getElementById("seasonLabel")
     const seasonInput = document.getElementById("seasonInput")
     const fileInput = document.getElementById("fileInput")
-
-
     
     operations.onchange = function() {
         let selectedValue = operations[operations.selectedIndex].value;
@@ -74,7 +74,7 @@ window.addEventListener("load", function(){
                 deleteCheckbox.style.display = "none"
                 break;
             case "Upload Games":
-                format.innerHTML = "Uploads games for the current week from a week xlsx file."
+                format.innerHTML = "Uploads games for the current week from a games csv file."
                 usernameLabel.style.display = "none";
                 usernameInput.style.display = "none";
                 passwordLabel.style.display = "none";
@@ -95,8 +95,30 @@ window.addEventListener("load", function(){
                 deleteLabel.style.display = "none"
                 deleteCheckbox.style.display = "none"
                 break;
+            case "Upload Picks":
+                    format.innerHTML = "Uploads picks for the current week from a picks csv file."
+                    usernameLabel.style.display = "none";
+                    usernameInput.style.display = "none";
+                    passwordLabel.style.display = "none";
+                    passwordInput.style.display = "none";
+                    userTypeLabel.style.display = "none"
+                    userTypeInput.style.display = "none"
+                    userGpLabel.style.display = "none"
+                    userGpInput.style.display = "none"
+                    timerLabel.style.display = "none";
+                    timerInput.style.display = "none";
+                    weekLabel.style.display = "none";
+                    weekInput.style.display = "none";
+                    seasonLabel.style.display = "none"
+                    seasonInput.style.display = "none";
+                    fileInput.style.display = "block";
+                    fileLabel.style.display = "none";
+                    fileCheckbox.style.display = "none";
+                    deleteLabel.style.display = "none"
+                    deleteCheckbox.style.display = "none"
+                    break;
             case "Enter Winners":
-                format.innerHTML = "Uploads winning teams for the current week. Format for file uploads is: (favorite,underdog,winner) per line."
+                format.innerHTML = "Uploads winning teams/players for the current week from a games csv file."
                 usernameLabel.style.display = "none";
                 usernameInput.style.display = "none";
                 passwordLabel.style.display = "none";
@@ -118,7 +140,7 @@ window.addEventListener("load", function(){
                 deleteCheckbox.style.display = "none"
                 break;
             case "Upload Old Data":
-                    format.innerHTML = "Uploads old data. Use BK.xlsm for the schedule and Week#.xlsx for processing the picks/users."
+                    format.innerHTML = "Uploads old data. Use process_seasons.bat to create the seasons.zip."
                     usernameLabel.style.display = "none";
                     usernameInput.style.display = "none";
                     passwordLabel.style.display = "none";
@@ -153,6 +175,8 @@ window.addEventListener("load", function(){
                 userTypeInput.style.display = fileCheckbox.checked ? "none" : "block";
                 userGpLabel.style.display = fileCheckbox.checked ? "none" : "block";
                 userGpInput.style.display = fileCheckbox.checked ? "none" : "block";
+                userGpNumberLabel.style.display = fileCheckbox.checked ? "none" : "block";
+                userGpNumberInput.style.display = fileCheckbox.checked ? "none" : "block";
                 timerLabel.style.display = "none";
                 timerInput.style.display = "none";
                 weekLabel.style.display = "none";
@@ -175,6 +199,8 @@ window.addEventListener("load", function(){
                 userTypeInput.style.display = "none"
                 userGpLabel.style.display = "none"
                 userGpInput.style.display = "none"
+                userGpNumberLabel.style.display = "none"
+                userGpNumberInput.style.display = "none"
                 timerLabel.style.display = "none";
                 timerInput.style.display = "none";
                 weekLabel.style.display = "none";
@@ -223,6 +249,8 @@ window.addEventListener("load", function(){
                     userTypeInput.style.display = "none"
                     userGpLabel.style.display = "none"
                     userGpInput.style.display = "none"
+                    userGpNumberLabel.style.display = "none"
+                    userGpNumberInput.style.display = "none"
                     weekLabel.style.display = "none";
                     weekInput.style.display = "none";
                     seasonLabel.style.display = "none"
@@ -241,6 +269,8 @@ window.addEventListener("load", function(){
                     userTypeInput.style.display = "block"
                     userGpLabel.style.display = "block"
                     userGpInput.style.display = "block"
+                    userGpNumberLabel.style.display = "block"
+                    userGpNumberInput.style.display = "block"
                     weekLabel.style.display = "none";
                     weekInput.style.display = "none";
                     seasonLabel.style.display = "none"
@@ -256,6 +286,8 @@ window.addEventListener("load", function(){
                     userTypeInput.style.display = "none"
                     userGpLabel.style.display = "none"
                     userGpInput.style.display = "none"
+                    userGpNumberLabel.style.display = "none"
+                    userGpNumberInput.style.display = "none"
                     weekLabel.style.display = "none";
                     weekInput.style.display = "none";
                     seasonLabel.style.display = "none"
@@ -264,4 +296,4 @@ window.addEventListener("load", function(){
             }
         }
     };
-})
+}) 
