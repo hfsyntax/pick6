@@ -1,5 +1,4 @@
 <?php
-require_once "php/check_session.php";
 require_once "php/week_timer.php";
 require_once "php/db_login.php";
 $configManager = new ConfigManager();
@@ -20,14 +19,15 @@ $conn = connectToDatabase();
 
 $sql = "SELECT p.name AS player_name,
 ps.rank,
-p.gp,
+ps.gp,
+ps.group_number,
 ps.won,
 ps.played,
 ps.win_percentage
 FROM PlayerSeasonStats ps
 JOIN Players p ON ps.player_id = p.player_id
 WHERE ps.season_number = ?
-GROUP BY p.name, ps.rank, p.gp, ps.won, ps.played, ps.win_percentage
+GROUP BY p.name, ps.rank, ps.gp, ps.won, ps.played, ps.win_percentage
 ORDER BY
     CASE
         WHEN ? = 'asc' THEN ps.rank
@@ -88,6 +88,7 @@ $stmt->close();
                 <section class="content">
                     <table id="seasons_table">
                         <tr>
+                            <th>Rank</th>
                             <th>#</th>
                             <th>GP</th>
                             <th>Player</th>
@@ -98,6 +99,7 @@ $stmt->close();
                         <?php while ($row = $result->fetch_assoc()) : ?>
                         <tr>
                             <td><?php echo $row["rank"];?></td>
+                            <td><?php echo $row["group_number"];?></td>
                             <td><?php echo $row["gp"];?></td>
                             <td>
                                 <?php 
@@ -123,6 +125,5 @@ $stmt->close();
         </div>
         <script src="js/savePicks.js"></script>
         <script src="js/pagination.js"></script>
-        <script src="js/sessionTimer.js"></script>
     </body>
 </html>
