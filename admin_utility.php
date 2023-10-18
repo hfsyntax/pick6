@@ -55,7 +55,8 @@ $timeRemaining = $configManager->stringResetTime();
                     <form id="utilityForm" action="" method="post" enctype="multipart/form-data">
                         <label style="font-weight: bold; font-size: 12px;">Select Task:</label>
                         <select id="operations">
-                            <option value="Upload Games" form-url="php/upload_picks.php">Upload Games</option>
+                            <option value="Upload Games" form-url="php/upload_games.php">Upload Games</option>
+                            <option value="Upload Picks" form-url="php/upload_picks.php">Upload Picks</option>
                             <option value="Toggle Timer" form-url="php/timer_validate.php">Toggle Timer</option>
                             <option value="Enter Winners"  form-url="php/winners_validate.php">Enter Winners</option>
                             <option value="Edit Timer"  form-url="php/timer_validate.php">Edit Timer</option>
@@ -79,6 +80,8 @@ $timeRemaining = $configManager->stringResetTime();
                         <input id="userTypeInput" type="text" name="userType" style="display: none;"></input>
                         <label id="userGpLabel" style="display: none;">GP:</label>
                         <input id="userGpInput" type="text" name="userGp" style="display: none;"></input>
+                        <label id="userGpNumberLabel" style="display: none;">#:</label>
+                        <input id="userGpNumberInput" type="text" name="userGpNumber" style="display: none;"></input>
                         <label id="timerLabel" style="display: none;">Enter Time:</label>
                         <input id="timerInput" type="text" name="timerEdit" style="display: none;"></input>
                         <label id="seasonLabel" style="display: none;">Season Number:</label>
