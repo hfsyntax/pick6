@@ -1,5 +1,6 @@
 <?php
 require_once "db_login.php";
+require_once "check_session.php";
 error_reporting(E_ALL);
 ini_set('display_errors', '1');
 session_status() === PHP_SESSION_NONE ? session_start() : null;
@@ -107,7 +108,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && $_SESSION["type"] === "admin") {
         
         $createTempUserSql = "INSERT INTO TempPlayerAuth (username, password, sha256) VALUES ";
         $createTempUserValues = [];
-        $createPlayerSql = "INSERT IGNORE INTO Players (player_id, name, gp) VALUES ";
+        $createPlayerSql = "INSERT IGNORE INTO Players (player_id, name, gp, group_number) VALUES ";
         $createPlayerValues = [];
         echo "adding new users if they don't exist <br>";
         flush();
@@ -125,16 +126,18 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && $_SESSION["type"] === "admin") {
                             $rowNumber++; 
                             continue;  
                         }
-
-                        $gp = $row[1];
-                        $playerName = strtolower(preg_replace('/[^a-zA-Z0-9$]/', '', $row[2]));
-                        $originalName = $row[2];
                         
                         // skip completely empty rows
                         if (empty($row[0])) {
                             $rowNumber++;
                             continue;
                         }
+
+                        $groupNumber = trim(round($row[0]));
+                        $gp = trim($row[1]);
+                        $originalName = trim($row[2]);
+                        $playerName = strtolower(preg_replace('/[^a-zA-Z0-9$]/', '', $originalName));
+                        
 
                         // log non-empty names that were skipped because of regex
                         if (empty($playerName)) {
@@ -151,8 +154,10 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && $_SESSION["type"] === "admin") {
                                 "username" => $playerName,
                                 "password" => $user_password,
                                 "gp" => $gp,
+                                "group_number" => $groupNumber,
                                 "new" => false
                             ];
+
                             $createTempUserValues[] = "('$playerName', '$password_hash', '1')";
                         }
 
@@ -222,9 +227,10 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && $_SESSION["type"] === "admin") {
             $user = $row["username"];
             $authID = $row["auth_id"];
             $createdUsers[$user]["auth_id"] = $authID;
+            $groupNumber = $createdUsers[$user]["group_number"];
             if ($createdUsers[$user]["new"]) {
                 $gp = $createdUsers[$user]["gp"];
-                $createPlayerValues[] = "('$authID', '$user', '$gp')";
+                $createPlayerValues[] = "('$authID', '$user', '$gp', '$groupNumber')";
             }    
         }
         $stmt->close();
@@ -272,9 +278,9 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && $_SESSION["type"] === "admin") {
         $createWinnerValues = [];
         $createLoserSql = "INSERT IGNORE INTO Losers (player_id, season_number, week_number) VALUES ";
         $createLoserValues = [];
-        $createStatSql = "INSERT IGNORE INTO PlayerSeasonStats (player_id, season_number, rank, won, lost, played, win_percentage) VALUES ";
+        $createStatSql = "INSERT IGNORE INTO PlayerSeasonStats (player_id, season_number, rank, won, lost, played, win_percentage, gp, group_number) VALUES ";
         $createStatValues = [];
-        $createWeekStatSql = "INSERT IGNORE INTO PlayerWeekStats (player_id, season_number, week_number, rank, won, lost, played, win_percentage) VALUES ";
+        $createWeekStatSql = "INSERT IGNORE INTO PlayerWeekStats (player_id, season_number, week_number, rank, won, lost, played, win_percentage, gp, group_number) VALUES ";
         $createWeekStatValues = [];
         echo "<script>
             setInterval(function() {  
@@ -404,8 +410,16 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && $_SESSION["type"] === "admin") {
                             $rowNumber++; 
                             continue;  
                         }
+                        
+                        // skip completely empty player rows
+                        if (empty($row[0])) {
+                            $rowNumber++;
+                            continue;
+                        } 
 
                         $rank = 0;
+                        $groupNumber = trim(round($row[0]));
+                        $gp = trim($row[1]);
                         $playerName = strtolower(preg_replace('/[^a-zA-Z0-9$]/', '', $row[2]));
                         $won = intval(trim($row[3]));
                         $played = intval(trim($row[4]));
@@ -418,12 +432,6 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && $_SESSION["type"] === "admin") {
                         $pick6 = trim($row[11]);
                         $weekWins = intval(trim($row[12]));
                         $weekLosses = intval(trim($row[13]));
-                        
-                        // skip completely empty player rows
-                        if (empty($row[0])) {
-                            $rowNumber++;
-                            continue;
-                        } 
 
                         if (empty($playerName)) {
                             echo "found empty player name at row $rowNumber in Week $weekNumber of Season $seasonNumber <br>";
@@ -433,7 +441,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && $_SESSION["type"] === "admin") {
 
                         $lost = $played - $won;
                         $playerID = $createdUsers[$playerName]["auth_id"];
-                        $createWeekStatValues[] = "('$playerID', '$seasonNumber', '$weekNumber', '$rank', '$won', '$lost', '$played', '$win_percentage')";
+                        $createWeekStatValues[] = "('$playerID', '$seasonNumber', '$weekNumber', '$rank', '$won', '$lost', '$played', '$win_percentage', '$gp', '$groupNumber')";
                         $picks = [$pick1, $pick2, $pick3, $pick4, $pick5, $pick6];
                         foreach ($picks as $pick) {
                             if (!empty($pick)) {
@@ -470,7 +478,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && $_SESSION["type"] === "admin") {
                             $played += $weekWins + $weekLosses;
                             $lost = $played - $won;
                             $win_percentage = floatval($won / $played);
-                            $createStatValues[] = "('$playerID', '$seasonNumber', '$rank', '$won', '$lost', '$played', '$win_percentage')";
+                            $createStatValues[] = "('$playerID', '$seasonNumber', '$rank', '$won', '$lost', '$played', '$win_percentage', '$gp', '$groupNumber')";
                         }
                         
                         $rowNumber++; 
@@ -635,6 +643,10 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && $_SESSION["type"] === "admin") {
         } 
         
         echo "<script>window.location.href = '../admin_utility.php'</script>";
+    } else {
+        $_SESSION["message"] = "file input cannot be empty!";
+        header("Location: ../admin_utility.php");
+        exit();
     }
 } else {
     // user has not posted any valid data
