@@ -1,4 +1,3 @@
-<?php if (isset($_SESSION["user"])) : ?>
 <nav id="settings">
     <div class="menu">
         <span>Settings</span>
@@ -9,4 +8,3 @@
 </nav>
 <div class="popup-overlay" id="profile-overlay"></div>
 <div class="popup-overlay" id="settings-overlay"></div>
-<?php endif; ?>
