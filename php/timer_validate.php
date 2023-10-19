@@ -1,9 +1,7 @@
 <?php 
 require_once "week_timer.php";
 require_once "db_login.php";
-error_reporting(E_ALL);
-ini_set('display_errors', '1');
-session_status() === PHP_SESSION_NONE ? session_start() : null;
+require_once "check_session.php";
 if (isset($_SESSION["type"]) && $_SESSION["type"] === "admin" && isset($_POST["selectedOption"])) {
     if (isset($_POST['timerState']) && $_POST["selectedOption"] === "Toggle Timer") {
         $newState = $_POST['timerState'];
