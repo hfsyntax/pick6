@@ -1,6 +1,6 @@
 <?php 
 require_once "db_login.php";
-session_status() === PHP_SESSION_NONE ? session_start() : null;
+require_once "check_session.php";
 if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_SESSION["user"]) && isset($_FILES["file"]["tmp_name"]) && !empty($_FILES["file"]["tmp_name"]) ) {
     $file = $_FILES["file"]["tmp_name"];
     $fileName = $_FILES["file"]["name"];
