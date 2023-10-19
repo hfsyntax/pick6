@@ -1,6 +1,6 @@
 <?php
-require 'db_login.php';
-session_status() === PHP_SESSION_NONE ? session_start() : null;
+require "db_login.php";
+require_once "check_session.php";
 if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_SESSION["type"]) && $_SESSION["type"] === "admin") {
 
         $conn = connectToDatabase();
@@ -161,6 +161,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_SESSION["type"]) && $_SESSI
                     $_SESSION["message"] = "No users from file " . $operation . ". Format is (user,) \n Skipped lines:\n" . implode("\n", $skippedLines);
                 }
                 
+                exit(); // used for debugging
                 header("Location: ../admin_utility.php");
                 exit();
         } else {
