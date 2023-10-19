@@ -161,7 +161,6 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_SESSION["type"]) && $_SESSI
                     $_SESSION["message"] = "No users from file " . $operation . ". Format is (user,) \n Skipped lines:\n" . implode("\n", $skippedLines);
                 }
                 
-                exit(); // used for debugging
                 header("Location: ../admin_utility.php");
                 exit();
         } else {
