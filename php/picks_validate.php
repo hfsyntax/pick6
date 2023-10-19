@@ -1,9 +1,7 @@
 <?php 
 require "db_login.php";
 require "week_timer.php";
-error_reporting(E_ALL);
-ini_set('display_errors', '0');
-session_status() === PHP_SESSION_NONE ? session_start() : null;
+require_once "check_session.php";
 if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_SESSION["user"])) {
     $configManager = new ConfigManager();
     $season = $configManager->getSeason();
@@ -99,6 +97,19 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_SESSION["user"])) {
     $stmt = $conn->prepare($sql);
     $stmt->bind_param("iii", $_SESSION["auth_id"], $week, $season);
     $stmt->execute();
+
+    //ensure player has stats entries created
+    $sql = "INSERT IGNORE INTO PlayerSeasonStats (player_id, season_number) VALUES (?, ?)";
+    $stmt = $conn->prepare($sql);
+    $stmt->bind_param("ii", $_SESSION["auth_id"], $season);
+    $stmt->execute();
+    $stmt->close();
+
+    $sql = "INSERT IGNORE INTO PlayerWeekStats (player_id, season_number, week_number) VALUES (?, ?, ?)";
+    $stmt = $conn->prepare($sql);
+    $stmt->bind_param("iii",  $_SESSION["auth_id"], $season, $week);
+    $stmt->execute();
+    $stmt->close();
 
     foreach ($selections as $gameID => $teamID) {
         $sql = "INSERT INTO PlayerSelections (player_id, game_id, selected_team_id) VALUES (?, ?, ?) ON DUPLICATE KEY UPDATE selected_team_id = ?";
