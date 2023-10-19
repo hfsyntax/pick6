@@ -1,5 +1,5 @@
 <?php
-session_status() === PHP_SESSION_NONE ? session_start() : null;
+require_once "check_session.php";
 if (isset($_SESSION["type"]) && $_SESSION["type"] === "admin") {
     $csvFilePath = '../user_credentials.csv';
     header('Content-Type: text/csv');
