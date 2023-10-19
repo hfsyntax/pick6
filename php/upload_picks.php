@@ -2,9 +2,6 @@
 require_once "week_timer.php";
 require_once "db_login.php";
 require_once "check_session.php";
-error_reporting(E_ALL);
-ini_set('display_errors', '1');
-session_status() === PHP_SESSION_NONE ? session_start() : null;
 
 function random_password() {
     $str = '';
