@@ -2,9 +2,6 @@
 require_once "week_timer.php";
 require_once "db_login.php";
 require_once "check_session.php";
-error_reporting(E_ALL);
-ini_set('display_errors', '1');
-session_status() === PHP_SESSION_NONE ? session_start() : null;
 if ($_SERVER["REQUEST_METHOD"] === "POST" && $_SESSION["type"] === "admin") {
     if (isset($_FILES["file"]["tmp_name"]) && !empty($_FILES["file"]["tmp_name"])) {
         
