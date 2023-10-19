@@ -1,8 +1,6 @@
 <?php
 // Set error reporting
 require 'db_login.php';
-error_reporting(E_ALL);
-ini_set('display_errors', '0');
 
 session_start();
 
