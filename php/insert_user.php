@@ -2,7 +2,6 @@
 require_once "db_login.php";
 require_once "week_timer.php";
 require_once "check_session.php";
-session_status() === PHP_SESSION_NONE ? session_start() : null;
 if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_SESSION["type"]) && $_SESSION["type"] === "admin") {
         $conn = connectToDatabase();
         $configManager = new ConfigManager();
