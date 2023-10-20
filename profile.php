@@ -31,6 +31,13 @@ $stmt->execute();
 $result = $stmt->get_result();
 $stmt->close();
 
+$sql = "SELECT picture_url FROM Players WHERE player_id = ?";
+$stmt = $conn->prepare($sql);
+$stmt->bind_param("i", $_SESSION["auth_id"]);
+$stmt->execute();
+$result2 = $stmt->get_result();
+$stmt->close();
+
 if (isset($_SESSION["message"])) {
     echo '<script>alert("' . str_replace("\n", "\\n", $_SESSION['message']) . '");</script>';
     unset($_SESSION['message']);
@@ -58,8 +65,11 @@ if (isset($_SESSION["message"])) {
     
                 <!-- Main content -->
                 <section class="content">
-                
-                    <label id="profile" style="background-image: url('profile_pictures/<?php echo $_SESSION['user']?>.png'); background-size: cover;">
+                    <label id="profile" 
+                        <?php if ($result2->num_rows > 0) : ?> 
+                        style="background-image: url('profile_pictures/<?php echo $_SESSION['user']?>.png');
+                        <?php endif; ?>
+                        background-size: cover;">
                         <form method="post" id="profileForm" action="php/profile_picture.php" enctype="multipart/form-data">
                             <input type="file" name="file" id="fileInput" style="display:none">
                             <i class="fa-solid fa-pencil" id="edit_profile_photo"></i>
@@ -72,6 +82,7 @@ if (isset($_SESSION["message"])) {
                             }
                         </script>
                     </label><br>
+                    
                     <table id="profile_table">
                         <tr>
                             <th># (current season)</th>
