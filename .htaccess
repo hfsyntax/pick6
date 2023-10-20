@@ -1,0 +1,8 @@
+<Files "config.env">
+    Order Allow,Deny
+    Deny from all
+</Files>
+<Files "user_credentials.csv">
+    Order Allow,Deny
+    Deny from all
+</Files>
