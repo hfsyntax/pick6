@@ -43,6 +43,7 @@ $timeRemaining = $configManager->stringResetTime();
                     <h1>
                         Pick6 -
                         <small>Admin Utility</small></br>
+                        <small style="font-size: small;">Admin Guide: <a href="admin_guide.php" target="_blank">here</a></small></br>
                         <small style="font-size: small;">Current Season: <?php echo $season; ?> </small>
                         <small style="font-size: small;">Current Week: <?php echo $week; ?> </small></br>
                         <small style="font-size: small;">Timer Status: <?php echo $timerState; ?> </small>
