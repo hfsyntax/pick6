@@ -21,6 +21,7 @@ $seasonNumber = $_GET["season"];
 $conn = connectToDatabase();
 $order = isset($_GET["order"]) ? $_GET["order"] : "";
 $sort = isset($_GET["sort"]) ? $_GET["sort"] : "";
+$sort2 = isset($_GET["sort2"]) ? $_GET["sort2"] : "";
 
 $sql = "SELECT DISTINCT
 subquery.stat_id,
@@ -113,10 +114,28 @@ ORDER BY
     END ASC,
     CASE
         WHEN ? = 'desc' AND ? = 'gp' THEN subquery.gp
+    END DESC,
+    CASE
+        WHEN ? = 'group_number' THEN subquery.group_number
+    END ASC,
+    CASE
+        WHEN ? = 'desc' AND ? = 'group_number' THEN subquery.group_number
+    END DESC,
+    CASE
+        WHEN ? = 'gp' THEN subquery.gp
+    END ASC,
+    CASE
+        WHEN ? = 'desc' AND ? = 'gp' THEN subquery.gp
+    END DESC,
+    CASE
+        WHEN ? = 'group_number' THEN subquery.group_number
+    END ASC,
+    CASE
+        WHEN ? = 'desc' AND ? = 'group_number' THEN subquery.group_number
     END DESC;
 ";
 $stmt = $conn->prepare($sql);
-$stmt->bind_param("iiiisssss", $_GET["season"], $_GET["week"], $_GET["season"], $_GET["week"], $order, $order, $sort, $order, $sort);
+$stmt->bind_param("iiiissssssssssssss", $_GET["season"], $_GET["week"], $_GET["season"], $_GET["week"], $order,$order,$sort,$order,$sort,$sort,$order,$sort,$sort2,$order,$sort2,$sort2,$order,$sort2);
 $stmt->execute();
 $result = $stmt->get_result();
 $stmt->close();
@@ -167,6 +186,8 @@ if ($gameCount >= 6)
                         <input type="checkbox" name="descCheckbox" data-url="weekly" id="descCheckbox">
                         <label id="gpLabel"style="font-size: medium;">GP:</label>
                         <input type="checkbox" name="gpCheckbox" data-url="weekly" id="gpCheckbox">
+                        <label id="groupLabel"style="font-size: medium;">Group Number</label>
+                        <input type="checkbox" name="groupCheckbox" data-url="season" id="groupCheckbox">
                     </h1>
                 </section>
     
