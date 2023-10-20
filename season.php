@@ -14,6 +14,7 @@ if (empty($_SERVER["QUERY_STRING"]) || !isset($_GET["season"])) {
 
 $order = isset($_GET["order"]) ? $_GET["order"] : "";
 $sort = isset($_GET["sort"]) ? $_GET["sort"] : "";
+$sort2 = isset($_GET["sort2"]) ? $_GET["sort2"] : "";
 
 $conn = connectToDatabase();
 
@@ -36,14 +37,32 @@ ORDER BY
         WHEN ? = 'desc' THEN ps.rank
     END DESC,
     CASE
-        WHEN ? = 'gp' THEN p.gp
+        WHEN ? = 'gp' THEN ps.gp
     END ASC,
     CASE
-        WHEN ? = 'desc' AND ? = 'gp' THEN p.gp
+        WHEN ? = 'desc' AND ? = 'gp' THEN ps.gp
+    END DESC,
+    CASE
+        WHEN ? = 'group_number' THEN ps.group_number
+    END ASC,
+    CASE
+        WHEN ? = 'desc' AND ? = 'group_number' THEN ps.group_number
+    END DESC,
+    CASE
+        WHEN ? = 'gp' THEN ps.gp
+    END ASC,
+    CASE
+        WHEN ? = 'desc' AND ? = 'gp' THEN ps.gp
+    END DESC,
+    CASE
+        WHEN ? = 'group_number' THEN ps.group_number
+    END ASC,
+    CASE
+        WHEN ? = 'desc' AND ? = 'group_number' THEN ps.group_number
     END DESC;
 ";
 $stmt = $conn->prepare($sql);
-$stmt->bind_param("isssss", $_GET["season"], $order,$order,$sort,$order,$sort);
+$stmt->bind_param("issssssssssssss", $_GET["season"], $order,$order,$sort,$order,$sort,$sort,$order,$sort,$sort2,$order,$sort2,$sort2,$order,$sort2);
 $stmt->execute();
 $result = $stmt->get_result();
 $stmt->close();
@@ -75,12 +94,14 @@ $stmt->close();
                                 <option value="Season <?php echo $row2["season_number"];?>">Season <?php echo $row2["season_number"]; ?></option>
                             <?php endwhile;?>
                         </select>
-						<br><label id="asc"style="font-size: medium;">Ascending:</label>
+						<br><label id="asc"style="font-size: medium;">Ascending</label>
                         <input type="checkbox" name="ascCheckbox" data-url="season" id="ascCheckbox">
-                        <label id="desc"style="font-size: medium;">Descending:</label>
+                        <label id="desc"style="font-size: medium;">Descending</label>
                         <input type="checkbox" name="descCheckbox" data-url="season" id="descCheckbox">
-                        <label id="gpLabel"style="font-size: medium;">GP:</label>
+                        <label id="gpLabel"style="font-size: medium;">GP</label>
                         <input type="checkbox" name="gpCheckbox" data-url="season" id="gpCheckbox">
+                        <label id="groupLabel"style="font-size: medium;">Group Number</label>
+                        <input type="checkbox" name="groupCheckbox" data-url="season" id="groupCheckbox">
                     </h1>
                 </section>
     
