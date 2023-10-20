@@ -1,9 +1,7 @@
 <?php
 // Start or resume the session
 session_start();
-$currentPage = $_SERVER['PHP_SELF'];
-$loginPage = "/pick6/login.php";
-$checkPage = "/pick6/php/check_session.php"; 
+$currentPage = basename($_SERVER["SCRIPT_FILENAME"], '.php');
 
 function getRemainingTime() {
     $timeout = 15 * 60; // 15 minutes (adjust as needed)
@@ -16,7 +14,7 @@ function getRemainingTime() {
 
 // Check if the user is logged in
 if (!isset($_SESSION['user'])) {
-    if ($currentPage !== $loginPage) {
+    if ($currentPage !== "login") {
         $cur_dir = explode('\\', getcwd());
         $cur_dir = $cur_dir[count($cur_dir)-1];
         if ($cur_dir === "php") {
@@ -28,7 +26,7 @@ if (!isset($_SESSION['user'])) {
     }
 } else {
     // Check if the user is already logged in and trying to access the login page.
-    if ($currentPage === $loginPage) {
+    if ($currentPage === "login") {
         header("Location: teams.php");
         exit();
     }
