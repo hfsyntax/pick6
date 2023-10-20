@@ -65,7 +65,7 @@ $timeRemaining = $configManager->stringResetTime();
                             <option value="Upload Old Data" form-url="php/process_old.php">Upload Old Data</option>
                             <option value="Set Week/Season" form-url="php/timer_validate.php">Set Week/Season</option>
                         </select>
-                        <span id="format" style="display: block; max-width: 200px; word-wrap: break-word; font-size: 12px;">Uploads games for the current week from a week xlsx file.</span>
+                        <span id="format" style="display: block; max-width: 210px; word-wrap: break-word; font-size: 12px;">Uploads games for the current week from a week xlsx file.</span>
                         <label id="fileLabel" style="display: none;">From File:</label>
                         <input type="checkbox" id="fileCheckbox" style="display: none;">
                         <label id="deleteLabel" name="deleteLabel" style="display: none;">Hard Delete</label>
