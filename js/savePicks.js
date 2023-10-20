@@ -1,16 +1,11 @@
+// clear picks selections for each new week
 function handleCheckboxStorage(picks, username) {
     if (picks === 0) {
-      const checkboxes = document.querySelectorAll('input[type="checkbox"]');
-      checkboxes.forEach(checkbox => {
-        // dont clear saved sorting options
-        if (checkbox.name !== "descCheckbox" && checkbox.name !== "gpCheckbox" && checkbox.name !== "ascCheckbox") {
-          const storedValue = localStorage.getItem(`${username}_${checkbox.name}`);
-          if (storedValue) {
-            localStorage.removeItem(`${username}_${checkbox.name}`);
-          }
+      for (const key in localStorage) {
+        if (key.includes(username) && key.includes("game")) {
+          localStorage.removeItem(key)
         }
-          
-      });
+      }
     }
   }
   
@@ -41,7 +36,8 @@ function handleCheckboxStorage(picks, username) {
   }
   
   window.addEventListener("load", function () {
-    const username = document.querySelector(".user-profile").children[0].childNodes[0].textContent
+    let username = document.querySelector(".user-profile")?.children[0]?.childNodes[0]?.textContent;
+    if (!username) username = "guest"
     restoreCheckboxState(username);
     const checkboxes = document.querySelectorAll('input[type="checkbox"]');
     checkboxes.forEach(checkbox => {
