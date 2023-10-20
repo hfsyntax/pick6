@@ -15,6 +15,7 @@ window.addEventListener("load", function(){
     const ascCheckbox = document.getElementById("ascCheckbox")
     const descCheckbox = document.getElementById("descCheckbox")
     const gpCheckbox = document.getElementById("gpCheckbox")
+    const groupCheckbox = document.getElementById("groupCheckbox")
     
     if (settingsBar) {
         settingsBar.onclick = function () {
@@ -93,11 +94,13 @@ window.addEventListener("load", function(){
         }
     }
 
-    if (ascCheckbox && descCheckbox && gpCheckbox) {
+    if (ascCheckbox && descCheckbox && gpCheckbox && groupCheckbox) {
         const url = new URL(window.location.href);
         const searchParams = url.searchParams;
         const currentSort = searchParams.get("sort");
+        const currentSort2 = searchParams.get("sort2");
         const currentOrder = searchParams.get("order");
+        
         // if url not set
         if (ascCheckbox.checked && currentOrder === null) {
             searchParams.set("order", "asc");
@@ -109,8 +112,22 @@ window.addEventListener("load", function(){
             location.reload();
         }
 
-        if (gpCheckbox.checked && currentSort === null) {
+        if (gpCheckbox.checked && groupCheckbox.checked && (currentSort === null || currentSort2 === null)) {
+            if (currentSort === null) {
+                searchParams.set("sort", "gp");
+                window.history.replaceState({}, '', url);
+            } 
+            if (currentSort2 === null)  {
+                searchParams.set("sort2", "group_number")
+                window.history.replaceState({}, '', url);
+            }
+            location.reload();
+        } else if (gpCheckbox.checked && currentSort === null) {
             searchParams.set("sort", "gp");
+            window.history.replaceState({}, '', url);
+            location.reload();
+        } else if (groupCheckbox.checked &&  currentSort === null) {
+            searchParams.set("sort", "desc");
             window.history.replaceState({}, '', url);
             location.reload();
         }
@@ -125,12 +142,13 @@ window.addEventListener("load", function(){
                 }
             } 
             if (ascCheckbox.checked)
-                currentOrder === null ? searchParams.append("order", "asc") : searchParams.set("order", "asc");
+                searchParams.set("order", "asc");
             else if (!descCheckbox.checked && !ascCheckbox.checked)
                 searchParams.delete("order");
             window.history.replaceState({}, '', url);
             location.reload();
-        });
+        })
+
         descCheckbox.addEventListener("click", function () {
             if (ascCheckbox.checked && !descCheckbox.checked) {
                 if (searchParams.get("order") && searchParams.get("order") === "asc") return
@@ -141,20 +159,54 @@ window.addEventListener("load", function(){
                 }
             }
             if (descCheckbox.checked)
-                currentOrder === null ? searchParams.append("order", "desc") : searchParams.set("order", "desc");
+                searchParams.set("order", "desc");
             else if (!descCheckbox.checked && !ascCheckbox.checked)
                 searchParams.delete("order");
             window.history.replaceState({}, '', url);
             location.reload();
-        });
+        })
+
         gpCheckbox.addEventListener("click", function () {
-            if (gpCheckbox.checked)
-                currentSort === null ? searchParams.append("sort", "gp") : null;
-            else 
+            if (gpCheckbox.checked && groupCheckbox.checked) {
+                searchParams.set("sort", "gp");
+                searchParams.set("sort2", "group_number");
+            }
+            else if (!gpCheckbox.checked && !groupCheckbox.checked) {
                 searchParams.delete("sort");
+                searchParams.delete("sort2");
+            }
+            else if (gpCheckbox.checked && !groupCheckbox.checked) {
+                searchParams.set("sort", "gp");
+                currentSort2 !== null ? searchParams.delete("sort2") : null
+            }
+            else if (groupCheckbox.checked && !gpCheckbox.checked) {
+                searchParams.set("sort", "group_number");
+                currentSort2 !== null ? searchParams.delete("sort2") : null
+            }
+                
             window.history.replaceState({}, '', url);
             location.reload();
-        });  
+        })
+
+        groupCheckbox.addEventListener("click", function () { 
+            if (gpCheckbox.checked && groupCheckbox.checked) {
+                searchParams.set("sort", "gp");
+                searchParams.set("sort2", "group_number");
+            }
+            else if (!gpCheckbox.checked && !groupCheckbox.checked) {
+                searchParams.delete("sort");
+                searchParams.delete("sort2");
+            }
+            else if (gpCheckbox.checked && !groupCheckbox.checked) {
+                searchParams.set("sort", "gp");
+                currentSort2 !== null ? searchParams.delete("sort2") : null
+            }
+            else if (groupCheckbox.checked && !gpCheckbox.checked) {
+                searchParams.set("sort", "group_number");
+                currentSort2 !== null ? searchParams.delete("sort2") : null
+            }
+            window.history.replaceState({}, '', url);
+            location.reload();
+        })
     }
-    
 })
