@@ -25,6 +25,12 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_SESSION["user"])) {
         header("Location: ../teams.php");
         exit();
     }
+
+    if ($_SESSION["type"] === "admin" && $_SESSION["user"] === "root") {
+        $_SESSION["message"] = "Error: Can't select teams as the root username.";
+        header("Location: ../teams.php");
+        exit();
+    }
     
     $sql = "SELECT COUNT(game_id) AS game_count FROM Games WHERE season_number = ? AND week_number = ?";
     $stmt = $conn->prepare($sql);
