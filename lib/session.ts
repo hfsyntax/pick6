@@ -4,13 +4,13 @@ import { revalidatePath } from "next/cache"
 import { cookies } from "next/headers"
 import { redirect } from "next/navigation"
 import { NextRequest, NextResponse } from "next/server"
-import {compare} from "bcryptjs"
+import { compare } from "bcryptjs"
 import { handleDatabaseConnection } from "./db"
 
 const secretKey = process.env.SECRET_KEY
 const key = new TextEncoder().encode(secretKey);
 
-export async function encrypt(payload: any) {
+async function encrypt(payload: any) {
   return await new SignJWT(payload)
     .setProtectedHeader({ alg: "HS256" })
     .setIssuedAt()
@@ -18,7 +18,7 @@ export async function encrypt(payload: any) {
     .sign(key);
 }
 
-export async function decrypt(input: string): Promise<any> {
+async function decrypt(input: string): Promise<any> {
   try {
     const { payload } = await jwtVerify(input, key, {
       algorithms: ["HS256"],
@@ -35,7 +35,7 @@ export async function login(prevState: string, formData: FormData) {
   // Verify credentials && get the user
   const username = String(formData.get("username"))
   const password = String(formData.get("password"))
-  
+
   if (!username || !password) {
     revalidatePath("/")
     return { error: "incorrect username or password" }
