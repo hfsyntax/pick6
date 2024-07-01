@@ -4,9 +4,9 @@ import { handleDatabaseConnection } from "../lib/db"
 import { getEnvValue, setEnvValue } from "../lib/configHandler"
 import { redirect } from "next/navigation"
 import { revalidatePath } from "next/cache"
-import fs from "fs"
+import {createWriteStream} from "fs"
 import ms from "ms"
-import bcrypt from "bcryptjs"
+import {genSalt, hash} from "bcryptjs"
 
 function randomPassword() {
     let str = ""
@@ -173,8 +173,8 @@ async function insertUser(formData: FormData) {
             return { error: "Error: username already exists." }
         }
 
-        const salt = await bcrypt.genSalt()
-        const hashed_password = await bcrypt.hash(password, salt)
+        const salt = await genSalt()
+        const hashed_password = await hash(password, salt)
         sql = "INSERT IGNORE INTO PlayerAuth (type, username, password) VALUES (?, ?, ?)";
         await dbConnection.execute(sql, [userType, username, hashed_password])
 
@@ -236,8 +236,8 @@ async function insertUser(formData: FormData) {
                     continue
                 }
 
-                const salt = await bcrypt.genSalt()
-                const hashed_password = await bcrypt.hash(password, salt)
+                const salt = await genSalt()
+                const hashed_password = await hash(password, salt)
                 const group = userData[2].toUpperCase()
                 const userType = userData[3].toLowerCase()
                 const groupNumber = userData[4]
@@ -1132,8 +1132,8 @@ async function uploadPicks(formData: FormData) {
 
             if (playerName && !createdUsers[playerName]) {
                 const userPassword = randomPassword()
-                const salt = await bcrypt.genSalt(1)
-                const hashedPassword = await bcrypt.hash(userPassword, salt)
+                const salt = await genSalt(1)
+                const hashedPassword = await hash(userPassword, salt)
                 createdUsers[playerName] = {
                     "authID": null,
                     "username": playerName,
@@ -1317,7 +1317,7 @@ async function uploadPicks(formData: FormData) {
 
     if (newUsers.length > 0) {
         const csvUserText = newUsers.map(user => `${user.username},${user.password}`).join("\n")
-        const file = fs.createWriteStream("user_credentials.csv")
+        const file = createWriteStream("user_credentials.csv")
         file.write(csvUserText)
         file.end()
     }

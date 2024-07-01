@@ -1,13 +1,13 @@
 "use server"
 import { cache } from "react"
 import { handleDatabaseConnection } from "../lib/db"
-import path from "path"
-import fs from "fs"
-import {promisify} from "util"
+import { join } from "path"
+import { truncate as truncateFn } from "fs"
+import { promisify } from "util"
 import { revalidatePath } from "next/cache"
 import { getSession } from "../lib/session"
 
-const truncate = promisify(fs.truncate)
+const truncate = promisify(truncateFn)
 
 export const getSeasons = cache(async () => {
     await handleDatabaseConnection()
@@ -309,7 +309,7 @@ export async function getUsersByName(users: string[]) {
         throw new Error("too many users to parse")
     }
     await handleDatabaseConnection()
-    const sql = `SELECT username from PlayerAuth where username IN (${users.map(user => `'${user}'`) .join()})`
+    const sql = `SELECT username from PlayerAuth where username IN (${users.map(user => `'${user}'`).join()})`
     const dbConnection = await global["dbConnection"].getConnection()
     const [queryResult] = await dbConnection.execute(sql)
     dbConnection.release()
@@ -436,7 +436,7 @@ export async function calculateTimeUntilReset() {
 }
 
 export async function clearUserCredentialsFile() {
-    const filePath = path.join(process.cwd(), "user_credentials.csv");
+    const filePath = join(process.cwd(), "user_credentials.csv");
     try {
         await truncate(filePath)
         revalidatePath("/admin_utility")
@@ -444,7 +444,7 @@ export async function clearUserCredentialsFile() {
     } catch (error) {
         console.error(error)
         revalidatePath("/admin_utility")
-        return {error: "Error: failed to clear contents of user_credentials.csv"}
+        return { error: "Error: failed to clear contents of user_credentials.csv" }
     }
 }
 

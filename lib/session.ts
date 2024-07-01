@@ -10,7 +10,7 @@ import { handleDatabaseConnection } from "./db"
 const secretKey = process.env.SECRET_KEY
 const key = new TextEncoder().encode(secretKey);
 
-async function encrypt(payload: any) {
+export async function encrypt(payload: any) {
   return await new SignJWT(payload)
     .setProtectedHeader({ alg: "HS256" })
     .setIssuedAt()
@@ -18,7 +18,7 @@ async function encrypt(payload: any) {
     .sign(key);
 }
 
-async function decrypt(input: string): Promise<any> {
+export async function decrypt(input: string): Promise<any> {
   try {
     const { payload } = await jwtVerify(input, key, {
       algorithms: ["HS256"],

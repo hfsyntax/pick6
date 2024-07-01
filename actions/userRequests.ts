@@ -3,7 +3,7 @@ import { getSession } from "../lib/session"
 import { handleDatabaseConnection } from "../lib/db"
 import { revalidatePath } from "next/cache"
 import { redirect } from "next/navigation"
-import bcrypt from "bcryptjs"
+import { hash, compare, genSalt } from "bcryptjs"
 
 export async function handlePicks(prevState: string, formData: FormData) {
     await handleDatabaseConnection()
@@ -67,7 +67,7 @@ export async function handlePicks(prevState: string, formData: FormData) {
         if (playerExists.length === 0) {
             dbConnection.release()
             revalidatePath("/teams")
-            return {error: "Error: you are not a player in the current season"}
+            return { error: "Error: you are not a player in the current season" }
         }
     }
 
@@ -165,11 +165,11 @@ export async function changePassword(prevState: string, formData: FormData) {
     let sql = `SELECT password FROM PlayerAuth WHERE username = ?`
     const username = String(session?.user?.username)
     const [[{ "password": hashedPassword }]] = await dbConnection.execute(sql, [username])
-    const correctPassword = await bcrypt.compare(currentPassword, String(hashedPassword))
+    const correctPassword = await compare(currentPassword, String(hashedPassword))
     if (correctPassword) {
         // set new password
-        const salt = await bcrypt.genSalt()
-        const newHashedPassword = await bcrypt.hash(newPassword, salt)
+        const salt = await genSalt()
+        const newHashedPassword = await hash(newPassword, salt)
         sql = "UPDATE PlayerAuth set password = ? WHERE username = ?"
         const [newPasswordQuery] = await dbConnection.execute(sql, [newHashedPassword, username])
         if (newPasswordQuery.affectedRows > 0) {
@@ -198,5 +198,5 @@ export async function updateProfilePictureURL(url: string) {
     await dbConnection.execute(sql, [url, authID])
     dbConnection.release()
     revalidatePath("/profile")
-    return {url: url}
+    return { url: url }
 }   
