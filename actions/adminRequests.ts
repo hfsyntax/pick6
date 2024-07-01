@@ -184,12 +184,6 @@ async function insertUser(formData: FormData) {
         sql = "INSERT IGNORE INTO Players (player_id, name, gp, group_number) VALUES (?, ?, ?, ?)";
         await dbConnection.execute(sql, [auth_id, username, group, groupNumber])
 
-        sql = "INSERT IGNORE INTO PlayerSeasonStats (player_id, season_number, gp, group_number) VALUES (?, ?, ?, ?)";
-        await dbConnection.execute(sql, [auth_id, currentSeason, group, groupNumber])
-
-        sql = "INSERT IGNORE INTO PlayerWeekStats (player_id, season_number, week_number, gp, group_number) VALUES (?, ?, ?, ?, ?)";
-        await dbConnection.execute(sql, [auth_id, currentSeason, currentWeek, group, groupNumber])
-
         dbConnection.release()
         revalidatePath("/admin_utility")
         return { message: `Successfully created user ${username}` }
@@ -219,10 +213,6 @@ async function insertUser(formData: FormData) {
         const createTempValues = [] as String[]
         const createPlayerSql = "INSERT IGNORE INTO Players (player_id, name, gp, group_number) VALUES ";
         const createPlayerValues = [] as String[]
-        const createStatSql = "INSERT IGNORE INTO PlayerSeasonStats (player_id, season_number, gp, group_number) VALUES ";
-        const createStatValues = [] as String[]
-        const createWeekStatSql = "INSERT IGNORE INTO PlayerWeekStats (player_id, season_number, week_number, gp, group_number) VALUES ";
-        const createWeekStatValues = [] as String[]
 
         //username,password,gp,type,group_number
         for (let line of lines) {
@@ -314,8 +304,6 @@ async function insertUser(formData: FormData) {
                     const group = createdUsers[user]["group"]
                     const groupNumber = createdUsers[user]["groupNumber"]
                     createPlayerValues.push(`('${authID}', '${user}', '${group}', '${groupNumber}')`)
-                    createStatValues.push(`('${authID}', '${currentSeason}', '${group}', '${groupNumber}')`)
-                    createWeekStatValues.push(`('${authID}', '${currentSeason}', '${currentWeek}', '${group}', '${groupNumber}')`)
                     successfulEntires++
                 }
             }
@@ -328,18 +316,6 @@ async function insertUser(formData: FormData) {
             for (let i = 0; i < createPlayerValues.length; i += batchSize) {
                 const batch = createPlayerValues.slice(i, batchSize)
                 const sql = createPlayerSql + batch.join()
-                await dbConnection.execute(sql)
-            }
-
-            for (let i = 0; i < createStatValues.length; i += batchSize) {
-                const batch = createStatValues.slice(i, batchSize)
-                const sql = createStatSql + batch.join()
-                await dbConnection.execute(sql)
-            }
-
-            for (let i = 0; i < createWeekStatValues.length; i += batchSize) {
-                const batch = createWeekStatValues.slice(i, batchSize);
-                const sql = createWeekStatSql + batch.join()
                 await dbConnection.execute(sql)
             }
         }
