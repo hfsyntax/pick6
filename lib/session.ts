@@ -7,7 +7,7 @@ import { NextRequest, NextResponse } from "next/server"
 import {compare} from "bcryptjs"
 import { handleDatabaseConnection } from "./db"
 
-const secretKey = "secret";
+const secretKey = process.env.SECRET_KEY
 const key = new TextEncoder().encode(secretKey);
 
 export async function encrypt(payload: any) {
