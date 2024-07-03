@@ -31,8 +31,9 @@ export async function decrypt(input: string): Promise<any> {
 
 export async function login(prevState: string, formData: FormData) {
   await handleDatabaseConnection()
-
-  // Verify credentials && get the user
+  console.log(global["dbConnection"])
+  return {error: "foobar"}
+  /* Verify credentials && get the user
   const username = String(formData.get("username"))
   const password = String(formData.get("password"))
 
@@ -78,7 +79,7 @@ export async function login(prevState: string, formData: FormData) {
     dbConnection.release()
     revalidatePath("/")
     return { error: "incorrect username or password" }
-  }
+  }*/
 }
 
 export async function logout() {
