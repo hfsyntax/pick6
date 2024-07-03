@@ -34,7 +34,8 @@ async function setTimer(time: FormDataEntryValue = "") {
 }
 
 async function setSeasonAndWeek(season: FormDataEntryValue = "", week: FormDataEntryValue = "") {
-    await handleDatabaseConnection()
+    return null
+    /*await handleDatabaseConnection()
     const targetSeason = isNaN(Number(season)) ? 0 : Number(season)
     const targetWeek = isNaN(Number(week)) ? 0 : Number(week)
     let currentSeason = Number(process.env.CURRENT_SEASON)
@@ -106,10 +107,12 @@ async function setSeasonAndWeek(season: FormDataEntryValue = "", week: FormDataE
     }
     revalidatePath("/admin_utility")
     return { message: message ? message : "No updates needed." }
+    */
 }
 
 async function insertUser(formData: FormData) {
-    await handleDatabaseConnection()
+    return null
+    /*await handleDatabaseConnection()
     const currentSeason = Number(process.env.CURRENT_SEASON)
     const currentWeek = Number(process.env.CURRENT_WEEK)
 
@@ -336,11 +339,12 @@ async function insertUser(formData: FormData) {
         }
     } else {
         return { error: "not every required input was filled" }
-    }
+    }*/
 }
 
 async function deleteUser(formData: FormData) {
-    await handleDatabaseConnection()
+    return null
+    /*await handleDatabaseConnection()
     // single deletion
     const dbConnection = await global["dbConnection"].getConnection()
     let sql = "" as string
@@ -468,11 +472,12 @@ async function deleteUser(formData: FormData) {
 
     } else {
         return { error: "not every required input was filled" }
-    }
+    }*/
 }
 
 async function uploadGames(formData: FormData) {
-    await handleDatabaseConnection()
+    return null
+    /*await handleDatabaseConnection()
     const fileInput = formData.get("fileInput") as File
 
     if (!fileInput) {
@@ -597,10 +602,12 @@ async function uploadGames(formData: FormData) {
     dbConnection.release()
     revalidatePath("/admin_utility")
     return { message: "All games from file created" }
+    */
 }
 
 async function handleWeekResults(formData: FormData) {
-    await handleDatabaseConnection()
+    return null
+    /*await handleDatabaseConnection()
     const fileInput = formData.get("fileInput") as File
 
     if (!fileInput) {
@@ -1003,11 +1010,12 @@ async function handleWeekResults(formData: FormData) {
         dbConnection.release()
         revalidatePath("/admin_utility")
         return { error: `Error: game results from file could not be parsed.<br/>Skipped lines: ${skippedLines.join("")}` }
-    }
+    }*/
 }
 
 async function uploadPicks(formData: FormData) {
-    const file = formData.get("fileInput") as File
+    return null
+    /*const file = formData.get("fileInput") as File
 
     if (!file) {
         revalidatePath("/admin_utility")
@@ -1299,11 +1307,12 @@ async function uploadPicks(formData: FormData) {
     }
 
     revalidatePath("/admin_utility")
-    return { message: `All picks from file created` }
+    return { message: `All picks from file created` }*/
 }
 
 export async function handleAdminForm(prevState: string, formData: FormData) {
-    const session = await getSession()
+    return null
+    /*const session = await getSession()
 
     if (!session) {
         return redirect("/")
@@ -1336,5 +1345,5 @@ export async function handleAdminForm(prevState: string, formData: FormData) {
     } else {
         revalidatePath("/admin_utility")
         return { error: "Invalid or unsupported option selected" }
-    }
+    }*/
 }

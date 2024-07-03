@@ -12,7 +12,7 @@ export const metadata = {
 
 export default async function Profile() {
     const session = await getSession()
-    const profilePicURL = await getProfilePictureURL()
+    const profilePicURL = undefined//await getProfilePictureURL()
     return (
         <div id="container">
             <EdgeStoreProvider>
@@ -21,6 +21,5 @@ export default async function Profile() {
             <ChangePassword session={session}/>
             <ProfileHandler id={session?.user?.authID} />
         </div>
-
     )
 }

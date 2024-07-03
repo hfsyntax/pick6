@@ -9,7 +9,7 @@ export const metadata = {
 export default async function Teams() {
     const currentSeason = process.env.CURRENT_SEASON
     const currentWeek = process.env.CURRENT_WEEK
-    const weekGames = await getWeekGames(currentSeason, currentWeek)
+    const weekGames = []//await getWeekGames(currentSeason, currentWeek)
     const timerPaused = await isTimerPaused()
     const timerTime = await calculateTimeUntilReset()
     return (

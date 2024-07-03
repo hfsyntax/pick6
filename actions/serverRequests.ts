@@ -10,12 +10,13 @@ import { getSession } from "../lib/session"
 const truncate = promisify(truncateFn)
 
 export const getSeasons = cache(async () => {
-    await handleDatabaseConnection()
+    return []
+    /*await handleDatabaseConnection()
     const sql = `SELECT * FROM Seasons`
     const dbConnection = await global["dbConnection"].getConnection()
     const [queryResult] = await dbConnection.execute(sql)
     dbConnection.release()
-    return queryResult
+    return queryResult*/
 })
 
 export const getWeeks = cache(async () => {
@@ -295,17 +296,19 @@ ORDER BY
 })
 
 export async function getUser(id: string) {
-    if (isNaN(Number(id))) return null
+    return null
+    /*if (isNaN(Number(id))) return null
     await handleDatabaseConnection()
     const sql = `SELECT auth_id, username from PlayerAuth where auth_id = ?`
     const dbConnection = await global["dbConnection"].getConnection()
     const [[queryResult]] = await dbConnection.execute(sql, [id])
     dbConnection.release()
-    return queryResult
+    return queryResult*/
 }
 
 export async function getUsersByName(users: string[]) {
-    if (users.length > 10) {
+    return []
+    /*if (users.length > 10) {
         throw new Error("too many users to parse")
     }
     await handleDatabaseConnection()
@@ -313,11 +316,12 @@ export async function getUsersByName(users: string[]) {
     const dbConnection = await global["dbConnection"].getConnection()
     const [queryResult] = await dbConnection.execute(sql)
     dbConnection.release()
-    return queryResult
+    return queryResult*/
 }
 
 export async function getUserWeekPicks(id: string) {
-    await handleDatabaseConnection()
+    return []
+    /*await handleDatabaseConnection()
     const currentSeason = process.env.CURRENT_SEASON
     const currentWeek = process.env.CURRENT_WEEK
     const sql = `SELECT DISTINCT
@@ -403,10 +407,12 @@ export async function getUserWeekPicks(id: string) {
     const headers = ["Player"]
         .concat(Array.from({ length: Math.min(gameCount, 6) }, (_, i) => "pick" + (i + 1)))
     return { picks: picks, headers: headers }
+    */
 }
 
 export async function getUserSeasonsData(id: string) {
-    await handleDatabaseConnection()
+    return []
+    /*await handleDatabaseConnection()
     const sql = `SELECT
     ps.season_number,
     ps.group_number,
@@ -423,6 +429,7 @@ export async function getUserSeasonsData(id: string) {
     const [queryResult] = await dbConnection.execute(sql, [id])
     dbConnection.release()
     return queryResult
+    */
 }
 
 export async function isTimerPaused() {
@@ -449,6 +456,8 @@ export async function clearUserCredentialsFile() {
 }
 
 export async function getProfilePictureURL() {
+    return null
+    /*
     const session = await getSession()
     await handleDatabaseConnection()
     const dbConnection = await global["dbConnection"].getConnection()
@@ -457,4 +466,5 @@ export async function getProfilePictureURL() {
     const [profileURL] = await dbConnection.execute(sql, [authID])
     dbConnection.release()
     return profileURL?.[0]?.picture_url
+    */
 }

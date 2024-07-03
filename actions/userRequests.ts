@@ -6,7 +6,8 @@ import { redirect } from "next/navigation"
 import { hash, compare, genSalt } from "bcryptjs"
 
 export async function handlePicks(prevState: string, formData: FormData) {
-    await handleDatabaseConnection()
+    return null
+    /*await handleDatabaseConnection()
     const currentSeason = Number(process.env.CURRENT_SEASON)
     const currentWeek = Number(process.env.CURRENT_WEEK)
 
@@ -127,10 +128,12 @@ export async function handlePicks(prevState: string, formData: FormData) {
     revalidatePath("/teams")
     dbConnection.release()
     return { message: `Sucessfully set picks for week ${currentWeek} of season ${currentSeason}` }
+    */
 }
 
 export async function changePassword(prevState: string, formData: FormData) {
-    const currentPassword = String(formData.get("currentPassword"))
+    return null
+    /*const currentPassword = String(formData.get("currentPassword"))
     const newPassword = String(formData.get("newPassword"))
     const confirmNewPassword = String(formData.get("confirmNewPassword"))
     const session = await getSession()
@@ -186,10 +189,12 @@ export async function changePassword(prevState: string, formData: FormData) {
         revalidatePath("/profile")
         return { error: "Error: the current password you entered is incorrect" }
     }
+    */
 }
 
 export async function updateProfilePictureURL(url: string) {
-    const session = await getSession()
+    return null
+    /*const session = await getSession()
     if (!session) return redirect("/")
     const authID = session?.user?.authID
     await handleDatabaseConnection()
@@ -198,5 +203,5 @@ export async function updateProfilePictureURL(url: string) {
     await dbConnection.execute(sql, [url, authID])
     dbConnection.release()
     revalidatePath("/profile")
-    return { url: url }
+    return { url: url }*/
 }   

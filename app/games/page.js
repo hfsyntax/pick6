@@ -9,8 +9,8 @@ export const metadata = {
 export default async function Games() {
     const currentSeason = process.env.CURRENT_SEASON
     const currentWeek = process.env.CURRENT_WEEK
-    const games = await getWeekGameResults(currentSeason, currentWeek)
-    const weeks = await getWeeks()
+    const games = []//await getWeekGameResults(currentSeason, currentWeek)
+    const weeks = []//await getWeeks()
     const weekID = weeks.find(week => week.season_number == currentSeason && week.week_number == currentWeek)?.week_id
     return (
         <div id="container">
