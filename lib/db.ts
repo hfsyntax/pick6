@@ -1,8 +1,7 @@
 "use server"
-//import mysql from "mysql2/promise"
+import mysql from "mysql2/promise"
 export async function handleDatabaseConnection() {
-    return null
-    /*try {
+    try {
         if (!global["dbConnection"]) {
             global["dbConnection"] = mysql.createPool({
                 host: process.env.DB_SERVERNAME,
@@ -22,5 +21,5 @@ export async function handleDatabaseConnection() {
     } catch (error) {
         console.error(error)
         throw error
-    }*/
+    }
 }
