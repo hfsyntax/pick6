@@ -19,6 +19,11 @@
 # misc
 .DS_Store
 *.pem
+package-lock.json
+/.vscode
+clear-cache.bat
+user_credentials.csv
+TODO
 
 # debug
 npm-debug.log*
@@ -26,7 +31,7 @@ yarn-debug.log*
 yarn-error.log*
 
 # local env files
-.env*.local
+.env*
 
 # vercel
 .vercel
@@ -34,10 +39,3 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
-
-package-lock.json
-.env
-/.vscode
-clear-cache.bat
-user_credentials.csv
-TODO
