@@ -9,7 +9,7 @@ export const metadata = {
 
 export default async function profileID({ params }) {
     const user = await getUser(params.id)
-    const profilePicURL = undefined//await getProfilePictureURL()
+    const profilePicURL = await getProfilePictureURL()
     return (
         <div id="container">
             <div id="profile_picture_container">

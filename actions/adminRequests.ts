@@ -1,12 +1,12 @@
 "use server"
 import { getSession } from "../lib/session"
-import { handleDatabaseConnection } from "../lib/db"
 import { getEnvValue, setEnvValue } from "../lib/configHandler"
 import { redirect } from "next/navigation"
 import { revalidatePath } from "next/cache"
-import {createWriteStream} from "fs"
+import { createWriteStream } from "fs"
 import ms from "ms"
-import {genSalt, hash} from "bcryptjs"
+import { genSalt, hash } from "bcryptjs"
+import { sql } from '@vercel/postgres';
 
 function randomPassword() {
     let str = ""
@@ -29,15 +29,15 @@ async function setTimer(time: FormDataEntryValue = "") {
     const addedTime = time ? ms(time.toString()) : ms("7d")
     const newTime = new Date(Date.now() + addedTime)
     setEnvValue("TARGET_RESET_TIME", newTime.getTime())
+    revalidatePath("/teams")
     revalidatePath("/admin_utility")
     return { message: `Successfully set the timer to ${newTime.toString()}.` }
 }
 
 async function setSeasonAndWeek(season: FormDataEntryValue = "", week: FormDataEntryValue = "") {
-    return null
-    /*await handleDatabaseConnection()
     const targetSeason = isNaN(Number(season)) ? 0 : Number(season)
     const targetWeek = isNaN(Number(week)) ? 0 : Number(week)
+    const timerPaused = process.env.TIMER_PAUSED
     let currentSeason = Number(process.env.CURRENT_SEASON)
     let currentWeek = Number(process.env.CURRENT_WEEK)
     let message = ""
@@ -48,13 +48,10 @@ async function setSeasonAndWeek(season: FormDataEntryValue = "", week: FormDataE
             revalidatePath("/admin_utility")
             return { error: "Error: the season is currently 0 and needs to be set" }
         } else {
-            const sql = "INSERT IGNORE INTO Seasons (season_number) VALUES (?)";
-            const dbConnection = await global["dbConnection"].getConnection()
-            const [queryResult] = await dbConnection.execute(sql, [currentSeason])
-            if (queryResult.affectedRows > 0) {
+            const queryResult = await sql`INSERT INTO seasons (season_number) VALUES (${currentSeason}) ON CONFLICT (season_number) DO NOTHING`
+            if (queryResult.rowCount > 0) {
                 message += `Inserted Season Entry ${currentSeason}<br/>`;
             }
-            dbConnection.release()
         }
         // update current season
     } else {
@@ -62,13 +59,10 @@ async function setSeasonAndWeek(season: FormDataEntryValue = "", week: FormDataE
             revalidatePath("/admin_utility")
             return { error: "Error: the specified season must be greater than 0" }
         }
-        const sql = "INSERT IGNORE INTO Seasons (season_number) VALUES (?)";
-        const dbConnection = await global["dbConnection"].getConnection()
-        const [queryResult] = await dbConnection.execute(sql, [targetSeason])
-        if (queryResult.affectedRows > 0) {
+        const queryResult = await sql`INSERT INTO seasons (season_number) VALUES (${targetSeason}) ON CONFLICT (season_number) DO NOTHING`;
+        if (queryResult.rowCount > 0) {
             message += `Inserted Season Entry ${targetSeason}<br/>`;
         }
-        dbConnection.release()
         setEnvValue("CURRENT_SEASON", targetSeason)
         message += `Set Season to ${targetSeason}<br/>`;
     }
@@ -81,38 +75,34 @@ async function setSeasonAndWeek(season: FormDataEntryValue = "", week: FormDataE
             revalidatePath("/admin_utility")
             return { error: "Error: the week is currently 0 and needs to be set." }
         }
-
-        const sql = "INSERT IGNORE INTO Weeks (week_number, season_number) VALUES (?, ?)";
-        const dbConnection = await global["dbConnection"].getConnection()
-        const [queryResult] = await dbConnection.execute(sql, [currentWeek, currentSeason])
-        if (queryResult.affectedRows > 0) {
+        const queryResult = await sql`INSERT INTO weeks (week_number, season_number) VALUES (${currentWeek}, ${currentSeason}) ON CONFLICT (week_number, season_number) DO NOTHING`;
+        if (queryResult.rowCount > 0) {
             message += `Inserted Week Entry ${currentWeek} for Season ${currentSeason}<br/>`;
         }
-        dbConnection.release()
         // update week
     } else {
         if (targetWeek <= 0) {
             revalidatePath("/admin_utility")
             return { error: "Error: the specified week must be greater than 0" }
         }
-        const sql = "INSERT IGNORE INTO Weeks (week_number, season_number) VALUES (?, ?)";
-        const dbConnection = await global["dbConnection"].getConnection()
-        const [queryResult] = await dbConnection.execute(sql, [targetWeek, currentSeason])
-        if (queryResult.affectedRows > 0) {
+
+        const queryResult = await sql`INSERT INTO weeks (week_number, season_number) VALUES (${targetWeek}, ${currentSeason}) ON CONFLICT (week_number, season_number) DO NOTHING`
+        if (queryResult.rowCount > 0) {
             message += `Inserted Week Entry ${targetWeek} for Season ${currentSeason}<br/>`;
         }
-        dbConnection.release()
         setEnvValue("CURRENT_WEEK", targetWeek)
         message += `Set Week to ${targetWeek} for Season ${currentSeason}<br/>`;
     }
+    revalidatePath("/teams")
+    revalidatePath("/weekly")
+    revalidatePath("/season")
+    revalidatePath("/results")
+    revalidatePath("/games")
     revalidatePath("/admin_utility")
     return { message: message ? message : "No updates needed." }
-    */
 }
 
 async function insertUser(formData: FormData) {
-    return null
-    /*await handleDatabaseConnection()
     const currentSeason = Number(process.env.CURRENT_SEASON)
     const currentWeek = Number(process.env.CURRENT_WEEK)
 
@@ -121,12 +111,9 @@ async function insertUser(formData: FormData) {
         return { error: `Error: the season/week need to be set to a value greater than 0 before users can be created` }
     }
 
-    let sql = "SELECT season_number FROM Weeks WHERE season_number = ? AND week_number = ?";
-    const dbConnection = await global["dbConnection"].getConnection()
-    const [queryResult] = await dbConnection.execute(sql, [currentSeason, currentWeek])
+    let queryResult = await sql`SELECT season_number FROM weeks WHERE season_number = ${currentSeason} AND week_number = ${currentWeek}`
 
-    if (queryResult.length === 0) {
-        dbConnection.release()
+    if (queryResult.rowCount === 0) {
         revalidatePath("/admin_utility")
         return { error: `Error: the season/week need to be set to a value greater than 0 before users can be created.` }
     }
@@ -166,28 +153,24 @@ async function insertUser(formData: FormData) {
             return { error: "Error: password must contain at least 6 characters, 1 uppercase letter and 1 number" }
         }
 
-        sql = "SELECT username FROM PlayerAuth WHERE username = ?";
-        const dbConnection = await global["dbConnection"].getConnection()
-        const [queryResult] = await dbConnection.execute(sql, [username])
+        queryResult = await sql`SELECT username FROM playerauth WHERE username = ${username}`
 
-        if (queryResult.length > 0) {
-            dbConnection.release()
+        if (queryResult.rowCount > 0) {
             revalidatePath("/admin_utility")
             return { error: "Error: username already exists." }
         }
 
         const salt = await genSalt()
         const hashed_password = await hash(password, salt)
-        sql = "INSERT IGNORE INTO PlayerAuth (type, username, password) VALUES (?, ?, ?)";
-        await dbConnection.execute(sql, [userType, username, hashed_password])
+        await sql`INSERT INTO playerauth (type, username, password)
+        VALUES (${userType}, ${username}, ${hashed_password})`
 
-        sql = "SELECT auth_id FROM PlayerAuth WHERE username = ?";
-        const [[{ "auth_id": auth_id }]] = await dbConnection.execute(sql, [username])
+        queryResult = await sql`SELECT auth_id FROM playerauth WHERE username = ${username}`
+        const authID = queryResult?.rows?.[0]?.["auth_id"]
 
-        sql = "INSERT IGNORE INTO Players (player_id, name, gp, group_number) VALUES (?, ?, ?, ?)";
-        await dbConnection.execute(sql, [auth_id, username, group, groupNumber])
+        await sql`INSERT INTO players (player_id, name, gp, group_number) 
+        VALUES (${authID}, ${username}, ${group}, ${groupNumber})`
 
-        dbConnection.release()
         revalidatePath("/admin_utility")
         return { message: `Successfully created user ${username}` }
     }
@@ -197,13 +180,11 @@ async function insertUser(formData: FormData) {
         const type = fileInput.type
 
         if (type !== "text/plain" && type !== "text/csv") {
-            dbConnection.release()
             revalidatePath("/admin_utility")
             return { error: "Error: invalid file format. Only .txt and .csv files are allowed" }
         }
 
         if (text === "") {
-            dbConnection.release()
             revalidatePath("/admin_utility")
             return { error: "Error: file cannot be emtpy" }
         }
@@ -214,7 +195,7 @@ async function insertUser(formData: FormData) {
         const createdUsers = []
         const createTempUserSql = "INSERT INTO TempPlayerAuth (type, username, password, sha256) VALUES ";
         const createTempValues = [] as String[]
-        const createPlayerSql = "INSERT IGNORE INTO Players (player_id, name, gp, group_number) VALUES ";
+        const createPlayerSql = "INSERT INTO Players (player_id, name, gp, group_number) VALUES ";
         const createPlayerValues = [] as String[]
 
         //username,password,gp,type,group_number
@@ -229,7 +210,7 @@ async function insertUser(formData: FormData) {
                     continue
                 }
 
-                const salt = await genSalt()
+                const salt = await genSalt(1)
                 const hashed_password = await hash(password, salt)
                 const group = userData[2].toUpperCase()
                 const userType = userData[3].toLowerCase()
@@ -257,50 +238,45 @@ async function insertUser(formData: FormData) {
         }
 
         if (Object.keys(createdUsers).length > 0) {
-            sql = "TRUNCATE TABLE TempPlayerAuth"
-            await dbConnection.execute(sql)
+            await sql`TRUNCATE TABLE TempPlayerAuth`
 
             const batchSize = 1000000
             for (let i = 0; i < createTempValues.length; i += batchSize) {
                 const batch = createTempValues.slice(i, i + batchSize)
-                const sql = createTempUserSql + batch.join()
-                await dbConnection.execute(sql)
+                await sql.query(`${createTempUserSql} ${batch.join()}`)
             }
 
             // identify users to be inserted that already exist
-            sql = `SELECT ta.username
-                    FROM TempPlayerAuth ta
-                    LEFT JOIN PlayerAuth pa
+            const duplicateUsers = await sql`SELECT ta.username
+                    FROM tempplayerauth ta
+                    LEFT JOIN playerauth pa
                     ON ta.username = pa.username
                     WHERE pa.username IS NOT NULL`
-            const [duplicateUsers] = await dbConnection.execute(sql)
-            if (duplicateUsers.length > 0) {
-                for (let row of duplicateUsers) {
+            if (duplicateUsers.rowCount > 0) {
+                for (let row of duplicateUsers.rows) {
                     const existingUser = row["username"]
                     skippedLines.push(`${existingUser} (username already exists)<br/>`)
                 }
             }
 
             // insert new players
-            sql = `INSERT IGNORE INTO PlayerAuth (type, username, password, sha256)
-                    SELECT ta.type, ta.username, ta.password, 0
-                    FROM TempPlayerAuth ta
-                    LEFT JOIN PlayerAuth pa ON ta.username = pa.username
+            await sql`INSERT INTO playerauth (type, username, password, sha256)
+                    SELECT ta.type, ta.username, ta.password, false
+                    FROM tempplayerauth ta
+                    LEFT JOIN playerauth pa ON ta.username = pa.username
                     WHERE pa.username IS NULL`
-            await dbConnection.execute(sql)
 
             // get auth_id from inserts
-            sql = `SELECT username, auth_id, sha256
-                    FROM PlayerAuth
+
+            const auth_ids = await sql`SELECT username, auth_id, sha256
+                    FROM playerauth
                     WHERE (username) IN (
                         SELECT username
-                        FROM TempPlayerAuth
+                        FROM tempplayerauth
                     )`
 
-            const [auth_ids] = await dbConnection.execute(sql)
-
-            if (auth_ids.length > 0) {
-                for (let row of auth_ids) {
+            if (auth_ids.rowCount > 0) {
+                for (let row of auth_ids.rows) {
                     const user = row["username"]
                     const authID = row["auth_id"]
                     createdUsers[user]["auth_id"] = authID
@@ -312,18 +288,16 @@ async function insertUser(formData: FormData) {
             }
 
             // empty out temp inserts after processing users
-            sql = "TRUNCATE TABLE TempPlayerAuth"
-            await dbConnection.execute(sql)
+            await sql`TRUNCATE TABLE tempplayerauth`
 
             // start batch sql insers
             for (let i = 0; i < createPlayerValues.length; i += batchSize) {
                 const batch = createPlayerValues.slice(i, batchSize)
-                const sql = createPlayerSql + batch.join()
-                await dbConnection.execute(sql)
+                const query = `${createPlayerSql} ${batch.join()} ON CONFLICT (name) DO NOTHING`
+                await sql.query(query)
             }
         }
 
-        dbConnection.release()
         revalidatePath("/admin_utility")
 
         if (skippedLines.length === 0) {
@@ -339,53 +313,42 @@ async function insertUser(formData: FormData) {
         }
     } else {
         return { error: "not every required input was filled" }
-    }*/
+    }
 }
 
 async function deleteUser(formData: FormData) {
-    return null
-    /*await handleDatabaseConnection()
     // single deletion
-    const dbConnection = await global["dbConnection"].getConnection()
-    let sql = "" as string
+    let query = ""
     if (formData.get("username")) {
-        const username = formData.get("username")
-        sql = "SELECT auth_id, is_active FROM PlayerAuth WHERE username = ?"
-        const [authIDRow] = await dbConnection.execute(sql, [username])
+        const username = formData.get("username") as string
+        const authIDRow = await sql`SELECT auth_id, is_active FROM playerauth WHERE username = ${username}`
 
-        if (authIDRow.length === 0) {
-            dbConnection.release()
+        if (authIDRow.rowCount === 0) {
             revalidatePath("/admin_utility")
             return { error: "Error: user does not exist" }
         }
 
-        const isActive = authIDRow[0]["is_active"]
-        if (isActive === 0) {
-            dbConnection.release()
-            revalidatePath("/admin_utility")
-            return { error: "Error: user is already set as inactive" }
-        }
-
-        const authID = authIDRow[0]["auth_id"]
+        const authID = authIDRow?.rows?.[0]?.["auth_id"]
 
         if (formData.get("hardDelete")) {
-            sql = "DELETE FROM PlayerAuth WHERE auth_id = ?"
-            await dbConnection.execute(sql, [authID])
-            dbConnection.release()
+            await sql`DELETE FROM playerauth WHERE auth_id = ${authID}`
             revalidatePath("/admin_utility")
             return { message: `Successfully deleted ${username}` }
         }
 
-        sql = "UPDATE PlayerAuth SET is_active = ? WHERE auth_id = ?"
-        await dbConnection.execute(sql, ['0', authID])
-        dbConnection.release()
+        const isActive = authIDRow?.rows?.[0]?.["is_active"]
+        if (!isActive) {
+            revalidatePath("/admin_utility")
+            return { error: "Error: user is already set as inactive" }
+        }
+
+        await sql`UPDATE playerauth SET is_active = false WHERE auth_id = ${authID}`
         revalidatePath("/admin_utility")
         return { message: `Successfully set ${username} as inactive` }
     } else if (formData.get("fileInput")) {
         const file = formData.get("fileInput") as File
 
         if (file.type !== "text/plain" && file.type !== "text/csv") {
-            dbConnection.release()
             revalidatePath("/admin_utility")
             return { error: "Error: invalid file format. Only .txt and .csv files are allowed" }
         }
@@ -393,20 +356,18 @@ async function deleteUser(formData: FormData) {
         const fileText = await file.text()
 
         if (fileText === "") {
-            dbConnection.release()
             revalidatePath("/admin_utility")
             return { error: "Error: file cannot be empty" }
         }
 
-        sql = "TRUNCATE TABLE TempPlayerAuth"
-        await dbConnection.execute(sql)
+        await sql`TRUNCATE TABLE tempplayerauth CASCADE`
 
         const skippedLines = [] as String[]
         let successfulEntires = 0
         const deletedUsers = []
-        const createTempUserSql = "INSERT INTO TempPlayerAuth (username, is_active) VALUES ";
+        const createTempUserSql = "INSERT INTO tempplayerauth (username, is_active) VALUES ";
         const createTempValues = []
-        const deleteUserSql = "DELETE FROM PlayerAuth WHERE username IN";
+        const deleteUserSql = "DELETE FROM playerauth WHERE username IN";
         const deleteUserValues = []
         const batchSize = 1000000;
         const users = fileText.split(",")
@@ -415,26 +376,25 @@ async function deleteUser(formData: FormData) {
             user = user.trim()
             if (user && !deletedUsers[user]) {
                 deletedUsers[user] = user
-                createTempValues.push(`('${user}', '0')`)
+                createTempValues.push(`('${user}', 'false')`)
             }
         }
 
 
         for (let i = 0; i < createTempValues.length; i += batchSize) {
             const batch = createTempValues.slice(i, i + batchSize)
-            const sql = createTempUserSql + batch.join()
-            await dbConnection.execute(sql)
+            const query = createTempUserSql + batch.join()
+            await sql.query(query)
         }
 
-        sql = `SELECT ta.username
-            FROM TempPlayerAuth ta
-            LEFT JOIN PlayerAuth pa
+        const nonExistingUsers = await sql`SELECT ta.username
+            FROM tempplayerauth ta
+            LEFT JOIN playerauth pa
             ON ta.username = pa.username
             WHERE pa.username IS NULL`
 
-        const [nonExistingUsers] = await dbConnection.execute(sql)
-        for (let i = 0; i < nonExistingUsers.length; i++) {
-            const user = nonExistingUsers[i].username
+        for (let i = 0; i < nonExistingUsers.rowCount; i++) {
+            const user = nonExistingUsers?.rows?.[i]?.username
             skippedLines.push(`${user} (user doesn't exist)<br/>`)
             if (deletedUsers[user]) {
                 delete deletedUsers[user]
@@ -449,17 +409,15 @@ async function deleteUser(formData: FormData) {
         if (formData.get("hardDelete")) {
             for (let i = 0; i < deleteUserValues.length; i += batchSize) {
                 const batch = deleteUserValues.slice(i, i + batchSize)
-                const sql = `${deleteUserSql} (${batch.join()})`
-                await dbConnection.execute(sql)
+                await sql.query(`${deleteUserSql} (${batch.join()})`)
             }
         } else {
-            sql = `UPDATE PlayerAuth AS pa
-                        JOIN TempPlayerAuth AS ta ON pa.username = ta.username
-                        SET pa.is_active = ta.is_active`
-            await dbConnection.execute(sql)
+            await sql`UPDATE playerauth AS pa
+            SET is_active = ta.is_active
+            FROM tempplayerauth AS ta
+            WHERE pa.username = ta.username`
         }
 
-        dbConnection.release()
         revalidatePath("/admin_utility")
         const operation = formData.get("hardDelete") ? "hard deleted" : "soft deleted"
         if (skippedLines.length === 0) {
@@ -472,12 +430,10 @@ async function deleteUser(formData: FormData) {
 
     } else {
         return { error: "not every required input was filled" }
-    }*/
+    }
 }
 
 async function uploadGames(formData: FormData) {
-    return null
-    /*await handleDatabaseConnection()
     const fileInput = formData.get("fileInput") as File
 
     if (!fileInput) {
@@ -514,12 +470,8 @@ async function uploadGames(formData: FormData) {
         return { error: "Error: the timer needs to be paused or negative before games can be created." }
     }
 
-    const dbConnection = await global["dbConnection"].getConnection()
-
-    let sql = "SELECT * FROM Weeks WHERE season_number = ? AND week_number = ?"
-    const [queryResult] = await dbConnection.execute(sql, [currentSeason, currentWeek])
-    if (queryResult.length === 0) {
-        dbConnection.release()
+    const queryResult = await sql`SELECT * FROM weeks WHERE season_number = ${currentSeason} AND week_number = ${currentWeek}`
+    if (queryResult.rowCount === 0) {
         revalidatePath("/admin_utility")
         return { error: "Error: the week/season needs to be set to a value greater than 0 before games can be created." }
     }
@@ -536,7 +488,7 @@ async function uploadGames(formData: FormData) {
         "Broncos": 10, "Seahawks": 29, "WFT": 33, "Redskins": 33, "Push": 32
     }
 
-    const createGamesSql = "INSERT IGNORE INTO Games (season_number, week_number, favorite, spread, underdog) VALUES "
+    const createGamesSql = "INSERT INTO games (season_number, week_number, favorite, spread, underdog) VALUES"
     const createGamesValues = []
     const skippedLines = []
     let successfulEntries = 0
@@ -574,40 +526,34 @@ async function uploadGames(formData: FormData) {
     }
 
     if (skippedLines.length > 0) {
-        dbConnection.release()
         revalidatePath("/admin_utility")
         return { error: `Error: (need to reprocess) some games not created, skipped lines:<br/>${skippedLines.join("")}` }
     }
 
     // clear previously set picks
-    sql = `DELETE FROM PlayerSelections
+    await sql`DELETE FROM playerselections
      WHERE game_id IN (
          SELECT game_id
-         FROM Games
-         WHERE season_number = ? AND week_number = ?
+         FROM games
+         WHERE season_number = ${currentSeason} AND week_number = ${currentWeek}
      )`
-    await dbConnection.execute(sql, [currentSeason, currentWeek])
 
     // clear previously set games
-    sql = `DELETE FROM Games WHERE season_number = ? AND week_number = ?`
-    await dbConnection.execute(sql, [currentSeason, currentWeek])
+    await sql`DELETE FROM games WHERE season_number = ${currentSeason} AND week_number = ${currentWeek}`
 
     const batchSize = 1000000
     for (let i = 0; i < createGamesValues.length; i += batchSize) {
         const batch = createGamesValues.slice(i, i + batchSize)
-        const sql = createGamesSql + batch.join()
-        await dbConnection.execute(sql)
+        await sql.query(`${createGamesSql} ${batch.join()}`)
     }
 
-    dbConnection.release()
+    revalidatePath("/teams")
+    revalidatePath("/games")
     revalidatePath("/admin_utility")
     return { message: "All games from file created" }
-    */
 }
 
 async function handleWeekResults(formData: FormData) {
-    return null
-    /*await handleDatabaseConnection()
     const fileInput = formData.get("fileInput") as File
 
     if (!fileInput) {
@@ -627,12 +573,12 @@ async function handleWeekResults(formData: FormData) {
         return { error: "Error: file cannot be empty" }
     }
 
-    const currentSeason = process.env.CURRENT_SEASON
-    const currentWeek = process.env.CURRENT_WEEK
+    const currentSeason = Number(process.env.CURRENT_SEASON)
+    const currentWeek = Number(process.env.CURRENT_WEEK)
 
-    if (currentSeason === "0" || currentWeek === "0") {
+    if (currentSeason === 0 || currentWeek === 0) {
         revalidatePath("/admin_utility")
-        return { error: "Error: the week/season needs to be set to a value greater than 0 before games can be created" }
+        return { error: "Error: the week/season needs to be set to a value greater than 0 before game results can be created" }
     }
 
     const timerPaused = process.env.TIMER_PAUSED === "1" ? true : false
@@ -644,26 +590,19 @@ async function handleWeekResults(formData: FormData) {
         return { error: "Error: the timer needs to be paused or negative before games can be created." }
     }
 
-    const dbConnection = await global["dbConnection"].getConnection()
-
-    let sql = "SELECT * FROM Weeks WHERE season_number = ? AND week_number = ?"
-    const [queryResult] = await dbConnection.execute(sql, [currentSeason, currentWeek])
-    if (queryResult.length === 0) {
-        dbConnection.release()
+    const queryResult = await sql`SELECT * FROM weeks WHERE season_number = ${currentSeason} AND week_number = ${currentWeek}`
+    if (queryResult.rowCount === 0) {
         revalidatePath("/admin_utility")
         return { error: "Error: the week/season needs to be set to a value greater than 0 before games can be created." }
     }
 
-    sql = "SELECT COUNT(game_id) AS game_count FROM Games WHERE season_number = ? AND week_number = ?"
-    const [gameCount] = await dbConnection.execute(sql, [currentSeason, currentWeek])
-    if (gameCount.length === 0) {
-        dbConnection.release()
+    const gameCount = await sql`SELECT COUNT(game_id) AS game_count FROM games WHERE season_number = ${currentSeason} AND week_number = ${currentWeek}`
+    if (gameCount.rowCount === 0) {
         revalidatePath("/admin_utility")
         return { error: `Error: no games are available for week ${currentWeek} of season ${currentSeason}` }
     }
 
-    sql = "TRUNCATE TABLE TempGames"
-    await dbConnection.execute(sql)
+    await sql`TRUNCATE TABLE tempgames`
 
     const teamIDs = {
         "Bills": 4, "Rams": 19, "Dolphins": 20, "Patriots": 22,
@@ -677,7 +616,7 @@ async function handleWeekResults(formData: FormData) {
         "Broncos": 10, "Seahawks": 29, "WFT": 33, "Redskins": 33, "Push": 32
     }
 
-    const createTempGamesSql = "INSERT IGNORE INTO TempGames (season_number, week_number, favorite, underdog, winner, favorite_score, underdog_score) VALUES "
+    const createTempGamesSql = "INSERT INTO tempgames (season_number, week_number, favorite, underdog, winner, favorite_score, underdog_score) VALUES "
     const createTempValues = [] as String[]
     const skippedLines = [] as String[]
     const createdGames = {}
@@ -720,7 +659,7 @@ async function handleWeekResults(formData: FormData) {
                         const favoriteID = teamIDs[favorite];
                         const underdogID = teamIDs[underdog];
                         const winnerID = teamIDs[winner]
-                        createTempValues.push(`('${currentSeason}', '${currentWeek}', '${favoriteID}', '${underdogID}', '${winnerID}', '${spread}', '${underdogID}')`);
+                        createTempValues.push(`('${currentSeason}', '${currentWeek}', '${favoriteID}', '${underdogID}', '${winnerID}', '${favoriteScore}', '${underdogScore}')`);
                     }
                 }
             }
@@ -732,56 +671,54 @@ async function handleWeekResults(formData: FormData) {
 
         for (let i = 0; i < createTempValues.length; i += batchSize) {
             const batch = createTempValues.slice(i, i + batchSize)
-            const sql = createTempGamesSql + batch.join()
-            await dbConnection.execute(sql)
+            await sql.query(`${createTempGamesSql}  ${batch.join()}`)
         }
 
         // identify which games don't exist
-        sql = `SELECT tg.favorite, tg.underdog
-            FROM TempGames tg
-            LEFT JOIN Games g
+        const nonexistentGames = await sql`SELECT tg.favorite, tg.underdog
+            FROM tempgames tg
+            LEFT JOIN games g
             ON tg.season_number = g.season_number
             AND tg.week_number = g.week_number
             AND tg.favorite = g.favorite
             AND tg.underdog = g.underdog
             WHERE g.game_id IS NULL
-            AND tg.season_number = ?
-            AND tg.week_number = ?`
-
-        const [nonexistentGames] = await dbConnection.execute(sql, [currentSeason, currentWeek])
-        for (let row of nonexistentGames) {
+            AND tg.season_number = ${currentSeason}
+            AND tg.week_number = ${currentWeek}`
+        for (let row of nonexistentGames.rows) {
             const favorite = row["favorite"]
             const underdog = row["underdog"]
             skippedLines.push(`line with favorite: ${favorite} and underdog: ${underdog} (game doesn't exist)<br/>`)
         }
 
         // set winning teams and scores for all games that exist
-        sql = `UPDATE Games g
-            JOIN TempGames tg
-            ON g.season_number = tg.season_number
+        await sql`UPDATE games g
+        SET 
+            winner = tg.winner,
+            favorite_score = tg.favorite_score,
+            underdog_score = tg.underdog_score
+        FROM tempgames tg
+        WHERE 
+            g.season_number = tg.season_number
             AND g.week_number = tg.week_number
             AND g.favorite = tg.favorite
             AND g.underdog = tg.underdog
-            SET g.winner = tg.winner,
-            g.favorite_score = tg.favorite_score,
-            g.underdog_score = tg.underdog_score
-            WHERE g.winner IS NULL
+            AND g.winner IS NULL
             AND tg.winner IS NOT NULL
-            AND g.season_number = ?
-            AND g.week_number = ? `
-        await dbConnection.execute(sql, [currentSeason, currentWeek])
+            AND g.season_number = ${currentSeason}
+            AND g.week_number = ${currentWeek};
+        `
 
         //log the successful insertions
-        sql = `SELECT g.week_number, g.season_number, g.favorite, g.underdog
-            FROM Games g
-            JOIN TempGames tg
+        const insertedGames = await sql`SELECT g.week_number, g.season_number, g.favorite, g.underdog
+            FROM games g
+            JOIN tempgames tg
             ON g.week_number = tg.week_number
             AND g.season_number = tg.season_number
             AND g.favorite = tg.favorite
             AND g.underdog = tg.underdog`
-        const [insertedGames] = await dbConnection.execute(sql)
 
-        if (insertedGames.length !== Object.keys(createdGames).length) {
+        if (insertedGames.rowCount !== Object.keys(createdGames).length) {
             revalidatePath("/admin_utility")
             return { error: `Error: the number of game results to update does not match the number of games for the week (need to reprocess)<br/>Skipped lines: ${skippedLines.join("")}` }
         }
@@ -789,233 +726,234 @@ async function handleWeekResults(formData: FormData) {
         const message = [] as String[]
         message.push("All games winners/scores processed<br/>")
 
-        sql = "INSERT IGNORE INTO Weeks (season_number, week_number) VALUES (?, ?)"
         const weekNumber = Number(currentWeek) + 1
-        const [insertWeek] = await dbConnection.execute(sql, [currentSeason, weekNumber])
-        if (insertWeek.affectedRows > 0) {
+        const insertWeek = await sql`INSERT INTO weeks (season_number, week_number) VALUES (${currentSeason}, ${weekNumber}) ON CONFLICT (season_number, week_number) DO NOTHING`
+        if (insertWeek.rowCount > 0) {
             message.push(`Inserted week entry for next week ${weekNumber}<br/>`)
         }
 
+        // delete the previously set playerweekstats (admin might want to redo results)
+        await sql`DELETE FROM playerweekstats where season_number = ${currentSeason} AND week_number = ${weekNumber}`
+
         // insert playerstats entry for next week for players who have not made selections
-        sql = `INSERT IGNORE INTO PlayerWeekStats (player_id, gp, group_number, season_number, week_number, rank, won, lost, played, win_percentage)
+
+        const maxPicks = Math.min(gameCount?.rows?.[0]?.game_count, 6)
+        const playersWithNoPicks = await sql`INSERT INTO playerweekstats (player_id, gp, group_number, season_number, week_number, rank, won, lost, played, win_percentage)
             SELECT
                 p.player_id,
                 p.gp,
                 p.group_number,
-                ? AS season_number,
-                ? AS week_number, -- next week
+                ${currentSeason} AS season_number,
+                ${weekNumber} AS week_number, -- next week
                 COALESCE(pws.rank, 0) AS rank,
                 COALESCE(pws.won, 0) AS won,
-                COALESCE(pws.lost, 0) + ? AS lost,
-                COALESCE(pws.played, 0) + ? AS played,
-                COALESCE(pws.won, 0) / (COALESCE(pws.played, 0) + ?) AS win_percentage
+                COALESCE(pws.lost, 0) + ${maxPicks} AS lost,
+                COALESCE(pws.played, 0) + ${maxPicks} AS played,
+                COALESCE(pws.won, 0) / (COALESCE(pws.played, 0) + ${maxPicks}) AS win_percentage
             FROM Players p
-            LEFT JOIN PlayerWeekStats pws ON p.player_id = pws.player_id AND pws.season_number = ? AND pws.week_number = ?
+            LEFT JOIN playerweekstats pws ON p.player_id = pws.player_id AND pws.season_number = ${currentSeason} AND pws.week_number = ${currentWeek}
             WHERE p.player_id IN (
                 SELECT pws.player_id
-                FROM PlayerWeekStats pws
-                WHERE pws.season_number = ? AND pws.week_number = ?
+                FROM playerweekstats pws
+                WHERE pws.season_number = ${currentSeason} AND pws.week_number = ${currentWeek}
             )
             AND p.player_id NOT IN (
                 SELECT ps.player_id
-                FROM PlayerSelections ps
-                JOIN Games g ON ps.game_id = g.game_id
-                WHERE g.season_number = ? AND g.week_number = ?
+                FROM playerselections ps
+                JOIN games g ON ps.game_id = g.game_id
+                WHERE g.season_number = ${currentSeason} AND g.week_number = ${currentWeek}
             )`
-
-        const maxPicks = Math.min(gameCount[0].game_count, 6)
-        console.log(`max picks is ${maxPicks}`)
-        const [playersWithNoPicks] = await dbConnection.execute(sql, [currentSeason, weekNumber, maxPicks, maxPicks, maxPicks, currentSeason, currentWeek, currentSeason, currentWeek, currentSeason, currentWeek])
-        if (playersWithNoPicks.affectedRows > 0) {
+        if (playersWithNoPicks.rowCount > 0) {
             message.push(`Created new player week stat entries for players who did not make selections for week ${currentWeek}<br/>`)
         }
 
         // insert playerweekstats entries for players who did make selections
-        sql = `INSERT IGNORE INTO PlayerWeekStats (player_id, gp, group_number, season_number, week_number, rank, won, lost, played, win_percentage)
+        const playersWithPicks = await sql`INSERT INTO playerweekstats (player_id, gp, group_number, season_number, week_number, rank, won, lost, played, win_percentage)
         SELECT
             pws.player_id,
             p.gp,
             p.group_number,
-            ?, -- current season_number
-            ?, -- next week_number
+            ${currentSeason}, -- current season_number
+            ${weekNumber}, -- next week_number
             pws.rank,
             COALESCE(pws.won, 0) + week_data.won,
-            COALESCE(pws.lost, 0) +  ? - week_data.won - week_data.cancelled, -- minimum required selections
-            COALESCE(pws.played, 0) + ? - week_data.cancelled,
-        CASE WHEN (COALESCE(pws.played, 0) + ? - week_data.cancelled) > 0 THEN (COALESCE(pws.won, 0) + week_data.won) / (COALESCE(pws.played, 0) + ? - week_data.cancelled) ELSE 0 END
-        FROM PlayerWeekStats pws
-        LEFT JOIN (
+            COALESCE(pws.lost, 0) +  ${maxPicks} - week_data.won - week_data.cancelled, -- minimum required selections
+            COALESCE(pws.played, 0) + ${maxPicks} - week_data.cancelled,
+        CASE WHEN (COALESCE(pws.played, 0) + ${maxPicks} - week_data.cancelled) > 0 THEN (COALESCE(pws.won, 0) + week_data.won) / (COALESCE(pws.played, 0) + ${maxPicks} - week_data.cancelled) ELSE 0 END
+        FROM playerweekstats pws
+        INNER JOIN (
             SELECT
                 ps.player_id,
                 SUM(CASE WHEN g.winner = ps.selected_team_id THEN 1 ELSE 0 END) AS won,
                 SUM(CASE WHEN g.winner IS NULL THEN 1 ELSE 0 END) as cancelled
-            FROM PlayerSelections ps
-            JOIN Games g ON ps.game_id = g.game_id
-            WHERE g.season_number = ? -- current season_number
-                AND g.week_number = ? -- current week_number
+            FROM playerselections ps
+            JOIN games g ON ps.game_id = g.game_id
+            WHERE g.season_number = ${currentSeason} -- current season_number
+                AND g.week_number = ${currentWeek} -- current week_number
             GROUP BY ps.player_id
         ) AS week_data ON pws.player_id = week_data.player_id
-        JOIN Players p ON pws.player_id = p.player_id
-        WHERE pws.season_number = ? -- current season_number
-            AND pws.week_number = ?`
+        JOIN players p ON pws.player_id = p.player_id
+        WHERE pws.season_number = ${currentSeason} -- current season_number
+            AND pws.week_number = ${currentWeek}`
 
-        const [playersWithPicks] = await dbConnection.execute(sql, [currentSeason, weekNumber, maxPicks, maxPicks, maxPicks, maxPicks, currentSeason, currentWeek, currentSeason, currentWeek])
-
-        if (playersWithPicks.affectedRows > 0) {
+        if (playersWithPicks.rowCount > 0) {
             message.push(`Created new player week stats entries for next week week $weekNumber who have made selections<br/>`)
         }
 
         //update ranks for next week weekstats
-        sql = `UPDATE PlayerWeekStats pws
-            JOIN (
-              SELECT
-                p1.player_id,
-                p1.season_number,
-                p1.week_number,
-                p1.won,
-                p1.lost,
-                p1.played,
-                p1.win_percentage,
-                (
-                  SELECT COUNT(*) + 1
-                  FROM PlayerWeekStats p2
-                  WHERE p2.season_number = p1.season_number
-                    AND p2.week_number = p1.week_number
-                    AND p2.win_percentage > p1.win_percentage
-                ) AS new_rank
-              FROM PlayerWeekStats p1
-              WHERE p1.season_number = ?
-                AND p1.week_number = ?    
-            ) AS new_stats ON pws.player_id = new_stats.player_id
-            AND pws.season_number = new_stats.season_number
-            AND pws.week_number = new_stats.week_number
-            SET pws.rank = new_stats.new_rank;`
+        const nextWeekRanks = await sql`
+        WITH ranked_stats AS (
+        SELECT
+            p1.player_id,
+            p1.season_number,
+            p1.week_number,
+            p1.won,
+            p1.lost,
+            p1.played,
+            p1.win_percentage,
+            RANK() OVER (PARTITION BY p1.season_number, p1.week_number ORDER BY p1.win_percentage DESC) AS new_rank
+        FROM playerweekstats p1
+        WHERE p1.season_number = ${currentSeason}
+        AND p1.week_number = ${weekNumber}
+        )
+        UPDATE playerweekstats pws
+        SET rank = rs.new_rank
+        FROM ranked_stats rs
+        WHERE pws.player_id = rs.player_id
+        AND pws.season_number = rs.season_number
+        AND pws.week_number = rs.week_number;
+        `
 
-        const [nextWeekRanks] = await dbConnection.execute(sql, [currentSeason, weekNumber])
-
-        if (nextWeekRanks.affectedRows > 0) {
+        if (nextWeekRanks.rowCount > 0) {
             message.push(`Updated player ranks for next weeks stats week ${weekNumber}<br/>`)
         }
 
         //update playerseasonstats
-        sql = `UPDATE PlayerSeasonStats pss
-            JOIN (
-                SELECT
-                    pws.player_id,
-                    pws.season_number,
-                    pws.won,
-                    pws.lost,
-                    pws.played,
-                    pws.rank,
-                    CASE WHEN pws.played > 0 THEN pws.won / pws.played ELSE 0 END AS win_percentage
-                FROM PlayerWeekStats pws
-                WHERE pws.season_number = ?
-                    AND pws.week_number = ? -- next week_number
-            ) AS week_data ON pss.player_id = week_data.player_id AND pss.season_number = week_data.season_number
-            SET
-                pss.won = week_data.won,
-                pss.lost = week_data.lost,
-                pss.played = week_data.played,
-                pss.rank = week_data.rank,
-                pss.win_percentage = week_data.win_percentage
-            WHERE
-                pss.season_number = ?`
+        const seasonStats = await sql`UPDATE playerseasonstats pss
+        SET
+            won = week_data.won,
+            lost = week_data.lost,
+            played = week_data.played,
+            rank = week_data.rank,
+            win_percentage = week_data.win_percentage
+        FROM (
+            SELECT
+                pws.player_id,
+                pws.season_number,
+                SUM(pws.won) AS won,
+                SUM(pws.lost) AS lost,
+                SUM(pws.played) AS played,
+                MAX(pws.rank) AS rank,
+                CASE WHEN SUM(pws.played) > 0 THEN SUM(pws.won) / SUM(pws.played)::float ELSE 0 END AS win_percentage
+            FROM playerweekstats pws
+            WHERE pws.season_number = ${currentSeason}
+            AND pws.week_number = ${weekNumber} -- next week_number
+            GROUP BY pws.player_id, pws.season_number
+        ) AS week_data
+        WHERE pss.player_id = week_data.player_id
+        AND pss.season_number = week_data.season_number
+        AND pss.season_number = ${currentSeason};
+        `
 
-        const [seasonStats] = await dbConnection.execute(sql, [currentSeason, weekNumber, currentSeason])
-
-        if (seasonStats.affectedRows > 0) {
+        if (seasonStats.rowCount > 0) {
             message.push(`Updated player season stats entries for sesaon ${currentSeason}<br/>`)
         }
 
         //insert winners
-        sql = `INSERT IGNORE INTO Winners (player_id, season_number, week_number)
-        SELECT subquery.player_id, ?, ? 
-        FROM (
-            SELECT ps.player_id,
-                SUM(CASE WHEN g.winner IS NULL THEN 0
-                            WHEN ps.selected_team_id = g.winner THEN 1
-                            ELSE 0 END) AS games_won,
-                SUM(CASE WHEN g.winner IS NULL THEN 1 ELSE 0 END) as cancelled
-            FROM PlayerSelections ps
-            INNER JOIN Games g ON ps.game_id = g.game_id
-            LEFT JOIN Teams t ON g.winner = t.team_id
-            WHERE g.season_number = ? AND g.week_number = ?
-            GROUP BY ps.player_id
-            HAVING (games_won = ? - cancelled)
-        ) AS subquery`
+        const winners = await sql`WITH subquery AS (
+        SELECT 
+            ps.player_id,
+            SUM(CASE 
+                WHEN g.winner IS NULL THEN 0
+                WHEN ps.selected_team_id = g.winner THEN 1
+                ELSE 0 
+            END) AS games_won,
+            SUM(CASE 
+                WHEN g.winner IS NULL THEN 1 
+                ELSE 0 
+            END) AS cancelled
+        FROM playerselections ps
+        INNER JOIN games g ON ps.game_id = g.game_id
+        LEFT JOIN teams t ON g.winner = t.team_id
+        WHERE g.season_number = ${currentSeason} 
+        AND g.week_number = ${currentWeek}
+        GROUP BY ps.player_id
+    )
+    INSERT INTO winners (player_id, season_number, week_number)
+    SELECT player_id, ${currentSeason}, ${currentWeek}
+    FROM subquery
+    WHERE games_won = ${maxPicks} - cancelled
+    ON CONFLICT (player_id,season_number,week_number) DO NOTHING;
+    `
 
-        const [winners] = await dbConnection.execute(sql, [currentSeason, currentWeek, currentSeason, currentWeek, maxPicks])
-
-        if (winners.affectedRows > 0) {
+        if (winners.rowCount > 0) {
             message.push(`Inserted winners for week ${currentWeek}<br/>`)
         }
 
         //insert losers who have made selections
-        sql = `INSERT IGNORE INTO Losers (player_id, season_number, week_number)
-            SELECT subquery.player_id, ?, ? 
-            FROM (
-                SELECT ps.player_id,
-                       SUM(CASE WHEN g.winner IS NULL THEN 0
-                                WHEN ps.selected_team_id != g.winner THEN 1
-                                ELSE 0 END) AS games_lost
-                FROM PlayerSelections ps
-                INNER JOIN Games g ON ps.game_id = g.game_id
-                INNER JOIN Teams t ON g.winner = t.team_id
-                WHERE g.season_number = ? AND g.week_number = ?
-                GROUP BY ps.player_id
-                HAVING (games_lost = ? AND games_lost > 0) 
-            ) AS subquery`
-
-        const [losersWithPicks] = await dbConnection.execute(sql, [currentSeason, currentWeek, currentSeason, currentWeek, maxPicks])
-        if (losersWithPicks.affectedRows > 0) {
+        const losersWithPicks = await sql`WITH subquery AS (
+        SELECT 
+            ps.player_id,
+            SUM(CASE 
+                WHEN g.winner IS NULL THEN 0
+                WHEN ps.selected_team_id != g.winner THEN 1
+                ELSE 0 
+            END) AS games_lost
+        FROM playerselections ps
+        INNER JOIN games g ON ps.game_id = g.game_id
+        INNER JOIN teams t ON g.winner = t.team_id
+        WHERE g.season_number = ${currentSeason} 
+        AND g.week_number = ${currentWeek}
+        GROUP BY ps.player_id
+    )
+    INSERT INTO losers (player_id, season_number, week_number)
+    SELECT player_id, ${currentSeason}, ${currentWeek}
+    FROM subquery
+    WHERE games_lost = ${maxPicks} AND games_lost > 0
+    ON CONFLICT (player_id, season_number, week_number) DO NOTHING;
+    `
+        if (losersWithPicks.rowCount > 0) {
             message.push(`Inserted losers for week ${currentWeek}<br/>`)
         }
 
         //insert losers who have not made selections
-        sql = `INSERT IGNORE INTO Losers (player_id, season_number, week_number)
+        const losersWithNoPicks = await sql`INSERT INTO losers (player_id, season_number, week_number)
             SELECT
                 ps.player_id,
-                ? AS season_number,
-                ? AS week_number
-            FROM PlayerSeasonStats ps
-            WHERE ps.season_number = ? 
+                ${currentSeason} AS season_number,
+                ${currentWeek} AS week_number
+            FROM playerseasonstats ps
+            WHERE ps.season_number = ${currentSeason} 
               AND ps.player_id NOT IN (
                 SELECT DISTINCT ps2.player_id
-                FROM PlayerSelections ps2
-                INNER JOIN Games g ON ps2.game_id = g.game_id
-                WHERE g.week_number = ? 
-                  AND g.season_number = ?
-            );`
+                FROM playerselections ps2
+                INNER JOIN games g ON ps2.game_id = g.game_id
+                WHERE g.week_number = ${currentWeek} 
+                  AND g.season_number = ${currentSeason}
+            ) ON CONFLICT (player_id,season_number,week_number) DO NOTHING;`
 
-        const [losersWithNoPicks] = await dbConnection.execute(sql, [currentSeason, currentWeek, currentSeason, currentWeek, currentSeason])
-
-        if (losersWithNoPicks.affectedRows > 0) {
+        if (losersWithNoPicks.rowCount > 0) {
             message.push(`Inserted losers for week ${currentWeek} who didn't make selections<br/>`)
-        }
-
-        // insert new week entry
-        sql = "INSERT IGNORE INTO Weeks (week_number, season_number) VALUES (?, ?)"
-        const [newWeek] = await dbConnection.execute(sql, [currentSeason, weekNumber])
-        if (newWeek.affectedRows > 0) {
-            message.push(`Inserted a new week entry for week ${weekNumber}<br/>`)
         }
 
         // update week env
         setEnvValue("CURRENT_WEEK", weekNumber)
         message.push(`Updated the current week to the next week ${weekNumber}<br/>`)
-        dbConnection.release()
+        revalidatePath("/teams")
+        revalidatePath("/weekly")
+        revalidatePath("/season")
+        revalidatePath("/results")
+        revalidatePath("/games")
         revalidatePath("/admin_utility")
         return { message: message.join("") }
     } else {
-        dbConnection.release()
         revalidatePath("/admin_utility")
         return { error: `Error: game results from file could not be parsed.<br/>Skipped lines: ${skippedLines.join("")}` }
-    }*/
+    }
 }
 
 async function uploadPicks(formData: FormData) {
-    return null
-    /*const file = formData.get("fileInput") as File
+    const file = formData.get("fileInput") as File
 
     if (!file) {
         revalidatePath("/admin_utility")
@@ -1042,34 +980,28 @@ async function uploadPicks(formData: FormData) {
         return { error: "Error: the week/season needs to be set to a value greater than 0 before picks can be uploaded." }
     }
 
-    await handleDatabaseConnection()
-    const dbConnection = await global["dbConnection"].getConnection()
-
     // ensure week/season entry exists in database
-    let sql = "SELECT * FROM Weeks WHERE season_number = ? AND week_number = ?"
-    const [queryResult] = await dbConnection.execute(sql, [currentSeason, currentWeek])
-    if (queryResult.length === 0) {
-        dbConnection.release()
+    const queryResult = await sql`SELECT * FROM weeks WHERE season_number = ${currentSeason} AND week_number = ${currentWeek}`
+    if (queryResult.rowCount === 0) {
         revalidatePath("/admin_utility")
         return { error: "Error: the week/season needs to be set to a value greater than 0 before games can be created." }
     }
 
     // get games for the week
     const gamesArray = []
-    sql = `SELECT
+    const weekGamesQuery = await sql`SELECT
         g.game_id,
         t1.team_id AS favorite,
         t2.team_id AS underdog
         FROM
-        (SELECT * FROM Games WHERE week_number = ? AND season_number = ? ORDER BY game_id) AS g
+        (SELECT * FROM games WHERE week_number = ${currentWeek} AND season_number = ${currentSeason} ORDER BY game_id) AS g
         JOIN
         Teams t1 ON g.favorite = t1.team_id
         JOIN
         Teams t2 ON g.underdog = t2.team_id`
-    const [weekGamesQuery] = await dbConnection.execute(sql, [currentWeek, currentSeason])
 
-    if (weekGamesQuery.length > 0) {
-        for (let row of weekGamesQuery) {
+    if (weekGamesQuery.rowCount > 0) {
+        for (let row of weekGamesQuery.rows) {
             const favoriteID = row["favorite"]
             const underdogID = row["underdog"]
             const gameID = row["game_id"]
@@ -1077,19 +1009,18 @@ async function uploadPicks(formData: FormData) {
             gamesArray[underdogID] = gameID
         }
     } else {
-        dbConnection.release()
         revalidatePath("/admin_utility")
         return { error: `Error: no games have been uploaded for week ${currentWeek} of season ${currentSeason}` }
     }
 
     const createdUsers = []
-    const createTempUserSql = "INSERT INTO TempPlayerAuth (username, password, sha256) VALUES ";
+    const createTempUserSql = "INSERT INTO tempplayerauth (username, password, sha256) VALUES ";
     const createTempUserValues = [];
-    const createPlayerSql = "INSERT IGNORE INTO Players (player_id, name, gp, group_number) VALUES ";
+    const createPlayerSql = "INSERT INTO players (player_id, name, gp, group_number) VALUES ";
     const createPlayerValues = [];
-    const createStatSql = "INSERT IGNORE INTO PlayerSeasonStats (player_id, season_number, rank, won, lost, played, win_percentage, gp, group_number) VALUES ";
+    const createStatSql = "INSERT INTO playerseasonstats (player_id, season_number, rank, won, lost, played, win_percentage, gp, group_number) VALUES ";
     const createStatValues = [];
-    const createWeekStatSql = "INSERT IGNORE INTO PlayerWeekStats (player_id, season_number, week_number, rank, won, lost, played, win_percentage, gp, group_number) VALUES ";
+    const createWeekStatSql = "INSERT INTO playerweekstats (player_id, season_number, week_number, rank, won, lost, played, win_percentage, gp, group_number) VALUES ";
     const createWeekStatValues = [];
     const skippedLines = []
 
@@ -1135,35 +1066,30 @@ async function uploadPicks(formData: FormData) {
     }
 
     if (skippedLines.length > 0) {
-        dbConnection.release()
         revalidatePath("/admin_utility")
         return { error: `Error: need to reprocess picks due to skipped lines:<br/>${skippedLines.join("")}` }
     }
 
-    sql = "TRUNCATE TABLE TempPlayerAuth"
-    await dbConnection.execute(sql)
+    await sql`TRUNCATE TABLE tempplayerauth`
 
     const batchSize = 1000000
     for (let i = 0; i < createTempUserValues.length; i += batchSize) {
         const batch = createTempUserValues.slice(i, i + batchSize)
-        const sql = createTempUserSql + batch.join()
-        await dbConnection.execute(sql)
+        await sql.query(`${createTempUserSql} ${batch.join()}`)
     }
 
     // mark new players
     const newUsers = []
-    sql = `SELECT ta.username FROM TempPlayerAuth ta
+    const newUsersQuery = await sql`SELECT ta.username FROM TempPlayerAuth ta
         LEFT JOIN PlayerAuth pa ON ta.username = pa.username
         WHERE pa.username IS NULL`
-    const [newUsersQuery] = await dbConnection.execute(sql)
 
-    if (currentWeek !== "1" && newUsersQuery.length > 0) {
-        dbConnection.release()
+    if (currentWeek !== "1" && newUsersQuery.rowCount > 0) {
         revalidatePath("/admin_utility")
-        return { error: `Error: found new players after the first week: ${newUsersQuery.map(user => user.username).join(" ")}` }
+        return { error: `Error: found new players after the first week: ${newUsersQuery.rows.map(user => user.username).join(" ")}` }
     }
 
-    for (let row of newUsersQuery) {
+    for (let row of newUsersQuery.rows) {
         const user = row["username"]
         createdUsers[user]["new"] = true
         const userPassword = createdUsers[user]["password"]
@@ -1171,22 +1097,20 @@ async function uploadPicks(formData: FormData) {
     }
 
     // insert new players
-    sql = `INSERT IGNORE INTO PlayerAuth (type, username, password, sha256)
-        SELECT 'user', ta.username, ta.password, 1
-        FROM TempPlayerAuth ta
-        LEFT JOIN PlayerAuth pa ON ta.username = pa.username
+    await sql`INSERT INTO playerauth (type, username, password, sha256)
+        SELECT 'user', ta.username, ta.password, true
+        FROM tempplayerauth ta
+        LEFT JOIN playerauth pa ON ta.username = pa.username
         WHERE pa.username IS NULL`
-    await dbConnection.execute(sql)
 
-    // get auth id for all newky inserted players
-    sql = `SELECT username, auth_id, sha256
-        FROM PlayerAuth
+    // get auth id for all newly inserted players
+    const authIDQuery = await sql`SELECT username, auth_id, sha256
+        FROM playerauth
         WHERE (username) IN (
             SELECT username
-            FROM TempPlayerAuth
+            FROM tempplayerauth
         )`
-    const [authIDQuery] = await dbConnection.execute(sql)
-    for (let row of authIDQuery) {
+    for (let row of authIDQuery.rows) {
         const user = row["username"]
         const authID = row["auth_id"]
         createdUsers[user]["authID"] = authID
@@ -1202,25 +1126,21 @@ async function uploadPicks(formData: FormData) {
     // batch insert new users
     for (let i = 0; i < createPlayerValues.length; i += batchSize) {
         const batch = createPlayerValues.slice(i, i + batchSize)
-        const sql = createPlayerSql + batch.join()
-        await dbConnection.execute(sql)
+        await sql.query(`${createPlayerSql} ${batch.join()} ON CONFLICT(name) DO NOTHING`)
     }
 
     for (let i = 0; i < createStatValues.length; i += batchSize) {
         const batch = createStatValues.slice(i, i + batchSize)
-        const sql = createStatSql + batch.join()
-        await dbConnection.execute(sql)
+        await sql.query(`${createStatSql} ${batch.join()}`)
     }
 
     for (let i = 0; i < createWeekStatValues.length; i += batchSize) {
         const batch = createWeekStatValues.slice(i, i + batchSize)
-        const sql = createWeekStatSql + batch.join()
-        await dbConnection.execute(sql)
+        await sql.query(`${createWeekStatSql} ${batch.join()}`)
     }
 
     // empty out temp inserts after creating new users
-    sql = `TRUNCATE TABLE TempPlayerAuth`
-    await dbConnection.execute(sql)
+    await sql`TRUNCATE TABLE tempplayerauth CASCADE`
 
     const teamIDs = {
         "Bills": 4, "Rams": 19, "Dolphins": 20, "Patriots": 22,
@@ -1235,7 +1155,7 @@ async function uploadPicks(formData: FormData) {
     }
 
     // bulk inserts
-    const createPicksSql = "INSERT IGNORE INTO PlayerSelections (player_id, game_id, selected_team_id) VALUES ";
+    const createPicksSql = "INSERT INTO playerselections (player_id, game_id, selected_team_id) VALUES ";
     const createPicksValues = []
     const playerSelections = [] // track duplicates
 
@@ -1279,13 +1199,11 @@ async function uploadPicks(formData: FormData) {
     }
 
     if (skippedLines.length > 0) {
-        dbConnection.release()
         revalidatePath("/admin_utility")
         return { error: `Error: need to reprocess picks due to skipped lines:<br/>${skippedLines.join("")}` }
     }
 
     if (createPicksValues.length === 0) {
-        dbConnection.release()
         revalidatePath("/admin_utility")
         return { error: `Error: no picks were created due to all lines not containing the exact field values` }
     }
@@ -1293,11 +1211,8 @@ async function uploadPicks(formData: FormData) {
     // batch insert picks
     for (let i = 0; i < createPicksValues.length; i += batchSize) {
         const batch = createPicksValues.slice(i, i + batchSize)
-        const sql = createPicksSql + batch.join()
-        await dbConnection.execute(sql)
+        await sql.query(`${createPicksSql} ${batch.join()}`)
     }
-
-    dbConnection.release()
 
     if (newUsers.length > 0) {
         const csvUserText = newUsers.map(user => `${user.username},${user.password}`).join("\n")
@@ -1306,13 +1221,17 @@ async function uploadPicks(formData: FormData) {
         file.end()
     }
 
+    if (currentWeek === "1") {
+        revalidatePath("/season")
+    }
+
+    revalidatePath("/weekly")
     revalidatePath("/admin_utility")
-    return { message: `All picks from file created` }*/
+    return { message: `All picks from file created` }
 }
 
 export async function handleAdminForm(prevState: string, formData: FormData) {
-    return null
-    /*const session = await getSession()
+    const session = await getSession()
 
     if (!session) {
         return redirect("/")
@@ -1345,5 +1264,5 @@ export async function handleAdminForm(prevState: string, formData: FormData) {
     } else {
         revalidatePath("/admin_utility")
         return { error: "Invalid or unsupported option selected" }
-    }*/
+    }
 }

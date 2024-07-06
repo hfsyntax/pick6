@@ -8,8 +8,8 @@ export const metadata = {
 
 export default async function Season() {
     const currentSeason = process.env.CURRENT_SEASON
-    const seasons = []//await getSeasons()
-    const seasonStats = []//await getSeasonStats(currentSeason)
+    const seasons = await getSeasons()
+    const seasonStats = await getSeasonStats(currentSeason)
     const seasonID = seasons.find(season => season.season_number == currentSeason)?.season_id
     return (
         <div id="container">

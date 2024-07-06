@@ -26,7 +26,7 @@ export default function Table({ className, id, headers, rows }) {
                                                 String(row[field]).includes("<br>") ?
                                                     row[field].split("<br>").map((text, index) => (
                                                         <li key={index}>
-                                                        <Image width={"25"} height={"25"} src={text.split(" ")[0] ? text.split(" ")[0] : "/profile_pictures/default.png"} alt="profile_picture"/>
+                                                        <Image width={"25"} height={"25"} src={text.split(" ")[0] ? text.split(" ")[0] : "/img/default.png"} alt="profile_picture"/>
                                                         <Link key={index} href={`/profile/${text.split(" ")[2]}`}>&nbsp;{text.split(" ")[1]}<br /></Link>
                                                         </li>
                                                     ))
@@ -39,12 +39,12 @@ export default function Table({ className, id, headers, rows }) {
                                                         : ( // single winner or loser
                                                             ["winner_names", "loser_names"].includes(field) && !["NONE!!!", "ROLL-OVER!!!"].includes(row[field]) ?
                                                                 <>
-                                                                <Image width={"25"} height={"25"} src={row[field].split(" ")[0] ? row[field].split(" ")[0] : "/profile_pictures/default.png"} alt="profile_picture"/>
+                                                                <Image width={"25"} height={"25"} src={row[field].split(" ")[0] ? row[field].split(" ")[0] : "/img/default.png"} alt="profile_picture"/>
                                                                 <Link key={index} href={`/profile/${row[field].split(" ")[2]}`}>&nbsp;{row[field].split(" ")[1]}<br /></Link>
                                                                 </>
                                                                 : (field === "player_name" ?
                                                                     <>
-                                                                    <Image width={"25"} height={"25"} src={row["picture_url"] ? row["picture_url"] : "/profile_pictures/default.png"} alt="profile_picture"/>
+                                                                    <Image width={"25"} height={"25"} src={row["picture_url"] ? row["picture_url"] : "/img/default.png"} alt="profile_picture"/>
                                                                     <Link key={index} href={`/profile/${row["player_id"]}`}>&nbsp;{row[field]}<br /></Link>
                                                                     </>
                                                                     : row[field]))

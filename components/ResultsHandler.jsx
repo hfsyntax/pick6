@@ -12,7 +12,7 @@ export default function ResultsHandler({ currentSeason, currentSeasonID, current
         const selectedSeasonID = selectedOption.value
         const selectedSeason = selectedOption.getAttribute("data-season")
         setSelectedSeason({ season: selectedSeason, id: selectedSeasonID })
-        const weekResults = await getWeekResults(currentSeason, selectedSeason, currentWeek)
+        const weekResults = await getWeekResults(selectedSeason, currentWeek)
         setResults(weekResults)
     }
 

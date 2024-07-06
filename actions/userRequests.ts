@@ -1,13 +1,11 @@
 "use server"
 import { getSession } from "../lib/session"
-import { handleDatabaseConnection } from "../lib/db"
 import { revalidatePath } from "next/cache"
 import { redirect } from "next/navigation"
 import { hash, compare, genSalt } from "bcryptjs"
+import { sql } from '@vercel/postgres';
 
 export async function handlePicks(prevState: string, formData: FormData) {
-    return null
-    /*await handleDatabaseConnection()
     const currentSeason = Number(process.env.CURRENT_SEASON)
     const currentWeek = Number(process.env.CURRENT_WEEK)
 
@@ -25,20 +23,15 @@ export async function handlePicks(prevState: string, formData: FormData) {
         return { error: "Error: the timer needs to be unpaused or non-negative before picks can be made." }
     }
 
-    let sql = "SELECT season_number FROM Weeks WHERE season_number = ? AND week_number = ?";
-    const dbConnection = await global["dbConnection"].getConnection()
-    const [queryResult] = await dbConnection.execute(sql, [currentSeason, currentWeek])
+    const queryResult = await sql`SELECT season_number FROM weeks WHERE season_number = ${currentSeason} AND week_number = ${currentWeek}`
 
-    if (queryResult.length === 0) {
-        dbConnection.release()
+    if (queryResult.rowCount === 0) {
         revalidatePath("/teams")
         return { error: `Error: the season/week need to be set to a value greater than 0 before picks can be made.` }
     }
 
-    sql = "SELECT COUNT(game_id) AS game_count FROM Games WHERE season_number = ? AND week_number = ?"
-    const [gameCount] = await dbConnection.execute(sql, [currentSeason, currentWeek])
-    if (gameCount.length === 0) {
-        dbConnection.release()
+    const gameCount = await sql`SELECT COUNT(game_id) AS game_count FROM games WHERE season_number = ${currentSeason} AND week_number = ${currentWeek}`
+    if (gameCount.rowCount === 0) {
         revalidatePath("/teams")
         return { error: `Error: no games are available for week ${currentWeek} of season ${currentSeason}` }
     }
@@ -48,25 +41,40 @@ export async function handlePicks(prevState: string, formData: FormData) {
     const authID = session?.user?.authID
 
     if (username === "root") {
-        dbConnection.release()
         revalidatePath("/teams")
         return { error: "Error: the root user cannot make picks" }
     }
 
     if (currentWeek === 1) {
         // ensure player has a stats entry for the season
-        sql = "INSERT IGNORE INTO PlayerSeasonStats (player_id, season_number) VALUES (?, ?)"
-        await dbConnection.execute(sql, [authID, currentSeason])
+        await sql`INSERT INTO playerseasonstats (player_id, season_number, group_number, gp)
+        SELECT
+            p.player_id,
+            ${currentSeason},
+            p.group_number,
+            p.gp
+        FROM
+            players p
+        WHERE p.player_id = ${authID}
+        ON CONFLICT(player_id, season_number) DO NOTHING;
+        `
 
         // ensure player has stats for the week
-        sql = "INSERT IGNORE INTO PlayerWeekStats (player_id, season_number, week_number) VALUES (?, ?, ?)"
-        await dbConnection.execute(sql, [authID, currentSeason, currentWeek])
+        await sql`INSERT INTO playerweekstats (player_id, season_number, week_number, group_number, gp)
+        SELECT
+            p.player_id,
+            ${currentSeason},
+            ${currentWeek},
+            p.group_number,
+            p.gp
+        FROM
+            players p
+        WHERE p.player_id = ${authID}
+        ON CONFLICT DO NOTHING;`
     } else {
         // check if stats entries exist
-        sql = "SELECT player_id FROM PlayerSeasonStats WHERE player_id = ?"
-        const [playerExists] = await dbConnection.execute(sql, [authID])
-        if (playerExists.length === 0) {
-            dbConnection.release()
+        const playerExists = await sql`SELECT player_id FROM playerseasonstats WHERE player_id = ${authID}`
+        if (playerExists.rowCount === 0) {
             revalidatePath("/teams")
             return { error: "Error: you are not a player in the current season" }
         }
@@ -75,21 +83,19 @@ export async function handlePicks(prevState: string, formData: FormData) {
     const pickCount = Array.from(formData.keys()).length
 
     if (pickCount === 0) {
-        dbConnection.release()
         revalidatePath("/teams")
         return { error: `Error: no picks selected` }
     }
 
-    const minPicks = Math.min(gameCount[0].game_count, 6)
+    const minPicks = Math.min(gameCount?.rows?.[0]?.game_count, 6)
 
     if (pickCount !== minPicks) {
-        dbConnection.release()
         revalidatePath("/teams")
         return { error: `"Error: the number of picks you selected is not ${minPicks} picks` }
     }
 
-    sql = "SELECT MAX(game_id) AS max_game_id FROM Games WHERE season_number = ? AND week_number = ?"
-    const [[{ "max_game_id": maxGameID }]] = await dbConnection.execute(sql, [currentSeason, currentWeek])
+    const maxGameIdQuery = await sql`SELECT MAX(game_id) AS max_game_id FROM games WHERE season_number = ${currentSeason} AND week_number = ${currentWeek}`
+    const maxGameID = maxGameIdQuery?.rows?.[0]?.max_game_id
 
     const picks = {}
 
@@ -97,43 +103,39 @@ export async function handlePicks(prevState: string, formData: FormData) {
         if (!picks[String(gameID)]) {
             picks[String(gameID)] = teamID
         } else {
-            dbConnection.release()
             revalidatePath("/teams")
             return { error: "Error: multiple teams were selected for one or more of your picks" }
         }
     }
 
     if (!picks[String(maxGameID)]) {
-        dbConnection.release()
         revalidatePath("/teams")
         return { error: "Error: no pick was made for the last game" }
     }
 
     // remove previous picks for week
-    sql = `DELETE ps
-    FROM PlayerSelections ps
-    JOIN Games g ON ps.game_id = g.game_id
-    WHERE ps.player_id = ?
-      AND g.week_number = ?
-      AND g.season_number = ?`
-    await dbConnection.execute(sql, [authID, currentWeek, currentSeason])
+    await sql`DELETE FROM playerselections ps
+    USING games g 
+    WHERE ps.game_id = g.game_id
+    AND ps.player_id = ${authID}
+    AND g.week_number = ${currentWeek}
+    AND g.season_number = ${currentSeason}`
 
     for (let pick in picks) {
         const gameID = Number(pick)
         const teamID = picks[pick]
-        sql = "INSERT INTO PlayerSelections (player_id, game_id, selected_team_id) VALUES (?, ?, ?) ON DUPLICATE KEY UPDATE selected_team_id = ?"
-        await dbConnection.execute(sql, [authID, gameID, teamID, teamID])
+        await sql`INSERT INTO playerselections (player_id, game_id, selected_team_id)
+        VALUES (${authID}, ${gameID}, ${teamID}) 
+        ON CONFLICT(player_id, game_id) DO UPDATE SET selected_team_id = ${teamID};`
     }
 
     revalidatePath("/teams")
-    dbConnection.release()
+    revalidatePath("/weekly")
     return { message: `Sucessfully set picks for week ${currentWeek} of season ${currentSeason}` }
-    */
 }
 
 export async function changePassword(prevState: string, formData: FormData) {
-    return null
-    /*const currentPassword = String(formData.get("currentPassword"))
+    const currentPassword = String(formData.get("currentPassword"))
     const newPassword = String(formData.get("newPassword"))
     const confirmNewPassword = String(formData.get("confirmNewPassword"))
     const session = await getSession()
@@ -148,12 +150,12 @@ export async function changePassword(prevState: string, formData: FormData) {
     }
 
     if (newPassword.length > 255) {
-        revalidatePath("/admin_utility")
+        revalidatePath("/profile")
         return { error: "Error: password must be 255 characters or less" }
     }
 
     if (!newPassword.match(/^(?=.*[A-Z])(?=.*\d).{6,}$/)) {
-        revalidatePath("/admin_utility")
+        revalidatePath("/profile")
         return { error: "Error: password must contain at least 6 characters, 1 uppercase letter and 1 number" }
     }
 
@@ -163,45 +165,33 @@ export async function changePassword(prevState: string, formData: FormData) {
     }
 
     // compare current to db hash
-    await handleDatabaseConnection()
-    const dbConnection = await global["dbConnection"].getConnection()
-    let sql = `SELECT password FROM PlayerAuth WHERE username = ?`
     const username = String(session?.user?.username)
-    const [[{ "password": hashedPassword }]] = await dbConnection.execute(sql, [username])
-    const correctPassword = await compare(currentPassword, String(hashedPassword))
+    const hashedPasswordQuery = await sql`SELECT password FROM playerauth WHERE username = ${username}`
+    const hashedPassword = String(hashedPasswordQuery?.rows?.[0]?.password)
+    const correctPassword = await compare(currentPassword, hashedPassword)
     if (correctPassword) {
         // set new password
         const salt = await genSalt()
         const newHashedPassword = await hash(newPassword, salt)
-        sql = "UPDATE PlayerAuth set password = ? WHERE username = ?"
-        const [newPasswordQuery] = await dbConnection.execute(sql, [newHashedPassword, username])
-        if (newPasswordQuery.affectedRows > 0) {
-            dbConnection.release()
+        const newPasswordQuery = await sql`UPDATE playerauth set password = ${newHashedPassword} WHERE username = ${username}`
+        if (newPasswordQuery.rowCount > 0) {
             revalidatePath("/profile")
             return { message: "Password change success" }
         } else {
-            dbConnection.release()
             revalidatePath("/profile")
             return { error: "Error: Failed to change password" }
         }
     } else {
-        dbConnection.release()
         revalidatePath("/profile")
         return { error: "Error: the current password you entered is incorrect" }
     }
-    */
 }
 
 export async function updateProfilePictureURL(url: string) {
-    return null
-    /*const session = await getSession()
+    const session = await getSession()
     if (!session) return redirect("/")
     const authID = session?.user?.authID
-    await handleDatabaseConnection()
-    const dbConnection = await global["dbConnection"].getConnection()
-    const sql = `UPDATE Players SET picture_url = ? WHERE player_id = ?`
-    await dbConnection.execute(sql, [url, authID])
-    dbConnection.release()
+    await sql`UPDATE players SET picture_url = ${url} WHERE player_id = ${authID}`
     revalidatePath("/profile")
-    return { url: url }*/
+    return { url: url }
 }   

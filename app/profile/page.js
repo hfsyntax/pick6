@@ -12,7 +12,7 @@ export const metadata = {
 
 export default async function Profile() {
     const session = await getSession()
-    const profilePicURL = undefined//await getProfilePictureURL()
+    const profilePicURL = await getProfilePictureURL()
     return (
         <div id="container">
             <EdgeStoreProvider>

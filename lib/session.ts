@@ -5,7 +5,7 @@ import { cookies } from "next/headers"
 import { redirect } from "next/navigation"
 import { NextRequest, NextResponse } from "next/server"
 import { compare } from "bcryptjs"
-import { handleDatabaseConnection } from "./db"
+import { sql } from '@vercel/postgres'
 
 const secretKey = process.env.SECRET_KEY
 const key = new TextEncoder().encode(secretKey);
@@ -30,10 +30,7 @@ export async function decrypt(input: string): Promise<any> {
 }
 
 export async function login(prevState: string, formData: FormData) {
-  await handleDatabaseConnection()
-  console.log(global["dbConnection"])
-  return {error: "foobar"}
-  /* Verify credentials && get the user
+  // Verify credentials && get the user
   const username = String(formData.get("username"))
   const password = String(formData.get("password"))
 
@@ -47,39 +44,36 @@ export async function login(prevState: string, formData: FormData) {
     return { error: "incorrect username or password" }
   }
 
-  const dbConnection = await global["dbConnection"].getConnection()
-  let sql = "SELECT auth_id, password, is_active, type FROM `PlayerAuth` WHERE username = ?"
-  const [dbUser] = await dbConnection.execute(sql, [username])
+  const dbUser = await sql`SELECT auth_id, password, is_active, type FROM playerauth WHERE username = ${username}`
 
-  if (dbUser.length === 1) {
-    const hashedPassword = String(dbUser[0]["password"])
+  if (dbUser.rowCount === 1) {
+    const hashedPassword = String(dbUser?.rows?.[0]?.["password"])
     const correctPassword = await compare(password, hashedPassword)
     if (correctPassword) {
-      if (dbUser[0]["is_active"]) {
-        const userType = String(dbUser[0]["type"])
-        const authID = Number(dbUser[0]["auth_id"])
+      if (dbUser?.rows?.[0]?.["is_active"]) {
+        const userType = String(dbUser?.rows?.[0]?.["type"])
+        const authID = Number(dbUser?.rows?.[0]?.["auth_id"])
         const user = { username: username, password: hashedPassword, type: userType, authID: authID };
         const expires = new Date(Date.now() + 60 * 60 * 1000);
         const session = await encrypt({ user, expires });
         cookies().set("session", session, { expires, httpOnly: true });
-        dbConnection.release()
         return redirect("/teams")
       } else {
-        dbConnection.release()
+        //dbConnection.release()
         revalidatePath("/")
         return { error: "your account has been temporarily disabled" }
       }
     } else {
-      dbConnection.release()
+      //dbConnection.release()
       revalidatePath("/")
       return { error: "incorrect username or password" }
     }
 
   } else {
-    dbConnection.release()
+    //dbConnection.release()
     revalidatePath("/")
     return { error: "incorrect username or password" }
-  }*/
+  }
 }
 
 export async function logout() {
