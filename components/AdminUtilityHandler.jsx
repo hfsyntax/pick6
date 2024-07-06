@@ -1,7 +1,7 @@
 "use client"
 import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
-import { handleAdminForm } from "../actions/adminRequests";
+import { handleAdminForm, revalidateCache } from "../actions/adminRequests";
 import { useFormState } from "react-dom"
 import { clearUserCredentialsFile } from "../actions/serverRequests";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
@@ -36,6 +36,11 @@ export default function AdminUtilityHandler({ season, week, timerStatus, resetTi
             disabled: true,
             text: "Loading..."
         })
+    }
+
+    const refreshData = async (event) => {
+        const response = await revalidateCache()
+        showMessage({display: "block", text: response})
     }
 
     const closeModal = () => {
@@ -89,6 +94,7 @@ export default function AdminUtilityHandler({ season, week, timerStatus, resetTi
             <span><b>Current:&nbsp;</b>Week {week} of Season {season}</span>
             <span><b>Timer status:&nbsp;</b>{timerStatus}</span>
             <span><b>Timer Ends:&nbsp;</b>{resetTime}</span>
+            <button style={{width: "fit-content"}} onClick={refreshData}>Refresh Data</button>
 
             <form className="default-form" ref={currentForm} onSubmit={submitHandler}>
                 <div>

@@ -172,13 +172,14 @@ h2 {
 
 #container {
     position: absolute;
-    top: 20px;
+    top: 0px;
     left: 50px;
     width: calc(100% - 50px);
-    height: calc(100% - 20px - 50px);
+    height: calc(100% - 50px);
     display: flex;
     flex-direction: column;
     text-align: center;
+    align-items: center;
 }
 
 .table-wrapper {

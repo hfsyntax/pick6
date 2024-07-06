@@ -1230,6 +1230,18 @@ async function uploadPicks(formData: FormData) {
     return { message: `All picks from file created` }
 }
 
+export async function revalidateCache() {
+    const session = await getSession()
+    if (session?.user?.type !== "admin") return
+    revalidatePath("/teams")
+    revalidatePath("/weeks")
+    revalidatePath("/season")
+    revalidatePath("/results")
+    revalidatePath("/games")
+    revalidatePath("/admin_utility")
+    return "Successfully refreshed data"
+}
+
 export async function handleAdminForm(prevState: string, formData: FormData) {
     const session = await getSession()
 

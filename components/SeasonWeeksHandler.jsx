@@ -29,10 +29,10 @@ export default function SeasonWeeksHandler({ currentSeason, currentWeek, selecte
             setData({ ...data, currentData: seasonStats })
         } else if (pathname === "/games") {
             const weekGames = await getWeekGameResults(selectedSeason, selectedWeek)
-            setData({...data, currentData: weekGames})
+            setData({ ...data, currentData: weekGames })
         } else {
             const weekResults = await getWeekResults(selectedSeason, currentWeek)
-            setData({...data, currentData: weekResults})
+            setData({ ...data, currentData: weekResults })
         }
     }
 
@@ -93,38 +93,43 @@ export default function SeasonWeeksHandler({ currentSeason, currentWeek, selecte
 
     return (
         <>
-            <div id="select-container">
-                <label>{pathname === "/weekly" ? "Select Week" : "Select Season"}&nbsp;</label>
-                <select onChange={handleSelection} defaultValue={selectedOption.id}>
-                    {selectOptions.map((row) => (
-                        pathname === "/weekly" || pathname === "/games" ?
-                            <option
-                                key={row["week_id"]}
-                                value={row["week_id"]}
-                                data-season={row["season_number"]}
-                                data-week={row["week_number"]}
-                            >
-                                Week {row["week_number"]} of Season {row["season_number"]}
-                            </option>
-                            :
-                            <option
-                                key={row["season_id"]}
-                                value={row["season_id"]}
-                                data-season={row["season_number"]}
-                            >
-                                Season {row["season_number"]}
-                            </option>
-                    ))}
-                </select>
-            </div>
-            {
-                (pathname === "/weekly" || pathname === "/season") && <div id="checkbox-container">
-                <label>Ascending</label><input ref={ascCheckbox} id="asc" type="checkbox" onClick={handleCheckbox}></input>
-                <label>Descending</label><input ref={descCheckbox} id="desc" type="checkbox" onClick={handleCheckbox}></input>
-                <label>GP</label><input ref={groupCheckbox} id="gp" type="checkbox" onClick={handleCheckbox}></input>
-                <label>Group Number</label><input ref={groupNumberCheckbox} id="group_number" type="checkbox" onClick={handleCheckbox}></input>
-            </div>
-            }
+            {data?.currentData?.length > 0 && (
+                <>
+                    <div id="select-container">
+                        <label>{pathname === "/weekly" ? "Select Week" : "Select Season"}&nbsp;</label>
+                        <select onChange={handleSelection} defaultValue={selectedOption.id}>
+                            {selectOptions.map((row) => (
+                                pathname === "/weekly" || pathname === "/games" ?
+                                    <option
+                                        key={row["week_id"]}
+                                        value={row["week_id"]}
+                                        data-season={row["season_number"]}
+                                        data-week={row["week_number"]}
+                                    >
+                                        Week {row["week_number"]} of Season {row["season_number"]}
+                                    </option>
+                                    :
+                                    <option
+                                        key={row["season_id"]}
+                                        value={row["season_id"]}
+                                        data-season={row["season_number"]}
+                                    >
+                                        Season {row["season_number"]}
+                                    </option>
+                            ))}
+                        </select>
+                    </div>
+                    {
+                        (pathname === "/weekly" || pathname === "/season") && <div id="checkbox-container">
+                            <label>Ascending</label><input ref={ascCheckbox} id="asc" type="checkbox" onClick={handleCheckbox}></input>
+                            <label>Descending</label><input ref={descCheckbox} id="desc" type="checkbox" onClick={handleCheckbox}></input>
+                            <label>GP</label><input ref={groupCheckbox} id="gp" type="checkbox" onClick={handleCheckbox}></input>
+                            <label>Group Number</label><input ref={groupNumberCheckbox} id="group_number" type="checkbox" onClick={handleCheckbox}></input>
+                        </div>
+                    }
+                </>
+            )}
+
             <Table
                 className={"table-wrapper"}
                 headers={data.dataHeaders}
