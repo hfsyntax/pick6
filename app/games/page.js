@@ -1,5 +1,5 @@
 import { getWeekGameResults, getWeeks } from "../../actions/serverRequests";
-import GamesHandler from '../../components/GamesHandler'
+import SeasonWeeksHandler from "../../components/SeasonWeeksHandler";
 
 export const metadata = {
     title: "Pick6 - Games",
@@ -16,12 +16,13 @@ export default async function Games() {
         <div id="container">
             <h1>Pick6 - Games</h1>
             <h1>Week {currentWeek} of Season {currentSeason}</h1>
-            <GamesHandler 
-            currentSeason={currentSeason} 
-            currentWeek={currentWeek} 
-            currentWeekID={weekID}
-            weekGames={games} 
-            allWeeks={weeks}
+            <SeasonWeeksHandler
+            currentSeason={currentSeason}
+            currentWeek={currentWeek}
+            selectedId={weekID}
+            selectOptions={weeks}
+            initialData={games}
+            headers={["#", "Pts", "Favorite", "Spread", "Underdog", "Pts", "Covering Team"]}
             />
         </div>
     )

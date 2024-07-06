@@ -1,7 +1,7 @@
 "use client"
 import { useState, useRef, useEffect } from "react"
 import { usePathname } from "next/navigation"
-import { getPicks, getSeasonStats } from "../actions/serverRequests"
+import { getPicks, getSeasonStats, getWeekGameResults, getWeekResults } from "../actions/serverRequests"
 import Table from './Table'
 
 export default function SeasonWeeksHandler({ currentSeason, currentWeek, selectedId, selectOptions, initialData, headers }) {
@@ -24,9 +24,15 @@ export default function SeasonWeeksHandler({ currentSeason, currentWeek, selecte
         if (pathname === "/weekly") {
             const picks = await getPicks(selectedSeason, selectedWeek)
             setData({ currentData: picks.picks, dataHeaders: picks.headers })
-        } else {
+        } else if (pathname === "/season") {
             const seasonStats = await getSeasonStats(selectedSeason)
             setData({ ...data, currentData: seasonStats })
+        } else if (pathname === "/games") {
+            const weekGames = await getWeekGameResults(selectedSeason, selectedWeek)
+            setData({...data, currentData: weekGames})
+        } else {
+            const weekResults = await getWeekResults(selectedSeason, currentWeek)
+            setData({...data, currentData: weekResults})
         }
     }
 
@@ -76,13 +82,12 @@ export default function SeasonWeeksHandler({ currentSeason, currentWeek, selecte
                     .then(response => {
                         setData({ currentData: response.picks, dataHeaders: response.headers })
                     })
-            } else {
+            } else if (pathname === "/season") {
                 getSeasonStats(selectedOption.season, sorts.order, sorts.sort, sorts.sort2)
                     .then(response => {
                         setData({ ...data, currentData: response })
                     })
             }
-
         }
     }, [sorts])
 
@@ -92,7 +97,7 @@ export default function SeasonWeeksHandler({ currentSeason, currentWeek, selecte
                 <label>{pathname === "/weekly" ? "Select Week" : "Select Season"}&nbsp;</label>
                 <select onChange={handleSelection} defaultValue={selectedOption.id}>
                     {selectOptions.map((row) => (
-                        pathname === "/weekly" ?
+                        pathname === "/weekly" || pathname === "/games" ?
                             <option
                                 key={row["week_id"]}
                                 value={row["week_id"]}
@@ -112,13 +117,14 @@ export default function SeasonWeeksHandler({ currentSeason, currentWeek, selecte
                     ))}
                 </select>
             </div>
-            <div id="checkbox-container">
+            {
+                (pathname === "/weekly" || pathname === "/season") && <div id="checkbox-container">
                 <label>Ascending</label><input ref={ascCheckbox} id="asc" type="checkbox" onClick={handleCheckbox}></input>
                 <label>Descending</label><input ref={descCheckbox} id="desc" type="checkbox" onClick={handleCheckbox}></input>
                 <label>GP</label><input ref={groupCheckbox} id="gp" type="checkbox" onClick={handleCheckbox}></input>
                 <label>Group Number</label><input ref={groupNumberCheckbox} id="group_number" type="checkbox" onClick={handleCheckbox}></input>
             </div>
-
+            }
             <Table
                 className={"table-wrapper"}
                 headers={data.dataHeaders}
