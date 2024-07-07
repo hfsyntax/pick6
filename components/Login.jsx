@@ -60,26 +60,23 @@ export default function Login() {
                 }
             })
         // remove localstorage for deleted users
-        const users = new Set()
+        const users = []
+        const userKeys = {}
         for (let key of Object.keys(localStorage)) {
             if (key.includes("_")) {
                 const user = key.split("_")[0]
-                users.add(user)
+                users.push(user)
+                userKeys[user] = key
             }
         }
-        if (users.size > 0)
-        getUsersByName([...users])
+        if (users.length > 0)
+        getUsersByName(users)
         .then(response => {
-            const nonExistingUsers = response?.filter(dbUsers => !users.has(dbUsers?.username))
+            const dbUsers = response.map(dbUser => dbUser?.username)
+            const nonExistingUsers = users.filter(user => !dbUsers.includes(user))
             for (let nonExistingUser of nonExistingUsers) {
-                for (let key of Object.keys(localStorage)) {
-                    if (key.includes("_")) {
-                        const user = key.split("_")[0]
-                        if (nonExistingUser?.username === user) {
-                            localStorage.removeItem(key)
-                        }
-                    }
-                }
+                const key = userKeys[nonExistingUser]
+                localStorage.removeItem(key)
             }
         })
     }, [])
