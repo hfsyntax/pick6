@@ -3,8 +3,11 @@ import { checkSessionTimeout, login } from "../lib/session"
 import { getUsersByName } from "../actions/serverRequests"
 import { useFormState } from "react-dom"
 import { useEffect, useRef, useState } from "react"
+import ReCAPTCHA from 'react-google-recaptcha'
 
 export default function Login() {
+    const recaptchaSiteKey = "6Leu4_UUAAAAAEmRqjfo2-g9z75Jc8JHAi7_D-LG"
+    const recaptcha = useRef()
     const currentForm = useRef()
     const [formResponse, formAction] = useFormState(login, null)
     const [formState, setFormState] = useState({
@@ -13,9 +16,10 @@ export default function Login() {
         text: "Login"
     })
 
-    const handleFormSubmit = event => {
+    const handleFormSubmit = async event => {
         event.preventDefault()
-        const formData = new FormData(event.currentTarget)
+        await recaptcha.current.executeAsync()
+        const formData = new FormData(event.target)
         if (!formData.get("username")) {
             setFormState({
                 ...formState,
@@ -50,7 +54,7 @@ export default function Login() {
     useEffect(() => {
         checkSessionTimeout()
             .then(response => {
-                if (response && response === "session timeout") {
+                if (response === "session timeout") {
                     setFormState(
                         {
                             ...formState,
@@ -89,6 +93,7 @@ export default function Login() {
             <label>Password</label>
             <input type="password" name="password" placeholder="password" autoComplete="current-password" required />
             <input type="submit" disabled={formState.disabled} value={formState.text} />
+            <ReCAPTCHA ref={recaptcha} sitekey={recaptchaSiteKey} size="invisible"/>
             {formState?.error && <span style={{ color: "red" }}>{formState?.error}</span>}
         </form>
     )

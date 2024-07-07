@@ -29,10 +29,17 @@ export async function decrypt(input: string): Promise<any> {
   }
 }
 
+async function validateRecaptcha(token: string) {
+  const recaptchaResponse = await fetch(`https://www.google.com/recaptcha/api/siteverify?secret=${process.env.RECAPTCHA_SECRET_KEY}&response=${token}`)
+  const responseBody = await recaptchaResponse.json()
+  return responseBody?.success && responseBody?.score > 0.5
+}
+
 export async function login(prevState: string, formData: FormData) {
   // Verify credentials && get the user
   const username = String(formData.get("username"))
   const password = String(formData.get("password"))
+  const recaptchaResponse = String(formData.get("g-recaptcha-response"))
 
   if (!username || !password) {
     revalidatePath("/")
@@ -42,6 +49,16 @@ export async function login(prevState: string, formData: FormData) {
   if (username.length > 32 || password.length > 128) {
     revalidatePath("/")
     return { error: "incorrect username or password" }
+  }
+
+  if (!recaptchaResponse) {
+    return { error: "no reCAPTCHA token set." }
+  }
+
+  const recaptchaValidated = await validateRecaptcha(recaptchaResponse)
+
+  if (!recaptchaValidated) {
+    return { error: "reCAPTCHA validation failed" }
   }
 
   const dbUser = await sql`SELECT auth_id, password, is_active, type FROM playerauth WHERE username = ${username}`
@@ -59,18 +76,15 @@ export async function login(prevState: string, formData: FormData) {
         cookies().set("session", session, { expires, httpOnly: true });
         return redirect("/teams")
       } else {
-        //dbConnection.release()
         revalidatePath("/")
         return { error: "your account has been temporarily disabled" }
       }
     } else {
-      //dbConnection.release()
       revalidatePath("/")
       return { error: "incorrect username or password" }
     }
 
   } else {
-    //dbConnection.release()
     revalidatePath("/")
     return { error: "incorrect username or password" }
   }
