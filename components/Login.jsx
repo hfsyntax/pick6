@@ -70,12 +70,12 @@ export default function Login() {
         if (users.size > 0)
         getUsersByName([...users])
         .then(response => {
-            const nonExistingUsers = Array.from(users).filter(user => !response.includes(user))
+            const nonExistingUsers = response?.filter(dbUsers => !users.has(dbUsers?.username))
             for (let nonExistingUser of nonExistingUsers) {
                 for (let key of Object.keys(localStorage)) {
                     if (key.includes("_")) {
                         const user = key.split("_")[0]
-                        if (nonExistingUser === user) {
+                        if (nonExistingUser?.username === user) {
                             localStorage.removeItem(key)
                         }
                     }

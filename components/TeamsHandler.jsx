@@ -1,5 +1,5 @@
 "use client"
-import { useEffect, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import { useFormState } from "react-dom"
 import { handlePicks } from "../actions/userRequests";
 import { getSession } from "../lib/session";
@@ -8,6 +8,8 @@ import Table from './Table'
 export default function TeamsHandler({ weekGames, timerPaused, timerTime, currentSeason, currentWeek }) {
   const [countdown, setCountdown] = useState()
   const [formResponse, formAction] = useFormState(handlePicks, null)
+  const [storePicks, setStorePicks] = useState({ key: null, values: null })
+  const currentForm = useRef()
   const updateCountdown = (timeUntilReset, paused) => {
     // Convert the time until reset to days, hours, minutes, and seconds
     const days = Math.floor(timeUntilReset / (1000 * 60 * 60 * 24));
@@ -31,38 +33,61 @@ export default function TeamsHandler({ weekGames, timerPaused, timerTime, curren
     event.preventDefault()
     const session = await getSession()
     const username = session?.user?.username
-    const formData = new FormData(event.target)
     const teamCheckboxes = document.querySelectorAll("input[type='checkbox']")
+    const selections = {}
     for (let checkbox of teamCheckboxes) {
       const teamID = checkbox.name
-      const key = `${username}_${teamID}`
       if (checkbox.checked) {
-        localStorage.setItem(key, `${currentSeason}-${currentWeek}`)
-      } else {
-        if (localStorage.getItem(key)) {
-          localStorage.removeItem(key)
-        }
+        selections[teamID] = `${currentSeason}-${currentWeek}`
       }
     }
-    formAction(formData)
+    setStorePicks({ key: `${username}_picks`, values: JSON.stringify(selections, null, 2) })
   }
+
+  // wait for picks to be set to localstorage before validating
+  useEffect(() => {
+    if (storePicks?.key && storePicks?.values) {
+      const formData = new FormData(currentForm.current)
+      formAction(formData)
+    }
+  }, [storePicks])
+
+  // on form success set picks to localstorage
+  useEffect(() => {
+    if (formResponse?.message) {
+      localStorage.setItem(storePicks.key, storePicks.values)
+    }
+  }, [formResponse])
 
   useEffect(() => {
     getSession()
       .then(result => {
         const teamCheckboxes = document.querySelectorAll("input[type='checkbox']")
-        for (let checkbox of teamCheckboxes) {
-          const teamID = checkbox.name
-          const username = result?.user?.username
-          const key = `${username}_${teamID}`
-          if (localStorage.getItem(key)) {
-            const valueTimestamp = localStorage.getItem(key).split("-")
-            const seasonTimestamp = valueTimestamp[0]
-            const weekTimestamp = valueTimestamp[1]
-            if (currentSeason === seasonTimestamp && currentWeek === weekTimestamp) {
-              checkbox.checked = true
+        const username = result?.user?.username
+        const picks = JSON.parse(localStorage.getItem(`${username}_picks`))
+        if (picks) {
+          // every pick matches current week
+          const picksCurrentWeek = Object.values(picks).every(value => {
+            const [season, week] = value.split('-');
+            return season === currentSeason && week === currentWeek;
+          })
+          if (!picksCurrentWeek) {
+            localStorage.removeItem(`${username}_picks`)
+          } else {
+            // every pick matches a game id for the current week
+            const checkboxNames = Array.from(teamCheckboxes).map(checkbox => checkbox.name)
+            const picksMatchGames = Object.keys(picks).every(gameId => checkboxNames.includes(gameId));
+            if (!picksMatchGames) {
+              localStorage.removeItem(`${username}_picks`)
             } else {
-              localStorage.removeItem(key)
+              // restore checkbox state for selected teams
+              for (let checkbox of teamCheckboxes) {
+                for (let teamid of Object.keys(picks)) {
+                  if (checkbox.name === teamid) {
+                    checkbox.checked = true
+                  }
+                }
+              }
             }
           }
         }
@@ -74,7 +99,7 @@ export default function TeamsHandler({ weekGames, timerPaused, timerTime, curren
   return (
     <>
       <h2>Time Remaining: {countdown}</h2>
-      <form className="default-form" onSubmit={submitHandler}>
+      <form ref={currentForm} className="default-form" onSubmit={submitHandler}>
         {!timerPaused && <input type="submit" value="submit" />}
         <Table
           className={"table-wrapper"}

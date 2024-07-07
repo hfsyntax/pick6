@@ -271,7 +271,7 @@ export async function getUsersByName(users: string[]) {
     if (users.length > 10) {
         throw new Error("too many users to parse")
     }
-    const queryResult = await sql`SELECT username from playerauth where username IN (${users.map(user => `'${user}'`).join()})`
+    const queryResult = await sql.query(`SELECT username from playerauth where username IN (${users.map(user => `'${user}'`).join()})`)
     return queryResult.rows
 }
 
