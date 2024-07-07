@@ -93,7 +93,6 @@ export default function SeasonWeeksHandler({ currentSeason, currentWeek, selecte
 
     return (
         <>
-            {data?.currentData?.length > 0 && (
                 <>
                     <div id="select-container">
                         <label>{pathname === "/weekly" ? "Select Week" : "Select Season"}&nbsp;</label>
@@ -120,7 +119,7 @@ export default function SeasonWeeksHandler({ currentSeason, currentWeek, selecte
                         </select>
                     </div>
                     {
-                        (pathname === "/weekly" || pathname === "/season") && <div id="checkbox-container">
+                        (data?.currentData?.length > 0 && (pathname === "/weekly" || pathname === "/season")) && <div id="checkbox-container">
                             <label>Ascending</label><input ref={ascCheckbox} id="asc" type="checkbox" onClick={handleCheckbox}></input>
                             <label>Descending</label><input ref={descCheckbox} id="desc" type="checkbox" onClick={handleCheckbox}></input>
                             <label>GP</label><input ref={groupCheckbox} id="gp" type="checkbox" onClick={handleCheckbox}></input>
@@ -128,8 +127,6 @@ export default function SeasonWeeksHandler({ currentSeason, currentWeek, selecte
                         </div>
                     }
                 </>
-            )}
-
             <Table
                 className={"table-wrapper"}
                 headers={data.dataHeaders}

@@ -779,7 +779,9 @@ async function handleWeekResults(formData: FormData) {
             COALESCE(pws.won, 0) + week_data.won,
             COALESCE(pws.lost, 0) +  ${maxPicks} - week_data.won - week_data.cancelled, -- minimum required selections
             COALESCE(pws.played, 0) + ${maxPicks} - week_data.cancelled,
-        CASE WHEN (COALESCE(pws.played, 0) + ${maxPicks} - week_data.cancelled) > 0 THEN (COALESCE(pws.won, 0) + week_data.won) / (COALESCE(pws.played, 0) + ${maxPicks} - week_data.cancelled) ELSE 0 END
+            ROUND(CASE WHEN (COALESCE(pws.played, 0) + ${maxPicks} - week_data.cancelled) > 0 
+                THEN (COALESCE(pws.won, 0) + week_data.won)::NUMERIC / (COALESCE(pws.played, 0) + ${maxPicks} - week_data.cancelled)::NUMERIC 
+                ELSE 0 END, 2)
         FROM playerweekstats pws
         INNER JOIN (
             SELECT
@@ -797,7 +799,7 @@ async function handleWeekResults(formData: FormData) {
             AND pws.week_number = ${currentWeek}`
 
         if (playersWithPicks.rowCount > 0) {
-            message.push(`Created new player week stats entries for next week week $weekNumber who have made selections<br/>`)
+            message.push(`Created new player week stats entries for next week week ${weekNumber} who have made selections<br/>`)
         }
 
         //update ranks for next week weekstats
@@ -807,9 +809,6 @@ async function handleWeekResults(formData: FormData) {
             p1.player_id,
             p1.season_number,
             p1.week_number,
-            p1.won,
-            p1.lost,
-            p1.played,
             p1.win_percentage,
             RANK() OVER (PARTITION BY p1.season_number, p1.week_number ORDER BY p1.win_percentage DESC) AS new_rank
         FROM playerweekstats p1
