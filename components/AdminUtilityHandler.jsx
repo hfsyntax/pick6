@@ -12,6 +12,10 @@ export default function AdminUtilityHandler({ season, week, timerStatus, resetTi
     const [fromFile, setFromFile] = useState(false)
     const [message, showMessage] = useState({display: "none", text: null})
     const currentForm = useRef()
+    const [refreshButton, setRefreshButton] = useState({
+        disabled: false,
+        text: "Refresh Data"
+    })
     const [sumbitButton, setSumbitButton] = useState({
         disabled: false,
         text: "Submit"
@@ -39,13 +43,17 @@ export default function AdminUtilityHandler({ season, week, timerStatus, resetTi
     }
 
     const refreshData = async (event) => {
+        setRefreshButton({text: "loading...", disabled: true})
         const response = await revalidateCache()
         showMessage({display: "block", text: response})
     }
 
     const closeModal = () => {
-        if (message.display === "block")
-        showMessage({display: "none", text: null})
+        if (message.display === "block") {
+            showMessage({display: "none", text: null})
+            if (refreshButton.disabled) 
+            setRefreshButton({text: "Refresh Data", disabled: false})
+        }
     }
 
     useEffect(() => {
@@ -94,7 +102,7 @@ export default function AdminUtilityHandler({ season, week, timerStatus, resetTi
             <span><b>Current:&nbsp;</b>Week {week} of Season {season}</span>
             <span><b>Timer status:&nbsp;</b>{timerStatus}</span>
             <span><b>Timer Ends:&nbsp;</b>{resetTime}</span>
-            <button style={{width: "fit-content"}} onClick={refreshData}>Refresh Data</button>
+            <button style={{width: "fit-content"}} onClick={refreshData} disabled={refreshButton.disabled}>{refreshButton.text}</button>
 
             <form className="default-form" ref={currentForm} onSubmit={submitHandler}>
                 <div>
