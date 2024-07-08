@@ -7,11 +7,7 @@ import Table from './Table'
 export default function SeasonWeeksHandler({ currentSeason, currentWeek, selectedId, selectOptions, initialData, headers }) {
     const [selectedOption, setSelectedOption] = useState({ season: currentSeason, week: currentWeek, id: selectedId })
     const [data, setData] = useState({ currentData: initialData, dataHeaders: headers })
-    const [sorts, setSorts] = useState({ order: null, sort: null, sort2: null })
-    const ascCheckbox = useRef()
-    const descCheckbox = useRef()
-    const groupCheckbox = useRef()
-    const groupNumberCheckbox = useRef()
+    const [sorts, setSorts] = useState({ "order": "asc", "rank": true, "gp": false, "group_number": false })
     const sortStateRan = useRef(false)
     const pathname = usePathname()
 
@@ -22,10 +18,10 @@ export default function SeasonWeeksHandler({ currentSeason, currentWeek, selecte
         const selectedWeek = currentOption.getAttribute("data-week")
         setSelectedOption({ season: selectedSeason, week: selectedWeek, id: selectedOptionId })
         if (pathname === "/weekly") {
-            const picks = await getPicks(selectedSeason, selectedWeek)
+            const picks = await getPicks(selectedSeason, selectedWeek, "asc", ["rank"])
             setData({ currentData: picks.picks, dataHeaders: picks.headers })
         } else if (pathname === "/season") {
-            const seasonStats = await getSeasonStats(selectedSeason)
+            const seasonStats = await getSeasonStats(selectedSeason, "asc", ["rank"])
             setData({ ...data, currentData: seasonStats })
         } else if (pathname === "/games") {
             const weekGames = await getWeekGameResults(selectedSeason, selectedWeek)
@@ -38,38 +34,10 @@ export default function SeasonWeeksHandler({ currentSeason, currentWeek, selecte
 
     const handleCheckbox = async (event) => {
         const { id, checked } = event.target
-
-        // ascending or descending order
-        if (id === ascCheckbox.current.id || id === descCheckbox.current.id) {
-            // already checked overwrite
-            if (checked) {
-                setSorts({ ...sorts, order: id })
-            } else {
-                if (id === ascCheckbox.current.id) {
-                    setSorts({ ...sorts, order: descCheckbox.current.checked ? descCheckbox.current.id : null })
-                } else {
-                    setSorts({ ...sorts, order: ascCheckbox.current.checked ? ascCheckbox.current.id : null })
-                }
-            }
-        }
-
-        // extra sorts
-        if (id === groupCheckbox.current.id) {
-            if (groupCheckbox.current.checked) {
-                setSorts({ ...sorts, sort: groupCheckbox.current.id, sort2: groupNumberCheckbox.current.checked ? groupNumberCheckbox.current.id : null })
-            } else {
-                setSorts({ ...sorts, sort: groupNumberCheckbox.current.checked ? groupNumberCheckbox.current.id : null, sort2: null })
-            }
-        } else if (id === groupNumberCheckbox.current.id) {
-            if (groupNumberCheckbox.current.checked) {
-                if (groupCheckbox.current.checked) {
-                    setSorts({ ...sorts, sort: groupCheckbox.current.id, sort2: groupNumberCheckbox.current.id })
-                } else {
-                    setSorts({ ...sorts, sort: groupNumberCheckbox.current.id, sort2: null })
-                }
-            } else {
-                setSorts({ ...sorts, sort: groupCheckbox.current.checked ? groupCheckbox.current.id : null, sort2: null })
-            }
+        if (id === "desc") {
+            setSorts({ ...sorts, "order": checked ? "desc" : "asc" })
+        } else {
+            setSorts({ ...sorts, [id]: checked ? true : false })
         }
     }
 
@@ -78,12 +46,12 @@ export default function SeasonWeeksHandler({ currentSeason, currentWeek, selecte
             sortStateRan.current = true
         } else {
             if (pathname === "/weekly") {
-                getPicks(selectedOption.season, selectedOption.week, sorts.order, sorts.sort, sorts.sort2)
+                getPicks(selectedOption.season, selectedOption.week, sorts.order, [sorts.gp && "gp", sorts.group_number && "group_number"].filter(x => x))
                     .then(response => {
                         setData({ currentData: response.picks, dataHeaders: response.headers })
                     })
             } else if (pathname === "/season") {
-                getSeasonStats(selectedOption.season, sorts.order, sorts.sort, sorts.sort2)
+                getSeasonStats(selectedOption.season, sorts.order, [sorts.rank && "rank", sorts.gp && "gp", sorts.group_number && "group_number"].filter(x => x))
                     .then(response => {
                         setData({ ...data, currentData: response })
                     })
@@ -120,10 +88,10 @@ export default function SeasonWeeksHandler({ currentSeason, currentWeek, selecte
                     </div>
                     {
                         (data?.currentData?.length > 0 && (pathname === "/weekly" || pathname === "/season")) && <div id="checkbox-container">
-                            <label>Ascending</label><input ref={ascCheckbox} id="asc" type="checkbox" onClick={handleCheckbox}></input>
-                            <label>Descending</label><input ref={descCheckbox} id="desc" type="checkbox" onClick={handleCheckbox}></input>
-                            <label>GP</label><input ref={groupCheckbox} id="gp" type="checkbox" onClick={handleCheckbox}></input>
-                            <label>Group Number</label><input ref={groupNumberCheckbox} id="group_number" type="checkbox" onClick={handleCheckbox}></input>
+                            <label>Descending</label><input id="desc" type="checkbox" onClick={handleCheckbox}></input>
+                            <label>Rank</label><input id="rank" type="checkbox" onClick={handleCheckbox} defaultChecked></input>
+                            <label>GP</label><input id="gp" type="checkbox" onClick={handleCheckbox}></input>
+                            <label>Group Number</label><input id="group_number" type="checkbox" onClick={handleCheckbox}></input>
                         </div>
                     }
                 </>

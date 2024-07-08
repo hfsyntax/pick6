@@ -108,30 +108,8 @@ export const getWeekResults = cache(async (season: string, week: string) => {
     return queryResult.rows
 })
 
-export const getSeasonStats = cache(async (season: string, order: string = "", sort: string = "", sort2: string = "") => {
-    let orderQuery = ""
-    
-    if (order || sort || sort2) {
-        orderQuery = "ORDER BY"
-    }
-     
-    if (order) {
-       orderQuery += ` ps.rank ${order}` 
-    }
-    
-    if (sort) {
-        if (orderQuery !== "ORDER BY") {
-            orderQuery += ",";
-        }
-        orderQuery += ` ps.${sort} ${order ? order : "asc"}` 
-    }
-
-    if (sort2) {
-        if (orderQuery !== "ORDER BY") {
-            orderQuery += ",";
-        }
-        orderQuery += ` ps.${sort2} ${order ? order : "asc"}` 
-    }
+export const getSeasonStats = cache(async (season: string, order: string, fields: Array<string>) => {
+    const orderQuery = fields.length > 0 ? `ORDER BY ${fields.map(f => `ps.${f} ${order}`).join(", ")}` : "" 
 
     const seasonNumber = isNaN(parseInt(season)) ? 0 : season
     
@@ -153,30 +131,8 @@ export const getSeasonStats = cache(async (season: string, order: string = "", s
     return queryResult.rows
 })
 
-export const getPicks = cache(async (season: string, week: string, order: string = "", sort: string = "", sort2: string = "") => {
-    let orderQuery = ""
-    
-    if (order || sort || sort2) {
-        orderQuery = "ORDER BY"
-    }
-     
-    if (order) {
-       orderQuery += ` subquery.rank ${order}` 
-    }
-    
-    if (sort) {
-        if (orderQuery !== "ORDER BY") {
-            orderQuery += ",";
-        }
-        orderQuery += ` subquery.${sort} ${order ? order : "asc"}` 
-    }
-
-    if (sort2) {
-        if (orderQuery !== "ORDER BY") {
-            orderQuery += ",";
-        }
-        orderQuery += ` subquery.${sort2} ${order ? order : "asc"}` 
-    }
+export const getPicks = cache(async (season: string, week: string, order: string = "", fields: Array<string>) => {
+    const orderQuery = fields.length > 0 ? `ORDER BY ${fields.map(f => `subquery.${f} ${order}`).join(", ")}` : "" 
 
     const seasonNumber = isNaN(parseInt(season)) ? 0 : season
     const weekNumber = isNaN(parseInt(week)) ? 0 : week

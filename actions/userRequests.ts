@@ -15,9 +15,9 @@ export async function handlePicks(prevState: string, formData: FormData) {
         return { error: "Error: the week/season needs to be set to a value greater than 0 before picks can be made" }
     }
 
-    const timerPaused = process.env.TIMER_PAUSED === "1" ? true : false
+    const timerPaused = await getConfigValue("TIMER_PAUSED") === "1" ? true : false
     const now = Date.now()
-    const timerTime = Number(process.env.TARGET_RESET_TIME)
+    const timerTime = Number(await getConfigValue("TARGET_RESET_TIME"))
 
     if (now > timerTime || timerPaused) {
         revalidatePath("/teams")

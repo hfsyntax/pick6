@@ -10,7 +10,7 @@ export const metadata = {
 export default async function Season() {
     const currentSeason = await getConfigValue("CURRENT_SEASON")
     const seasons = await getSeasons()
-    const seasonStats = await getSeasonStats(currentSeason)
+    const seasonStats = await getSeasonStats(currentSeason, "asc", ["rank"])
     const seasonID = seasons.find(season => season.season_number == currentSeason)?.season_id
     return (
         <div id="container">
