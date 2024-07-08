@@ -21,6 +21,7 @@ export default function AdminUtilityHandler({ season, week, timerStatus, resetTi
         text: "Submit"
     })
     const [formResponse, formAction] = useFormState(handleAdminForm, null)
+    const [formMessage, setFormMessage] = useState({message: null, error: null})
 
     const selectHandler = async (event) => {
         setOption(event.target.value)
@@ -58,8 +59,9 @@ export default function AdminUtilityHandler({ season, week, timerStatus, resetTi
 
     useEffect(() => {
         setSumbitButton({ disabled: false, text: "Submit" })
-        if (formResponse?.message && option === "Upload Picks") {
-            fetch("/api/downloadCredentials")
+        if (formResponse?.message) {
+            if (option === "Upload Picks") {
+                fetch("/api/downloadCredentials")
                 .then(async response => {
                     if (response.ok) {
                         if (response.status === 204) return // empty user credentials file
@@ -81,12 +83,19 @@ export default function AdminUtilityHandler({ season, week, timerStatus, resetTi
                         showMessage({display: "block", text: "Error: failed to download user credentials"})
                     }
                 })
-        }
-        if (formResponse?.message) {
+            }
             currentForm.current.reset()
-            setOption("Upload Games")
+            setFormMessage({...formMessage, message: formResponse?.message} )
+        } else if (formResponse?.error) {
+            setFormMessage({...formMessage, error: formResponse?.error} )
         }
     }, [formResponse])
+
+    useEffect(() => {
+        if (formMessage?.error || formMessage?.message) {
+            setFormMessage({message: null, error: null})
+        }
+    }, [option])
 
     return (
         <>
@@ -196,19 +205,19 @@ export default function AdminUtilityHandler({ season, week, timerStatus, resetTi
                 }
                 <input type="submit" value={sumbitButton.text} disabled={sumbitButton.disabled} />
                 <ul>
-                    {formResponse?.message &&
-                        (formResponse?.message.includes("<br/>") ?
-                            formResponse?.message.split("<br/>").map((text, index) => (
+                    {formMessage?.message &&
+                        (formMessage?.message.includes("<br/>") ?
+                        formMessage?.message.split("<br/>").map((text, index) => (
                                 text !== "" && <li key={index}><b style={{ color: "green" }}>{text}</b></li>
                             ))
-                            : <li key={"0"}><b style={{ color: "green" }}>{formResponse?.message}</b></li>)
+                            : <li key={"0"}><b style={{ color: "green" }}>{formMessage?.message}</b></li>)
                     }
-                    {formResponse?.error &&
-                        (formResponse?.error.includes("<br/>") ?
-                            formResponse?.error.split("<br/>").map((text, index) => (
+                    {formMessage?.error &&
+                        (formMessage?.error.includes("<br/>") ?
+                        formMessage?.error.split("<br/>").map((text, index) => (
                                 text !== "" && <li key={index}><b style={{ color: "red" }}>{text}</b></li>
                             ))
-                            : <li key={"0"}><b style={{ color: "red" }}>{formResponse?.error}</b></li>)
+                            : <li key={"0"}><b style={{ color: "red" }}>{formMessage?.error}</b></li>)
                     }
                 </ul>
             </form>
