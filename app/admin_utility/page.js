@@ -1,3 +1,4 @@
+import { getConfigValue } from "../../lib/configHandler"
 import AdminUtilityHandler from "../../components/AdminUtilityHandler"
 
 export const metadata = {
@@ -6,14 +7,13 @@ export const metadata = {
 }
 
 export default async function AdminUtility() {
-    const season = process.env.CURRENT_SEASON
-    const week = process.env.CURRENT_WEEK
-    const timerStatus = process.env.TIMER_PAUSED === "1" ? "Paused" : "Unpaused"
+    const season = await getConfigValue("CURRENT_SEASON")
+    const week = await getConfigValue("CURRENT_WEEK")
+    const timerStatus = await getConfigValue("TIMER_PAUSED") === "1" ? "Paused" : "Unpaused"
     const timerResetTime = new Date(Number(process.env.TARGET_RESET_TIME)).toLocaleString()
     return (
         <div id="container">
-            <AdminUtilityHandler season={season} week={week} timerStatus={timerStatus} resetTime={timerResetTime} />
+            <AdminUtilityHandler season={season ? season : "N/A"} week={week ? week : "N/A"} timerStatus={timerStatus} resetTime={timerResetTime} />
         </div>
-
     )
 }

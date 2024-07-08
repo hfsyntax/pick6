@@ -50,7 +50,7 @@ export default function AdminUtilityHandler({ season, week, timerStatus, resetTi
 
     useEffect(() => {
         setSumbitButton({ disabled: false, text: "Submit" })
-        if ((formResponse?.message || formResponse?.error) && option === "Upload Picks") {
+        if (formResponse?.message && option === "Upload Picks") {
             fetch("/api/downloadCredentials")
                 .then(async response => {
                     if (response.ok) {

@@ -1,12 +1,13 @@
 "use server"
 import { getSession } from "../lib/session"
-import { getEnvValue, setEnvValue } from "../lib/configHandler"
+import { getConfigValue, setConfigValue } from "../lib/configHandler"
 import { redirect } from "next/navigation"
 import { revalidatePath } from "next/cache"
 import { createWriteStream } from "fs"
 import ms from "ms"
 import { genSalt, hash } from "bcryptjs"
 import { sql } from '@vercel/postgres';
+import { join } from "path"
 
 function randomPassword() {
     let str = ""
@@ -19,8 +20,10 @@ function randomPassword() {
 }
 
 async function toggleTimer() {
-    setEnvValue("TIMER_PAUSED", process.env.TIMER_PAUSED === "1" ? 0 : 1)
-    const timerStatus = getEnvValue("TIMER_PAUSED") === "1" ? "Paused" : "Unpaused"
+    const timerPaused = await getConfigValue("TIMER_PAUSED")
+    await setConfigValue("TIMER_PAUSED", timerPaused === "1" ? "0" : "1")
+    const timerStatus = timerPaused === "1" ? "unpaused" : "paused"
+    revalidatePath("/teams")
     revalidatePath("/admin_utility")
     return { message: `Successfully ${timerStatus} the timer.` }
 }
@@ -28,7 +31,7 @@ async function toggleTimer() {
 async function setTimer(time: FormDataEntryValue = "") {
     const addedTime = time ? ms(time.toString()) : ms("7d")
     const newTime = new Date(Date.now() + addedTime)
-    setEnvValue("TARGET_RESET_TIME", newTime.getTime())
+    await setConfigValue("TARGET_RESET_TIME", newTime.getTime())
     revalidatePath("/teams")
     revalidatePath("/admin_utility")
     return { message: `Successfully set the timer to ${newTime.toString()}.` }
@@ -37,11 +40,17 @@ async function setTimer(time: FormDataEntryValue = "") {
 async function setSeasonAndWeek(season: FormDataEntryValue = "", week: FormDataEntryValue = "") {
     const targetSeason = isNaN(Number(season)) ? 0 : Number(season)
     const targetWeek = isNaN(Number(week)) ? 0 : Number(week)
-    const timerPaused = process.env.TIMER_PAUSED
-    let currentSeason = Number(process.env.CURRENT_SEASON)
-    let currentWeek = Number(process.env.CURRENT_WEEK)
+    const timerPaused = await getConfigValue("TIMER_PAUSED")
+    console.log(`timer paused is: ${timerPaused}`)
+    let currentSeason = Number(await getConfigValue("CURRENT_SEASON"))
+    let currentWeek = Number(await getConfigValue("CURRENT_WEEK"))
     let message = ""
 
+    if (timerPaused !== "1") {
+        revalidatePath("/admin_utility")
+        return {error: "Error: the timer needs to be paused before setting a new season/week"}
+    }
+    
     // set current season if left empty
     if (!season) {
         if (currentSeason <= 0) {
@@ -63,11 +72,11 @@ async function setSeasonAndWeek(season: FormDataEntryValue = "", week: FormDataE
         if (queryResult.rowCount > 0) {
             message += `Inserted Season Entry ${targetSeason}<br/>`;
         }
-        setEnvValue("CURRENT_SEASON", targetSeason)
+        await setConfigValue("CURRENT_SEASON", targetSeason)
         message += `Set Season to ${targetSeason}<br/>`;
     }
 
-    currentSeason = Number(getEnvValue("CURRENT_SEASON"))
+    currentSeason = Number(await getConfigValue("CURRENT_SEASON"))
 
     // set current week if left empty
     if (!week) {
@@ -90,7 +99,7 @@ async function setSeasonAndWeek(season: FormDataEntryValue = "", week: FormDataE
         if (queryResult.rowCount > 0) {
             message += `Inserted Week Entry ${targetWeek} for Season ${currentSeason}<br/>`;
         }
-        setEnvValue("CURRENT_WEEK", targetWeek)
+        await setConfigValue("CURRENT_WEEK", targetWeek)
         message += `Set Week to ${targetWeek} for Season ${currentSeason}<br/>`;
     }
     revalidatePath("/teams")
@@ -103,8 +112,8 @@ async function setSeasonAndWeek(season: FormDataEntryValue = "", week: FormDataE
 }
 
 async function insertUser(formData: FormData) {
-    const currentSeason = Number(process.env.CURRENT_SEASON)
-    const currentWeek = Number(process.env.CURRENT_WEEK)
+    const currentSeason = Number(await getConfigValue("CURRENT_SEASON"))
+    const currentWeek = Number(await getConfigValue("CURRENT_WEEK"))
 
     if (currentSeason === 0 || currentWeek === 0) {
         revalidatePath("/admin_utility")
@@ -453,19 +462,19 @@ async function uploadGames(formData: FormData) {
         return { error: "Error: file cannot be empty" }
     }
 
-    const currentSeason = process.env.CURRENT_SEASON
-    const currentWeek = process.env.CURRENT_WEEK
+    const currentSeason = await getConfigValue("CURRENT_SEASON")
+    const currentWeek = await getConfigValue("CURRENT_WEEK")
 
-    if (currentSeason === "0" || currentWeek === "0") {
+    if (!currentSeason || !currentWeek) {
         revalidatePath("/admin_utility")
         return { error: "Error: the week/season needs to be set to a value greater than 0 before games can be created" }
     }
 
-    const timerPaused = process.env.TIMER_PAUSED === "1" ? true : false
+    const timerPaused = await getConfigValue("TIMER_PAUSED")
     const now = Date.now()
-    const timerTime = Number(process.env.TARGET_RESET_TIME)
+    const timerTime = Number(await getConfigValue("TARGET_RESET_TIME"))
 
-    if (now < timerTime && !timerPaused) {
+    if (now < timerTime && timerPaused !== "1") {
         revalidatePath("/admin_utility")
         return { error: "Error: the timer needs to be paused or negative before games can be created." }
     }
@@ -573,19 +582,19 @@ async function handleWeekResults(formData: FormData) {
         return { error: "Error: file cannot be empty" }
     }
 
-    const currentSeason = Number(process.env.CURRENT_SEASON)
-    const currentWeek = Number(process.env.CURRENT_WEEK)
+    const currentSeason = Number(await getConfigValue("CURRENT_SEASON"))
+    const currentWeek = Number(await getConfigValue("CURRENT_WEEK"))
 
     if (currentSeason === 0 || currentWeek === 0) {
         revalidatePath("/admin_utility")
         return { error: "Error: the week/season needs to be set to a value greater than 0 before game results can be created" }
     }
 
-    const timerPaused = process.env.TIMER_PAUSED === "1" ? true : false
+    const timerPaused = await getConfigValue("TIMER_PAUSED")
     const now = Date.now()
-    const timerTime = Number(process.env.TARGET_RESET_TIME)
+    const timerTime = Number(await getConfigValue("TARGET_RESET_TIME"))
 
-    if (now < timerTime && !timerPaused) {
+    if (now < timerTime && timerPaused !== "1") {
         revalidatePath("/admin_utility")
         return { error: "Error: the timer needs to be paused or negative before games can be created." }
     }
@@ -936,7 +945,7 @@ async function handleWeekResults(formData: FormData) {
         }
 
         // update week env
-        setEnvValue("CURRENT_WEEK", weekNumber)
+        await setConfigValue("CURRENT_WEEK", weekNumber)
         message.push(`Updated the current week to the next week ${weekNumber}<br/>`)
         revalidatePath("/teams")
         revalidatePath("/weekly")
@@ -971,10 +980,10 @@ async function uploadPicks(formData: FormData) {
         return { error: "Error: file cannot be empty" }
     }
 
-    const currentSeason = process.env.CURRENT_SEASON
-    const currentWeek = process.env.CURRENT_WEEK
+    const currentSeason = await getConfigValue("CURRENT_SEASON")
+    const currentWeek = await getConfigValue("CURRENT_WEEK")
 
-    if (currentSeason === "0" || currentWeek === "0") {
+    if (!currentSeason  || !currentWeek) {
         revalidatePath("/admin_utility")
         return { error: "Error: the week/season needs to be set to a value greater than 0 before picks can be uploaded." }
     }
@@ -1215,7 +1224,10 @@ async function uploadPicks(formData: FormData) {
 
     if (newUsers.length > 0) {
         const csvUserText = newUsers.map(user => `${user.username},${user.password}`).join("\n")
-        const file = createWriteStream("user_credentials.csv")
+        const filePath = process.env.DEVELOPMENT ? 
+        join(process.cwd(), "/tmp", "/user_credentials.csv") :
+        join("/tmp", "user_credentials.csv")
+        const file = createWriteStream(filePath)
         file.write(csvUserText)
         file.end()
     }

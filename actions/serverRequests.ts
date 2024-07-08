@@ -6,6 +6,7 @@ import { promisify } from "util"
 import { revalidatePath } from "next/cache"
 import { getSession } from "../lib/session"
 import { sql } from '@vercel/postgres';
+import { getConfigValue } from "../lib/configHandler"
 
 const truncate = promisify(truncateFn)
 
@@ -131,6 +132,9 @@ export const getSeasonStats = cache(async (season: string, order: string = "", s
         }
         orderQuery += ` ps.${sort2} ${order ? order : "asc"}` 
     }
+
+    const seasonNumber = isNaN(parseInt(season)) ? 0 : season
+    
     const queryResult = await sql.query(`SELECT
     ps.rank,
     ps.group_number,
@@ -143,7 +147,7 @@ export const getSeasonStats = cache(async (season: string, order: string = "", s
     ps.win_percentage
     FROM PlayerSeasonStats ps
     JOIN Players p ON ps.player_id = p.player_id
-    WHERE ps.season_number = ${season}
+    WHERE ps.season_number = ${seasonNumber}
     GROUP BY ps.rank, ps.group_number, ps.gp, p.player_id, p.name, ps.won, ps.played, ps.win_percentage
     ${orderQuery}`)
     return queryResult.rows
@@ -174,6 +178,8 @@ export const getPicks = cache(async (season: string, week: string, order: string
         orderQuery += ` subquery.${sort2} ${order ? order : "asc"}` 
     }
 
+    const seasonNumber = isNaN(parseInt(season)) ? 0 : season
+    const weekNumber = isNaN(parseInt(week)) ? 0 : week
     const queryResult = await sql.query(`SELECT DISTINCT
     subquery.player_id,
     subquery.rank,
@@ -238,14 +244,14 @@ FROM (
     INNER JOIN
         Players p ON pw.player_id = p.player_id
     WHERE
-        pw.season_number = ${season}
-        AND pw.week_number = ${week}
+        pw.season_number = ${seasonNumber}
+        AND pw.week_number = ${weekNumber}
 ) AS subquery
 INNER JOIN PlayerSelections AS ps ON subquery.player_id = ps.player_id
 INNER JOIN Games AS g ON ps.game_id = g.game_id
 WHERE
-g.season_number = ${season}
-AND g.week_number = ${week}
+g.season_number = ${seasonNumber}
+AND g.week_number = ${weekNumber}
 ${orderQuery}
 `)
     const gameCount = await getGameCountForWeek(season, week)
@@ -276,8 +282,8 @@ export async function getUsersByName(users: string[]) {
 }
 
 export async function getUserWeekPicks(id: string) {
-    const currentSeason = process.env.CURRENT_SEASON
-    const currentWeek = process.env.CURRENT_WEEK
+    const currentSeason = await getConfigValue("CURRENT_SEASON")
+    const currentWeek = await getConfigValue("CURRENT_WEEK")
     const queryResult = await sql`SELECT DISTINCT
     subquery.name,
     CASE
@@ -374,17 +380,21 @@ export async function getUserSeasonsData(id: string) {
 }
 
 export async function isTimerPaused() {
-    return process.env.TIMER_PAUSED === "1" ? true : false
+    return await getConfigValue("TIMER_PAUSED") ===  "1" ? true : false
 }
 
 export async function calculateTimeUntilReset() {
-    const timerEnds = Number(process.env.TARGET_RESET_TIME)
+    const timerEnds = Number(await getConfigValue("TARGET_RESET_TIME"))
     const now = Date.now()
     return timerEnds - now
 }
 
 export async function clearUserCredentialsFile() {
-    const filePath = join(process.cwd(), "user_credentials.csv");
+    const session = await getSession()
+    if (!session || session?.user?.type !== "admin") return
+    const filePath = process.env.DEVELOPMENT ? 
+    join(process.cwd(), "tmp", "user_credentials.csv") :
+    join("/tmp", "user_credentials.csv")
     try {
         await truncate(filePath)
         revalidatePath("/admin_utility")

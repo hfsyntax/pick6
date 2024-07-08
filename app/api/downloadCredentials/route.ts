@@ -10,7 +10,10 @@ export async function GET() {
   }
 
   try {
-    const filePath = join(process.cwd(), "user_credentials.csv");
+    const filePath = process.env.DEVELOPMENT ? 
+    join(process.cwd(), "/tmp", "/user_credentials.csv") :
+    join("/tmp", "user_credentials.csv")
+    console.log(filePath)
     const buffer = await promises.readFile(filePath);
     if (buffer.length === 0) {
       return new Response(null, { status: 204 });

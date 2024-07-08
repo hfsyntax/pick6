@@ -1,4 +1,5 @@
-import { getWeeks, getPicks } from "../../actions/serverRequests";
+import { getWeeks, getPicks  } from "../../actions/serverRequests";
+import { getConfigValue } from "../../lib/configHandler";
 import SeasonWeeksHandler from "../../components/SeasonWeeksHandler";
 
 export const metadata = {
@@ -7,22 +8,23 @@ export const metadata = {
 }
 
 export default async function Weekly() {
-    const currentSeason = process.env.CURRENT_SEASON
-    const currentWeek = process.env.CURRENT_WEEK
+    const currentSeason = await getConfigValue("CURRENT_SEASON")
+    const currentWeek = await getConfigValue("CURRENT_WEEK")
     const weeks = await getWeeks()
     const weekID = weeks.find(week => week.season_number == currentSeason && week.week_number == currentWeek)?.week_id
     const picks = await getPicks(currentSeason, currentWeek)
     return (
         <div id="container">
             <h1>Pick6 - All Picks</h1>
-            <SeasonWeeksHandler
+            {weeks.length > 0 ? (<SeasonWeeksHandler
             currentSeason={currentSeason}
             currentWeek={currentWeek}
             selectedId={weekID}
             selectOptions={weeks}
             initialData={picks.picks}
             headers={picks.headers}
-            />
+            />) : <h3 style={{color: "red"}}>no data</h3>}
+            
         </div>
     )
 }

@@ -2,22 +2,23 @@ import {readFileSync, writeFileSync} from "fs"
 import {EOL} from "os"
 import { dirname, resolve } from "path"
 import { fileURLToPath } from 'url'
+import { QueryResultRow, sql } from "@vercel/postgres"
+import { getSession } from "./session"
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const envFilePath = resolve(dirname(__dirname), ".env")
 const readEnvVars = () => readFileSync(envFilePath, "utf-8").split(EOL)
 
-export const getEnvValue = (key: string) => {
-    const matchedLine = readEnvVars().find((line) => line.split("=")[0] === key)
-    return matchedLine !== undefined ? matchedLine.split("=")[1] : null
+export async function getConfigValue(key: string) : Promise<QueryResultRow[string]> {
+    const queryResult = await sql`SELECT value from app_settings WHERE key = ${key}`
+    return queryResult?.rows?.[0]?.value
 }
 
-export const setEnvValue = (key: string, value: string|number) => {
-    const envVars = readEnvVars()
-    const targetLine = envVars.find((line) => line.split("=")[0] === key)
-    if (targetLine !== undefined) {
-        const targetLineIndex = envVars.indexOf(targetLine)
-        envVars.splice(targetLineIndex, 1, `${key}=${value}`)
-    }
-    writeFileSync(envFilePath, envVars.join(EOL))
+export async function setConfigValue (key: string, value: string|number) : Promise<boolean> {
+    const queryResult = await sql`
+    INSERT INTO app_settings (key, value) 
+    VALUES (${key}, ${value}) 
+    ON CONFLICT(key) 
+    DO UPDATE SET value = ${value}, updated_at = CURRENT_TIMESTAMP`
+    return queryResult?.rowCount > 0
 }

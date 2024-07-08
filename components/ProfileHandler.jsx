@@ -1,9 +1,10 @@
 import { getUserWeekPicks, getUserSeasonsData, getUser } from "../actions/serverRequests";
+import { getConfigValue } from "../lib/configHandler";
 import Table from "../components/Table"
 
 export default async function ProfileHandler({ id }) {
-    const currentSeason = process.env.CURRENT_SEASON
-    const currentWeek = process.env.CURRENT_WEEK
+    const currentSeason = await getConfigValue("CURRENT_SEASON")
+    const currentWeek = await getConfigValue("CURRENT_WEEK")
     const user = await getUser(id)
     const weekPicks = await getUserWeekPicks(id)
     const seasonData = await getUserSeasonsData(id)

@@ -1,15 +1,16 @@
 "use server"
 import { getSession } from "../lib/session"
+import { getConfigValue } from "../lib/configHandler"
 import { revalidatePath } from "next/cache"
 import { redirect } from "next/navigation"
 import { hash, compare, genSalt } from "bcryptjs"
 import { sql } from '@vercel/postgres';
 
 export async function handlePicks(prevState: string, formData: FormData) {
-    const currentSeason = Number(process.env.CURRENT_SEASON)
-    const currentWeek = Number(process.env.CURRENT_WEEK)
+    const currentSeason = Number(await getConfigValue("CURRENT_SEASON"))
+    const currentWeek = Number(await getConfigValue("CURRENT_WEEK"))
 
-    if (currentSeason === 0 || currentWeek === 0) {
+    if (!currentSeason || !currentWeek) {
         revalidatePath("/teams")
         return { error: "Error: the week/season needs to be set to a value greater than 0 before picks can be made" }
     }
