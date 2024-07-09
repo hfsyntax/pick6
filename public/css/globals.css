@@ -38,6 +38,10 @@ h2 {
     margin-top: 5px;
 }
 
+#login label {
+    text-align: left;
+}
+
 #login h2 {
     color: #007BFF;
 }
