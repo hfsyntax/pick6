@@ -7,7 +7,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { compare } from "bcryptjs"
 import { sql } from '@vercel/postgres'
 
-const secretKey = process.env.SECRET_KEY
+const secretKey = process.env.SESSION_SECRET_KEY
 const key = new TextEncoder().encode(secretKey);
 
 export async function encrypt(payload: any) {
