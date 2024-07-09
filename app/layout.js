@@ -15,18 +15,11 @@ export default async function RootLayout({ children }) {
   return (
     <html lang="en">
       <body>
-        {
-          session ?
-            <>
-              <Navbar />
-              <div id="content">
-                <Sidebar sessionType={session?.user?.type}/>
-                {children}
-              </div>
-              <SessionTimeout />
-            </>
-            : children
-        }
+          <Navbar />
+          <div id="content">
+            <Sidebar sessionType={session?.user?.type}/>
+            {children}
+          </div>
       </body>
     </html>
   );

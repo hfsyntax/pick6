@@ -14,9 +14,12 @@ body {
     padding: 20px;
 }
 
-@media (max-width: 600px) {
+@media (max-width: 670px) {
     #login {
-        width: 80%;
+        left: 0px;
+        transform: translateY(-50%);
+        width: calc(100vw - 50px);
+        box-sizing: border-box;
     }
 }
 
@@ -40,13 +43,14 @@ h2 {
 }
 
 #login input {
+    outline: none;
     width: 100%;
     padding: 5px;
     box-sizing: border-box;
+    border: 1px solid gray;
 }
 
 #login input:focus {
-    outline: none;
     border: 2px solid #007BFF;
 }
 
@@ -61,6 +65,7 @@ h2 {
 }
 
 .grecaptcha-badge {
+    left: 0px !important;
     bottom: -60px !important;
 }
 

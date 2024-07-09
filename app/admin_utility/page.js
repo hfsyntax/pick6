@@ -1,5 +1,6 @@
 import { getConfigValue } from "../../lib/configHandler"
 import AdminUtilityHandler from "../../components/AdminUtilityHandler"
+import SessionTimeout from "../../components/SessionTimeout"
 
 export const metadata = {
     title: "Pick6 - Admin Utility",
@@ -14,6 +15,7 @@ export default async function AdminUtility() {
     return (
         <div id="container">
             <AdminUtilityHandler season={season ? season : "N/A"} week={week ? week : "N/A"} timerStatus={timerStatus} resetTime={timerResetTime} />
+            <SessionTimeout />
         </div>
     )
 }

@@ -7,6 +7,13 @@ import { hash, compare, genSalt } from "bcryptjs"
 import { sql } from '@vercel/postgres';
 
 export async function handlePicks(prevState: string, formData: FormData) {
+    const session = await getSession()
+
+    if (!session) {
+        revalidatePath("/teams")
+        return {error: "Error: unauthorized to make picks"}
+    }
+    
     const currentSeason = Number(await getConfigValue("CURRENT_SEASON"))
     const currentWeek = Number(await getConfigValue("CURRENT_WEEK"))
 
@@ -19,7 +26,7 @@ export async function handlePicks(prevState: string, formData: FormData) {
     const now = Date.now()
     const timerTime = Number(await getConfigValue("TARGET_RESET_TIME"))
 
-    if (now > timerTime || timerPaused) {
+    if (!timerTime || isNaN(timerTime) || now > timerTime  || timerPaused) {
         revalidatePath("/teams")
         return { error: "Error: the timer needs to be unpaused or non-negative before picks can be made." }
     }
@@ -37,7 +44,6 @@ export async function handlePicks(prevState: string, formData: FormData) {
         return { error: `Error: no games are available for week ${currentWeek} of season ${currentSeason}` }
     }
 
-    const session = await getSession()
     const username = session?.user?.username
     const authID = session?.user?.authID
 
@@ -157,12 +163,12 @@ export async function changePassword(prevState: string, formData: FormData) {
 
     if (!newPassword.match(/^(?=.*[A-Z])(?=.*\d).{6,}$/)) {
         revalidatePath("/profile")
-        return { error: "Error: password must contain at least 6 characters, 1 uppercase letter and 1 number" }
+        return { error: "Error: new password must contain at least 6 characters, 1 uppercase letter and 1 number" }
     }
 
     if (newPassword !== confirmNewPassword) {
         revalidatePath("/profile")
-        return { error: "Error: new password does not match current password" }
+        return { error: "Error: new password does not match the confirmed new password" }
     }
 
     // compare current to db hash

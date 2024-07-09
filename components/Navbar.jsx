@@ -26,7 +26,7 @@ export default async function Navbar() {
                     
                    <LogoutButton/>
                 </>
-                : null
+                : <Link href={"/"} style={{marginRight: "10px"}}>login</Link>
             }
         </div>
     )

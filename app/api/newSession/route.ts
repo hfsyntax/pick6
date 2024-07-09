@@ -7,7 +7,9 @@ import { headers } from "next/headers";
 export async function GET(request: NextRequest) {
   try {
     const headersList = headers()
-    const referer = new URL(headersList.get("referer")).pathname
+    const referer = headersList?.get("referer")
+    if (!referer) return NextResponse.json({ error: "401 Unauthorized" }, { status: 401 })
+    const refererPath = new URL(headersList.get("referer")).pathname
     const session = request.cookies.get("session")?.value;
     if (!session) return NextResponse.json({ error: "401 Unauthorized" }, { status: 401 })
     // Refresh the session so it doesn't expire
@@ -20,7 +22,7 @@ export async function GET(request: NextRequest) {
       httpOnly: true,
       expires: parsed.expires,
     });
-    revalidatePath(referer)
+    revalidatePath(refererPath)
     return res
   } catch (error) {
     if (error.name === "JWTExpired") {

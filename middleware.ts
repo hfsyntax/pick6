@@ -11,12 +11,11 @@ export async function middleware(request: NextRequest) {
   const session = await getSession()
   if (session && request.nextUrl.pathname === "/") {
     return NextResponse.redirect(new URL("/games", request.url))
-  } else if (session && session?.user?.type !== "admin" && ["/admin_utility", "/admin_guide"].includes(request.nextUrl.pathname)) {
+  } else if (!session && request.nextUrl.pathname === "/profile") {
     return NextResponse.redirect(new URL("/games", request.url))
   }
-  else if (!session && request.nextUrl.pathname !== "/") {
-    console.log("path is not login redirecting...")
-    return NextResponse.redirect(new URL("/", request.url))
+  else if (session?.user?.type !== "admin" && ["/admin_utility", "/admin_guide"].includes(request.nextUrl.pathname)) {
+    return NextResponse.redirect(new URL("/games", request.url))
   } else {
     return response
   }
