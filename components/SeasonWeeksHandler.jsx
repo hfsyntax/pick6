@@ -2,7 +2,7 @@
 import { useState, useRef, useEffect } from "react"
 import { usePathname } from "next/navigation"
 import { getPicks, getSeasonStats, getWeekGameResults, getWeekResults } from "../actions/serverRequests"
-import Table from './Table'
+import OptimizedTable from "./OptimizedTable"
 
 export default function SeasonWeeksHandler({ currentSeason, currentWeek, selectedId, selectOptions, initialData, headers }) {
     const [selectedOption, setSelectedOption] = useState({ season: currentSeason, week: currentWeek, id: selectedId })
@@ -95,11 +95,10 @@ export default function SeasonWeeksHandler({ currentSeason, currentWeek, selecte
                         </div>
                     }
                 </>
-            <Table
-                className={"table-wrapper"}
-                headers={data.dataHeaders}
-                rows={data.currentData}
-            />
+            {data?.currentData?.length > 0 ?<OptimizedTable
+            headers={data.dataHeaders}
+            rows={data.currentData}
+            /> : <h3 style={{color: "red", textAlign: "center"}}>No data</h3> }
         </>
     )
 }

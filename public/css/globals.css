@@ -266,6 +266,61 @@ table th,
     color: white;
 }
 
+.list {
+    box-sizing: border-box;
+    border: 1px solid #d9dddd;
+    left: 0px;
+    height: unset !important;
+    max-height: 500px;
+    margin-top: 10px;
+  }
+  
+  .list-item {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    font-size: large;
+    border: 1px solid black;
+    box-sizing: border-box;
+    width: unset !important;
+    min-width: 100vw;
+  }
+  
+  .header {
+    background-color: black;
+    color: white;
+    width: unset !important;
+    min-width: 100vw;
+  }
+  
+  .list-item li {
+    margin-left: 10px;
+    width: 130px;
+    flex-grow: 1;
+    text-align: left;
+    list-style-type: none;
+  }
+
+  .list-item-player {
+    position: relative;
+    right: 50px;
+  }
+
+  li.list-item-player  {
+    width: calc(130px - 50px);
+  }
+
+  .list-item-player a {
+    color: inherit;
+    text-decoration: none;
+  }
+
+  .list-item-player a:hover {
+    background: black;
+    color: white;
+  }
+  
+
 #checkbox-container {
     text-align: center;
 }
