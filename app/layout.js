@@ -3,7 +3,6 @@ import "@fortawesome/fontawesome-svg-core/styles.css"
 import Navbar from "../components/Navbar";
 import Sidebar from "../components/Sidebar";
 import { getSession } from "../lib/session";
-import SessionTimeout from "../components/SessionTimeout";
 
 export const metadata = {
   title: "Pick6 - Login",

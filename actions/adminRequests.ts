@@ -1,7 +1,6 @@
 "use server"
 import { getConfigValue } from "./serverRequests"
 import { getSession } from "../lib/session"
-import { setConfigValue } from "../lib/configHandler"
 import { redirect } from "next/navigation"
 import { revalidatePath } from "next/cache"
 import { createWriteStream } from "fs"
@@ -18,6 +17,15 @@ function randomPassword() {
         str += keyspace[Math.floor(Math.random() * (keyspace.length - 1))]
     }
     return str
+}
+
+async function setConfigValue (key: string, value: string|number) : Promise<boolean> {
+    const queryResult = await sql`
+    INSERT INTO app_settings (key, value) 
+    VALUES (${key}, ${value}) 
+    ON CONFLICT(key) 
+    DO UPDATE SET value = ${value}, updated_at = CURRENT_TIMESTAMP`
+    return queryResult?.rowCount > 0
 }
 
 async function toggleTimer() {
