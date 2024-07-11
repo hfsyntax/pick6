@@ -11,7 +11,6 @@ export default function AdminUtilityHandler({ season, week, timerStatus, resetTi
     const [option, setOption] = useState("Upload Games")
     const [fromFile, setFromFile] = useState(false)
     const [message, showMessage] = useState({display: "none", text: null})
-    const currentForm = useRef()
     const [refreshButton, setRefreshButton] = useState({
         disabled: false,
         text: "Refresh Data"
@@ -22,6 +21,8 @@ export default function AdminUtilityHandler({ season, week, timerStatus, resetTi
     })
     const [formResponse, formAction] = useFormState(handleAdminForm, null)
     const [formMessage, setFormMessage] = useState({message: null, error: null})
+    const currentForm = useRef()
+    const formMessageSet = useRef(false)
 
     const selectHandler = async (event) => {
         setOption(event.target.value)
@@ -36,6 +37,7 @@ export default function AdminUtilityHandler({ season, week, timerStatus, resetTi
         event.preventDefault()
         const formData = new FormData(event.target)
         formData.append("option", option)
+        formMessageSet.current = false
         formAction(formData)
         setSumbitButton({
             disabled: true,
@@ -84,16 +86,35 @@ export default function AdminUtilityHandler({ season, week, timerStatus, resetTi
                     }
                 })
             }
+            // reset the form before setting the form response
+            if (option === "Upload Games") {
+                formMessageSet.current = true
+                setFormMessage({message: formResponse?.message, error: null})
+            } else {
+                setOption("Upload Games")
+            }
+            
             currentForm.current.reset()
-            setFormMessage({...formMessage, message: formResponse?.message} )
         } else if (formResponse?.error) {
-            setFormMessage({...formMessage, error: formResponse?.error} )
+            setFormMessage({message: null, error: formResponse?.error} )
         }
     }, [formResponse])
 
+    // clear form message/error on option change
     useEffect(() => {
-        if (formMessage?.error || formMessage?.message) {
-            setFormMessage({message: null, error: null})
+        if (formResponse?.message) {
+            if (!formMessageSet.current) {
+                formMessageSet.current = true
+                setFormMessage({message: formResponse?.message, error: null})
+            } else {    
+                // form success already set 
+                setFormMessage({message: null, error: null})
+            }
+            
+        } else if (formResponse?.error) {
+            if (formMessage.error) {
+                setFormMessage({message: null, error: null})
+            }
         }
     }, [option])
 
@@ -113,7 +134,7 @@ export default function AdminUtilityHandler({ season, week, timerStatus, resetTi
             <span><b>Timer Ends:&nbsp;</b>{resetTime}</span>
             <button style={{width: "fit-content"}} onClick={refreshData} disabled={refreshButton.disabled}>{refreshButton.text}</button>
 
-            <form className="default-form" ref={currentForm} onSubmit={submitHandler}>
+            <form ref={currentForm} className="default-form" onSubmit={submitHandler}>
                 <div>
                     <b style={{ marginRight: "10px" }}>Select Task:</b>
                     <select onChange={selectHandler} defaultValue="Upload Games">

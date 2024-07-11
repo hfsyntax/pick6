@@ -1,6 +1,6 @@
 import { getUserWeekPicks, getUserSeasonsData, getUser } from "../actions/serverRequests";
 import { getConfigValue } from "../lib/configHandler";
-import Table from "../components/Table"
+import OptimizedTable from "./OptimizedTable";
 
 export default async function ProfileHandler({ id }) {
     const currentSeason = await getConfigValue("CURRENT_SEASON")
@@ -15,8 +15,7 @@ export default async function ProfileHandler({ id }) {
                 {weekPicks?.picks.length > 0 ?
                     (
                         <>
-                            <Table
-                                className={"profile-table"}
+                            <OptimizedTable
                                 headers={weekPicks.headers}
                                 rows={weekPicks.picks}
                             />
@@ -26,8 +25,7 @@ export default async function ProfileHandler({ id }) {
                     <h1>Season Data</h1>
                 {seasonData.length > 0 ?
                     <>
-                        <Table
-                            className={"profile-table"}
+                        <OptimizedTable
                             headers={["Season", "#", "GP", "Name", "Rank", "Won", "Played", "%"]}
                             rows={seasonData}
                         />

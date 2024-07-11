@@ -75,21 +75,23 @@ export const getGameCountForWeek = cache(async (season: string, week: string): P
     return queryResult?.rows?.[0]?.game_count
 })
 
-export const getWeekResults = cache(async (season: string, week: string) => {
+export const getWeekResults = cache(async (season: string, currentSeason: string, week: string) => {
     const queryResult = await sql`
     WITH players_info AS (
-        SELECT
-            w.week_number,
-            COALESCE(pl.picture_url, '') || ' ' || pl.name || ' ' || pl.player_id AS loser_info,
-            COALESCE(pw.picture_url, '') || ' ' || pw.name || ' ' || pw.player_id AS winner_info
-        FROM
-            Weeks w
-        LEFT JOIN Winners wn ON w.season_number = wn.season_number AND w.week_number = wn.week_number
-        LEFT JOIN Losers ls ON w.season_number = ls.season_number AND w.week_number = ls.week_number
-        LEFT JOIN Players pw ON wn.player_id = pw.player_id
-        LEFT JOIN Players pl ON ls.player_id = pl.player_id
-        WHERE
-            w.season_number = ${season} AND w.week_number < ${week}
+    SELECT
+        w.week_number,
+        COALESCE(pl.picture_url, '') || ' ' || pl.name || ' ' || pl.player_id AS loser_info,
+        COALESCE(pw.picture_url, '') || ' ' || pw.name || ' ' || pw.player_id AS winner_info,
+        CASE WHEN ls.player_id IS NOT NULL THEN 1 ELSE 0 END AS is_loser,
+        CASE WHEN wn.player_id IS NOT NULL THEN 1 ELSE 0 END AS is_winner
+    FROM
+        Weeks w
+    LEFT JOIN Winners wn ON w.season_number = wn.season_number AND w.week_number = wn.week_number
+    LEFT JOIN Losers ls ON w.season_number = ls.season_number AND w.week_number = ls.week_number
+    LEFT JOIN Players pw ON wn.player_id = pw.player_id
+    LEFT JOIN Players pl ON ls.player_id = pl.player_id
+    WHERE
+        (w.season_number = ${season} AND w.week_number < ${week}) OR (w.season_number = ${season} AND w.season_number != ${currentSeason})
     )
     SELECT
         week_number,
@@ -98,7 +100,9 @@ export const getWeekResults = cache(async (season: string, week: string) => {
         ) AS loser_names,
         COALESCE(
             string_agg(DISTINCT winner_info, '<br>' ORDER BY winner_info), 'ROLL-OVER!!!'
-        ) AS winner_names
+        ) AS winner_names,
+        SUM(is_loser) AS losers_count,
+        SUM(is_winner) AS winners_count
     FROM
         players_info
     GROUP BY
@@ -109,10 +113,10 @@ export const getWeekResults = cache(async (season: string, week: string) => {
 })
 
 export const getSeasonStats = cache(async (season: string, order: string, fields: Array<string>) => {
-    const orderQuery = fields.length > 0 ? `ORDER BY ${fields.map(f => `ps.${f} ${order}`).join(", ")}` : "" 
+    const orderQuery = fields.length > 0 ? `ORDER BY ${fields.map(f => `ps.${f} ${order}`).join(", ")}` : ""
 
     const seasonNumber = isNaN(parseInt(season)) ? 0 : season
-    
+
     const queryResult = await sql.query(`SELECT
     ps.rank,
     ps.group_number,
@@ -132,7 +136,7 @@ export const getSeasonStats = cache(async (season: string, order: string, fields
 })
 
 export const getPicks = cache(async (season: string, week: string, order: string = "", fields: Array<string>) => {
-    const orderQuery = fields.length > 0 ? `ORDER BY ${fields.map(f => `subquery.${f} ${order}`).join(", ")}` : "" 
+    const orderQuery = fields.length > 0 ? `ORDER BY ${fields.map(f => `subquery.${f} ${order}`).join(", ")}` : ""
 
     const seasonNumber = isNaN(parseInt(season)) ? 0 : season
     const weekNumber = isNaN(parseInt(week)) ? 0 : week
@@ -336,7 +340,7 @@ export async function getUserSeasonsData(id: string) {
 }
 
 export async function isTimerPaused() {
-    return await getConfigValue("TIMER_PAUSED") ===  "1" ? true : false
+    return await getConfigValue("TIMER_PAUSED") === "1" ? true : false
 }
 
 export async function calculateTimeUntilReset() {
@@ -348,9 +352,9 @@ export async function calculateTimeUntilReset() {
 export async function clearUserCredentialsFile() {
     const session = await getSession()
     if (!session || session?.user?.type !== "admin") return
-    const filePath = process.env.DEVELOPMENT ? 
-    join(process.cwd(), "tmp", "user_credentials.csv") :
-    join("/tmp", "user_credentials.csv")
+    const filePath = process.env.DEVELOPMENT ?
+        join(process.cwd(), "tmp", "user_credentials.csv") :
+        join("/tmp", "user_credentials.csv")
     try {
         await truncate(filePath)
         revalidatePath("/admin_utility")

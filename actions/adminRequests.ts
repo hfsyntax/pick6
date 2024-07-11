@@ -1245,7 +1245,7 @@ export async function revalidateCache() {
     const session = await getSession()
     if (session?.user?.type !== "admin") return
     revalidatePath("/teams")
-    revalidatePath("/weeks")
+    revalidatePath("/weekly")
     revalidatePath("/season")
     revalidatePath("/results")
     revalidatePath("/games")

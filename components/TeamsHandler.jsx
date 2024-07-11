@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from "react"
 import { useFormState } from "react-dom"
 import { handlePicks } from "../actions/userRequests";
 import { getSession } from "../lib/session";
-import Table from './Table'
+import OptimizedTable from "./OptimizedTable";
 
 export default function TeamsHandler({ weekGames, timerPaused, timerTime, currentSeason, currentWeek }) {
   const [countdown, setCountdown] = useState()
@@ -101,11 +101,12 @@ export default function TeamsHandler({ weekGames, timerPaused, timerTime, curren
       <h2>Time Remaining: {countdown}</h2>
       <form ref={currentForm} className="default-form" onSubmit={submitHandler}>
         {!timerPaused && <input type="submit" value="submit" />}
-        <Table
-          className={"table-wrapper"}
-          headers={["Game", "Favorite", "Spread", "Underdog"]}
-          rows={weekGames}
-        />
+        {weekGames?.length > 0 ?
+          <OptimizedTable
+            headers={["Game", "Favorite", "Spread", "Underdog"]}
+            rows={weekGames}
+          /> : <h3 style={{ color: "red" }}>no data</h3>
+        }
         <ul>
           {formResponse?.message &&
             (formResponse?.message.includes("<br/>") ?

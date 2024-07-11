@@ -11,7 +11,7 @@ export default async function AdminUtility() {
     const season = await getConfigValue("CURRENT_SEASON")
     const week = await getConfigValue("CURRENT_WEEK")
     const timerStatus = await getConfigValue("TIMER_PAUSED") === "1" ? "Paused" : "Unpaused"
-    const timerResetTime = new Date(Number(process.env.TARGET_RESET_TIME)).toLocaleString()
+    const timerResetTime = new Date(Number(await getConfigValue("TARGET_RESET_TIME"))).toLocaleString()
     return (
         <div id="container">
             <AdminUtilityHandler season={season ? season : "N/A"} week={week ? week : "N/A"} timerStatus={timerStatus} resetTime={timerResetTime} />

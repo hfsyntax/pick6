@@ -27,7 +27,7 @@ export default function SeasonWeeksHandler({ currentSeason, currentWeek, selecte
             const weekGames = await getWeekGameResults(selectedSeason, selectedWeek)
             setData({ ...data, currentData: weekGames })
         } else {
-            const weekResults = await getWeekResults(selectedSeason, currentWeek)
+            const weekResults = await getWeekResults(selectedSeason, currentSeason, currentWeek)
             setData({ ...data, currentData: weekResults })
         }
     }

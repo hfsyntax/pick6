@@ -29,6 +29,7 @@ h2 {
     text-align: center;
     margin-block-start: unset;
     margin-block-end: unset;
+    margin-top: 5px;
 }
 
 #login label,
@@ -270,12 +271,11 @@ table th,
     box-sizing: border-box;
     border: 1px solid #d9dddd;
     left: 0px;
-    height: unset !important;
     max-height: 500px;
     margin-top: 10px;
-  }
-  
-  .list-item {
+}
+
+.list-item {
     display: flex;
     align-items: center;
     justify-content: flex-start;
@@ -284,42 +284,56 @@ table th,
     box-sizing: border-box;
     width: unset !important;
     min-width: 100vw;
-  }
-  
-  .header {
+}
+
+.header {
     background-color: black;
     color: white;
     width: unset !important;
     min-width: 100vw;
-  }
-  
-  .list-item li {
+}
+
+.list-item li {
     margin-left: 10px;
     width: 130px;
     flex-grow: 1;
     text-align: left;
     list-style-type: none;
-  }
+}
 
-  .list-item-player {
+.list-item li div {
+    position: relative;
+    width: 130px; /* same as li field */
+}
+
+.loser {
+    position: relative;
+    right: 50px; 
+}
+
+.list-item li div span {
+    white-space: nowrap;
+}
+
+.list-item-player {
     position: relative;
     right: 50px;
-  }
+}
 
-  li.list-item-player  {
+li.list-item-player {
     width: calc(130px - 50px);
-  }
+}
 
-  .list-item-player a {
+.list-item-player a, .list-item a {
     color: inherit;
     text-decoration: none;
-  }
+}
 
-  .list-item-player a:hover {
+.list-item-player a:hover, .list-item a:hover {
     background: black;
     color: white;
-  }
-  
+}
+
 
 #checkbox-container {
     text-align: center;
@@ -344,7 +358,7 @@ table th,
     display: flex;
     align-items: center;
     flex-direction: column;
-    width: 80%;
+    width: 100%;
     margin-left: auto;
     margin-right: auto;
 }
@@ -353,7 +367,8 @@ table th,
     display: block;
 }
 
-.default-form input[type='file'], .default-form select {
+.default-form input[type='file'],
+.default-form select {
     margin: 10px;
 }
 
@@ -386,11 +401,12 @@ table th,
 
 
 #profile_picture_container:hover #edit_profile_picture,
-#profile_picture_container:hover #remove_profile_picture  {
+#profile_picture_container:hover #remove_profile_picture {
     display: inline-block;
 }
 
-#edit_profile_picture, #remove_profile_picture {
+#edit_profile_picture,
+#remove_profile_picture {
     display: none;
     position: relative;
     top: 50%;
@@ -408,9 +424,9 @@ table th,
     left: 0;
     width: 100%;
     height: 100%;
-    background: rgba(0, 0, 0, 0.5); 
-    backdrop-filter: blur(10px); 
-    z-index: 1; 
+    background: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(10px);
+    z-index: 1;
 }
 
 #modal {
