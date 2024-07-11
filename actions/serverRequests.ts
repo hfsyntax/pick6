@@ -137,7 +137,6 @@ export const getSeasonStats = cache(async (season: string, order: string, fields
 
 export const getPicks = cache(async (season: string, week: string, order: string = "", fields: Array<string>) => {
     const orderQuery = fields.length > 0 ? `ORDER BY ${fields.map(f => `subquery.${f} ${order}`).join(", ")}` : ""
-
     const seasonNumber = isNaN(parseInt(season)) ? 0 : season
     const weekNumber = isNaN(parseInt(week)) ? 0 : week
     const queryResult = await sql.query(`SELECT DISTINCT

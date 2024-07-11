@@ -46,7 +46,7 @@ export default function SeasonWeeksHandler({ currentSeason, currentWeek, selecte
             sortStateRan.current = true
         } else {
             if (pathname === "/weekly") {
-                getPicks(selectedOption.season, selectedOption.week, sorts.order, [sorts.gp && "gp", sorts.group_number && "group_number"].filter(x => x))
+                getPicks(selectedOption.season, selectedOption.week, sorts.order, [sorts.rank && "rank", sorts.gp && "gp", sorts.group_number && "group_number"].filter(x => x))
                     .then(response => {
                         setData({ currentData: response.picks, dataHeaders: response.headers })
                     })
