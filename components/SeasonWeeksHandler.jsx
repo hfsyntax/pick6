@@ -62,6 +62,10 @@ export default function SeasonWeeksHandler({ currentSeason, currentWeek, selecte
     return (
         <>
                 <>
+                    <h1>{pathname === "/weekly" || pathname === "/games" ?
+                    `Week ${selectedOption.week} of Season ${selectedOption.season}` : 
+                    `Season ${selectedOption.season}`}
+                    </h1>
                     <div id="select-container">
                         <label>{pathname === "/weekly" ? "Select Week" : "Select Season"}&nbsp;</label>
                         <select onChange={handleSelection} defaultValue={selectedOption.id}>

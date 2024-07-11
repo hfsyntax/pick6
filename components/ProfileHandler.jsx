@@ -1,5 +1,4 @@
-import { getUserWeekPicks, getUserSeasonsData, getUser } from "../actions/serverRequests";
-import { getConfigValue } from "../lib/configHandler";
+import { getUserWeekPicks, getUserSeasonsData, getUser, getConfigValue } from "../actions/serverRequests";
 import OptimizedTable from "./OptimizedTable";
 
 export default async function ProfileHandler({ id }) {

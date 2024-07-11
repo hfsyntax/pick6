@@ -1,4 +1,4 @@
-import { getConfigValue } from "../../lib/configHandler"
+import { getConfigValue } from "../../actions/serverRequests"
 import AdminUtilityHandler from "../../components/AdminUtilityHandler"
 import SessionTimeout from "../../components/SessionTimeout"
 

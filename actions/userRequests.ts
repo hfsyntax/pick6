@@ -1,6 +1,6 @@
 "use server"
 import { getSession } from "../lib/session"
-import { getConfigValue } from "../lib/configHandler"
+import { getConfigValue } from "../actions/serverRequests"
 import { revalidatePath } from "next/cache"
 import { redirect } from "next/navigation"
 import { hash, compare, genSalt } from "bcryptjs"

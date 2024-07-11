@@ -1,5 +1,4 @@
-import { getSeasons, getSeasonStats} from "../../actions/serverRequests";
-import { getConfigValue } from "../../lib/configHandler";
+import { getSeasons, getSeasonStats, getConfigValue} from "../../actions/serverRequests";
 import SeasonWeeksHandler from "../../components/SeasonWeeksHandler"
 
 export const metadata = {
@@ -15,7 +14,6 @@ export default async function Season() {
     return (
         <div id="container">
             <h1>Pick6 - Season</h1>
-            <h1>Season {currentSeason ? currentSeason : "N/A"}</h1>
             {seasons.length > 0 ? <SeasonWeeksHandler
             currentSeason={currentSeason}
             selectedId={seasonID}

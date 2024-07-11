@@ -1,5 +1,4 @@
-import { getWeekGames, isTimerPaused, calculateTimeUntilReset } from "../../actions/serverRequests";
-import { getConfigValue } from "../../lib/configHandler";
+import { getWeekGames, isTimerPaused, calculateTimeUntilReset, getConfigValue } from "../../actions/serverRequests";
 import TeamsHandler from "../../components/TeamsHandler"
 
 export const metadata = {
@@ -16,7 +15,7 @@ export default async function Teams() {
     return (
         <div id="container">
             <h1>Pick6 - Select Teams</h1>
-            <h1>Week {currentWeek ? currentWeek : "N/A"} of Season {currentSeason ? currentSeason : "N/A"}</h1>
+            {weekGames?.length > 0 && <h1>Week {currentWeek ? currentWeek : "N/A"} of Season {currentSeason ? currentSeason : "N/A"}</h1>}
             {currentSeason && currentWeek ? (<TeamsHandler 
             weekGames={weekGames}
             timerPaused={timerPaused}

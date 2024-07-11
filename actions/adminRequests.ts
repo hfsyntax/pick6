@@ -1,6 +1,7 @@
 "use server"
+import { getConfigValue } from "./serverRequests"
 import { getSession } from "../lib/session"
-import { getConfigValue, setConfigValue } from "../lib/configHandler"
+import { setConfigValue } from "../lib/configHandler"
 import { redirect } from "next/navigation"
 import { revalidatePath } from "next/cache"
 import { createWriteStream } from "fs"

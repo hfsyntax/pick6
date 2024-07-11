@@ -1,5 +1,4 @@
-import { getWeeks, getPicks  } from "../../actions/serverRequests";
-import { getConfigValue } from "../../lib/configHandler";
+import { getWeeks, getPicks, getConfigValue  } from "../../actions/serverRequests";
 import SeasonWeeksHandler from "../../components/SeasonWeeksHandler";
 
 export const metadata = {

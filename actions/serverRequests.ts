@@ -5,10 +5,14 @@ import { truncate as truncateFn } from "fs"
 import { promisify } from "util"
 import { revalidatePath } from "next/cache"
 import { getSession } from "../lib/session"
-import { sql } from '@vercel/postgres';
-import { getConfigValue } from "../lib/configHandler"
+import { QueryResultRow, sql } from '@vercel/postgres';
 
 const truncate = promisify(truncateFn)
+
+export async function getConfigValue(key: string) : Promise<QueryResultRow[string]> {
+    const queryResult = await sql`SELECT value from app_settings WHERE key = ${key}`
+    return queryResult?.rows?.[0]?.value
+}
 
 export const getSeasons = cache(async () => {
     const queryResult = await sql`SELECT * FROM Seasons`
