@@ -32,7 +32,7 @@ export async function decrypt(input: string): Promise<any> {
 async function validateRecaptcha(token: string) {
   const recaptchaResponse = await fetch(`https://www.google.com/recaptcha/api/siteverify?secret=${process.env.RECAPTCHA_SECRET_KEY}&response=${token}`)
   const responseBody = await recaptchaResponse.json()
-  return responseBody?.success && responseBody?.score > 0.5
+  return responseBody?.success && responseBody?.score >= 0.3
 }
 
 export async function login(prevState: string, formData: FormData) {
