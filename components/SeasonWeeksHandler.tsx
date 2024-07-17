@@ -1,10 +1,20 @@
 "use client"
+import type { QueryResultRow } from "@vercel/postgres"
 import { useState, useRef, useEffect, ChangeEvent, MouseEvent } from "react"
 import { usePathname } from "next/navigation"
 import { getPicks, getSeasonStats, getWeekGameResults, getWeekResults } from "../actions/serverRequests"
 import OptimizedTable from "./OptimizedTable"
 
-export default function SeasonWeeksHandler({ currentSeason, currentWeek, selectedId, selectOptions, initialData, headers }): JSX.Element {
+interface ComponentProps {
+    currentSeason: QueryResultRow[string],
+    currentWeek: QueryResultRow[string] | undefined,
+    selectedId: QueryResultRow[string],
+    selectOptions: QueryResultRow[],
+    initialData: any[],
+    headers: string[]
+}
+
+export default function SeasonWeeksHandler({ currentSeason, currentWeek, selectedId, selectOptions, initialData, headers }: ComponentProps): JSX.Element {
     const [selectedOption, setSelectedOption] = useState({ season: currentSeason, week: currentWeek, id: selectedId })
     const [data, setData] = useState({ currentData: initialData, dataHeaders: headers })
     const [sorts, setSorts] = useState({ "order": "asc", "rank": true, "gp": false, "group_number": false })

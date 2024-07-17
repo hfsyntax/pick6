@@ -1,16 +1,26 @@
 "use client"
-import { useEffect, useRef, useState, FormEvent } from "react"
+import type { FormEvent } from "react";
+import type { QueryResultRow } from "@vercel/postgres";
+import { useEffect, useRef, useState } from "react"
 import { useFormState } from "react-dom"
 import { handlePicks } from "../actions/userRequests";
 import { getSession } from "../lib/session";
 import OptimizedTable from "./OptimizedTable";
 
-export default function TeamsHandler({ weekGames, timerPaused, timerTime, currentSeason, currentWeek }) {
+interface ComponentProps {
+  weekGames: QueryResultRow[],
+  timerPaused: boolean,
+  timerTime: number,
+  currentSeason: QueryResultRow[string],
+  currentWeek: QueryResultRow[string],
+}
+
+export default function TeamsHandler({ weekGames, timerPaused, timerTime, currentSeason, currentWeek }: ComponentProps) {
   const [countdown, setCountdown] = useState<string>()
   const [formResponse, formAction] = useFormState(handlePicks, null)
   const [storePicks, setStorePicks] = useState({ key: null, values: null })
   const currentForm = useRef()
-  const updateCountdown = (timeUntilReset, paused) => {
+  const updateCountdown = (timeUntilReset: number, paused: boolean) => {
     // Convert the time until reset to days, hours, minutes, and seconds
     const days = Math.floor(timeUntilReset / (1000 * 60 * 60 * 24));
     const hours = Math.floor((timeUntilReset % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));

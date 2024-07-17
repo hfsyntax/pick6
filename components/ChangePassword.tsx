@@ -1,5 +1,6 @@
 "use client"
-import { useState, useEffect, useRef, FormEvent } from "react"
+import type { FormEvent } from "react"
+import { useState, useEffect, useRef } from "react"
 import { useFormState } from "react-dom"
 import { changePassword } from "../actions/userRequests"
 

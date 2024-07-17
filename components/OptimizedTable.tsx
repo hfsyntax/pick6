@@ -2,12 +2,14 @@
 import Image from "next/image"
 import Link from "next/link"
 import { Fragment, useEffect, useState } from "react"
+import type { CSSProperties } from "react"
 import { FixedSizeList, VariableSizeList } from "react-window"
+import type { QueryResultRow } from "@vercel/postgres"
 
-export default function OptimizedTable({ headers, rows }): JSX.Element {
+export default function OptimizedTable({ headers, rows }: {headers: string[], rows: QueryResultRow[]}): JSX.Element {
     // calculation to render winners and losers
     const [rowData, setRowData] = useState({rowHeights: {0: 50}, totalPlayers: 0, additionalHeight: 0})
-    const getItemSize = index => rowData.rowHeights[index]
+    const getItemSize = (index: number) => rowData.rowHeights[index]
     const headerSize = 50
     const playerCellSize = 30
     
@@ -30,7 +32,7 @@ export default function OptimizedTable({ headers, rows }): JSX.Element {
         setRowData({rowHeights: newRowHeights, totalPlayers: totalPlayers, additionalHeight: additionalHeight})
     }, [])
 
-    const Row = ({ index, style }) => {
+    const Row = ({ index, style }: {index: number, style: CSSProperties}): JSX.Element => {
         return (
             <div key={`row_${index}`} className={index === 0 ? 'list-item header' : 'list-item'} style={style}>
                 {index === 0 ?

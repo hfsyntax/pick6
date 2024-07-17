@@ -7,7 +7,7 @@ import Image from "next/image"
 import { getProfilePictureURL } from "../actions/serverRequests"
 import { updateProfilePictureURL } from "../actions/userRequests"
 
-export default function ProfilePictureHandler({ pictureURL }): JSX.Element {
+export default function ProfilePictureHandler({ pictureURL }: {pictureURL: string}): JSX.Element {
     const fileInput = useRef<HTMLInputElement>()
     const [url, setUrl] = useState(pictureURL)
     const { edgestore } = useEdgeStore()
