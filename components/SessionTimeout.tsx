@@ -4,9 +4,9 @@ import { faXmark } from "@fortawesome/free-solid-svg-icons"
 import { useEffect, useState } from "react"
 import { getSession, redirectToLogin } from "../lib/session"
 
-export default function SessionTimeout() {
+export default function SessionTimeout(): JSX.Element {
     const [message, showMessage] = useState("none")
-    const [redirectTimeout, setRedirectTimeout] = useState()
+    const [redirectTimeout, setRedirectTimeout] = useState<NodeJS.Timeout>()
     
     const promptSessionTimeout = async () => {
         const session = await getSession()

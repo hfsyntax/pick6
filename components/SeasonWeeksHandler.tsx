@@ -1,17 +1,17 @@
 "use client"
-import { useState, useRef, useEffect } from "react"
+import { useState, useRef, useEffect, ChangeEvent, MouseEvent } from "react"
 import { usePathname } from "next/navigation"
 import { getPicks, getSeasonStats, getWeekGameResults, getWeekResults } from "../actions/serverRequests"
 import OptimizedTable from "./OptimizedTable"
 
-export default function SeasonWeeksHandler({ currentSeason, currentWeek, selectedId, selectOptions, initialData, headers }) {
+export default function SeasonWeeksHandler({ currentSeason, currentWeek, selectedId, selectOptions, initialData, headers }): JSX.Element {
     const [selectedOption, setSelectedOption] = useState({ season: currentSeason, week: currentWeek, id: selectedId })
     const [data, setData] = useState({ currentData: initialData, dataHeaders: headers })
     const [sorts, setSorts] = useState({ "order": "asc", "rank": true, "gp": false, "group_number": false })
     const sortStateRan = useRef(false)
     const pathname = usePathname()
 
-    const handleSelection = async (event) => {
+    const handleSelection = async (event: ChangeEvent<HTMLSelectElement>) => {
         const currentOption = event.target.options[event.target.selectedIndex]
         const selectedOptionId = currentOption.value
         const selectedSeason = currentOption.getAttribute("data-season")
@@ -32,8 +32,8 @@ export default function SeasonWeeksHandler({ currentSeason, currentWeek, selecte
         }
     }
 
-    const handleCheckbox = async (event) => {
-        const { id, checked } = event.target
+    const handleCheckbox = async (event: MouseEvent<HTMLInputElement>) => {
+        const { id, checked } = event.currentTarget
         if (id === "desc") {
             setSorts({ ...sorts, "order": checked ? "desc" : "asc" })
         } else {

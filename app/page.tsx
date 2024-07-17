@@ -1,5 +1,5 @@
 import Login from "../components/Login";
-export default async function Page() {
+export default function Page(): JSX.Element {
   return (
     <div id="container">
       <Login />

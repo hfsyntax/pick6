@@ -5,10 +5,10 @@ import { useFormState } from "react-dom"
 import { useEffect, useRef, useState } from "react"
 import ReCAPTCHA from 'react-google-recaptcha'
 
-export default function Login() {
+export default function Login(): JSX.Element {
     const recaptchaSiteKey = "6LeBoQsqAAAAAPgRejKkDo695uUkDlPre8Os5MyB"
-    const recaptcha = useRef()
-    const currentForm = useRef()
+    const recaptcha = useRef<ReCAPTCHA>()
+    const currentForm = useRef<HTMLFormElement>()
     const [formResponse, formAction] = useFormState(login, null)
     const [formState, setFormState] = useState({
         error: null,

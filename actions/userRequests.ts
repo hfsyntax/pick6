@@ -6,7 +6,7 @@ import { redirect } from "next/navigation"
 import { hash, compare, genSalt } from "bcryptjs"
 import { sql } from '@vercel/postgres';
 
-export async function handlePicks(prevState: string, formData: FormData) {
+export async function handlePicks(prevState: any, formData: FormData) {
     const session = await getSession()
 
     if (!session) {
@@ -141,7 +141,7 @@ export async function handlePicks(prevState: string, formData: FormData) {
     return { message: `Sucessfully set picks for week ${currentWeek} of season ${currentSeason}` }
 }
 
-export async function changePassword(prevState: string, formData: FormData) {
+export async function changePassword(prevState: any, formData: FormData) {
     const currentPassword = String(formData.get("currentPassword"))
     const newPassword = String(formData.get("newPassword"))
     const confirmNewPassword = String(formData.get("confirmNewPassword"))

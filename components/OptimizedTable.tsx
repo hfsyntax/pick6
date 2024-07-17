@@ -4,7 +4,7 @@ import Link from "next/link"
 import { Fragment, useEffect, useState } from "react"
 import { FixedSizeList, VariableSizeList } from "react-window"
 
-export default function OptimizedTable({ className, headers, rows }) {
+export default function OptimizedTable({ headers, rows }): JSX.Element {
     // calculation to render winners and losers
     const [rowData, setRowData] = useState({rowHeights: {0: 50}, totalPlayers: 0, additionalHeight: 0})
     const getItemSize = index => rowData.rowHeights[index]

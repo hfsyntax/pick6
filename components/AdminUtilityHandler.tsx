@@ -1,5 +1,6 @@
 "use client"
-import { useState, useRef, useEffect } from "react";
+import type { QueryResultRow } from "@vercel/postgres";
+import { useState, useRef, useEffect, ChangeEvent, MouseEvent, FormEvent } from "react";
 import Link from "next/link";
 import { handleAdminForm, revalidateCache } from "../actions/adminRequests";
 import { useFormState } from "react-dom"
@@ -7,10 +8,17 @@ import { clearUserCredentialsFile } from "../actions/serverRequests";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 import { faXmark } from "@fortawesome/free-solid-svg-icons"
 
-export default function AdminUtilityHandler({ season, week, timerStatus, resetTime }) {
+interface ComponentProps {
+    season: QueryResultRow[string],
+    week: QueryResultRow[string],
+    timerStatus: string,
+    resetTime: string
+}
+
+export default function AdminUtilityHandler({ season, week, timerStatus, resetTime }: ComponentProps): JSX.Element {
     const [option, setOption] = useState("Upload Games")
     const [fromFile, setFromFile] = useState(false)
-    const [message, showMessage] = useState({display: "none", text: null})
+    const [message, showMessage] = useState({ display: "none", text: null })
     const [refreshButton, setRefreshButton] = useState({
         disabled: false,
         text: "Refresh Data"
@@ -20,22 +28,22 @@ export default function AdminUtilityHandler({ season, week, timerStatus, resetTi
         text: "Submit"
     })
     const [formResponse, formAction] = useFormState(handleAdminForm, null)
-    const [formMessage, setFormMessage] = useState({message: null, error: null})
-    const currentForm = useRef()
+    const [formMessage, setFormMessage] = useState({ message: null, error: null })
+    const currentForm = useRef<HTMLFormElement>()
     const formMessageSet = useRef(false)
 
-    const selectHandler = async (event) => {
+    const selectHandler = async (event: ChangeEvent<HTMLSelectElement>) => {
         setOption(event.target.value)
     }
 
-    const checkboxHandler = async (event) => {
-        event.target.name === "" ?
-            setFromFile(event.target.checked) : null
+    const checkboxHandler = async (event: MouseEvent<HTMLInputElement>) => {
+        event.currentTarget.name === "" ?
+            setFromFile(event.currentTarget.checked) : null
     }
 
-    const submitHandler = async (event) => {
+    const submitHandler = async (event: FormEvent<HTMLFormElement>) => {
         event.preventDefault()
-        const formData = new FormData(event.target)
+        const formData = new FormData(event.target as HTMLFormElement)
         formData.append("option", option)
         formMessageSet.current = false
         formAction(formData)
@@ -45,17 +53,17 @@ export default function AdminUtilityHandler({ season, week, timerStatus, resetTi
         })
     }
 
-    const refreshData = async (event) => {
-        setRefreshButton({text: "loading...", disabled: true})
+    const refreshData = async (event: MouseEvent<HTMLButtonElement>) => {
+        setRefreshButton({ text: "loading...", disabled: true })
         const response = await revalidateCache()
-        showMessage({display: "block", text: response})
+        showMessage({ display: "block", text: response })
     }
 
     const closeModal = () => {
         if (message.display === "block") {
-            showMessage({display: "none", text: null})
-            if (refreshButton.disabled) 
-            setRefreshButton({text: "Refresh Data", disabled: false})
+            showMessage({ display: "none", text: null })
+            if (refreshButton.disabled)
+                setRefreshButton({ text: "Refresh Data", disabled: false })
         }
     }
 
@@ -64,39 +72,39 @@ export default function AdminUtilityHandler({ season, week, timerStatus, resetTi
         if (formResponse?.message) {
             if (option === "Upload Picks") {
                 fetch("/api/downloadCredentials")
-                .then(async response => {
-                    if (response.ok) {
-                        if (response.status === 204) return // empty user credentials file
-                        const blob = await response.blob()
-                        const url = window.URL.createObjectURL(blob)
-                        const a = document.createElement("a")
-                        a.style.display = "none"
-                        a.href = url
-                        a.download = 'user_credentials.csv'
-                        a.click()
-                        window.URL.revokeObjectURL(url)
-                        const csvresponse = await clearUserCredentialsFile()
-                        if (csvresponse) {
-                            showMessage({display: "block", text: "initiated download for new users csv file and cleared contents of existing server csv file"})
+                    .then(async response => {
+                        if (response.ok) {
+                            if (response.status === 204) return // empty user credentials file
+                            const blob = await response.blob()
+                            const url = window.URL.createObjectURL(blob)
+                            const a = document.createElement("a")
+                            a.style.display = "none"
+                            a.href = url
+                            a.download = 'user_credentials.csv'
+                            a.click()
+                            window.URL.revokeObjectURL(url)
+                            const csvresponse = await clearUserCredentialsFile()
+                            if (csvresponse) {
+                                showMessage({ display: "block", text: "initiated download for new users csv file and cleared contents of existing server csv file" })
+                            } else {
+                                showMessage({ display: "block", text: "initiated download for new users csv file but failed to clear existing server csv file" })
+                            }
                         } else {
-                            showMessage({display: "block", text: "initiated download for new users csv file but failed to clear existing server csv file"})
+                            showMessage({ display: "block", text: "Error: failed to download user credentials" })
                         }
-                    } else {
-                        showMessage({display: "block", text: "Error: failed to download user credentials"})
-                    }
-                })
+                    })
             }
             // reset the form before setting the form response
             if (option === "Upload Games") {
                 formMessageSet.current = true
-                setFormMessage({message: formResponse?.message, error: null})
+                setFormMessage({ message: formResponse?.message, error: null })
             } else {
                 setOption("Upload Games")
             }
-            
-            currentForm.current.reset()
+
+            currentForm?.current?.reset()
         } else if (formResponse?.error) {
-            setFormMessage({message: null, error: formResponse?.error} )
+            setFormMessage({ message: null, error: formResponse?.error })
         }
     }, [formResponse])
 
@@ -105,15 +113,15 @@ export default function AdminUtilityHandler({ season, week, timerStatus, resetTi
         if (formResponse?.message) {
             if (!formMessageSet.current) {
                 formMessageSet.current = true
-                setFormMessage({message: formResponse?.message, error: null})
-            } else {    
+                setFormMessage({ message: formResponse?.message, error: null })
+            } else {
                 // form success already set 
-                setFormMessage({message: null, error: null})
+                setFormMessage({ message: null, error: null })
             }
-            
+
         } else if (formResponse?.error) {
             if (formMessage.error) {
-                setFormMessage({message: null, error: null})
+                setFormMessage({ message: null, error: null })
             }
         }
     }, [option])
@@ -132,7 +140,7 @@ export default function AdminUtilityHandler({ season, week, timerStatus, resetTi
             <span><b>Current:&nbsp;</b>Week {week} of Season {season}</span>
             <span><b>Timer status:&nbsp;</b>{timerStatus}</span>
             <span><b>Timer Ends:&nbsp;</b>{resetTime}</span>
-            <button style={{width: "fit-content"}} onClick={refreshData} disabled={refreshButton.disabled}>{refreshButton.text}</button>
+            <button style={{ width: "fit-content" }} onClick={refreshData} disabled={refreshButton.disabled}>{refreshButton.text}</button>
 
             <form ref={currentForm} className="default-form" onSubmit={submitHandler}>
                 <div>
@@ -228,14 +236,14 @@ export default function AdminUtilityHandler({ season, week, timerStatus, resetTi
                 <ul>
                     {formMessage?.message &&
                         (formMessage?.message.includes("<br/>") ?
-                        formMessage?.message.split("<br/>").map((text, index) => (
+                            formMessage?.message.split("<br/>").map((text, index) => (
                                 text !== "" && <li key={index}><b style={{ color: "green" }}>{text}</b></li>
                             ))
                             : <li key={"0"}><b style={{ color: "green" }}>{formMessage?.message}</b></li>)
                     }
                     {formMessage?.error &&
                         (formMessage?.error.includes("<br/>") ?
-                        formMessage?.error.split("<br/>").map((text, index) => (
+                            formMessage?.error.split("<br/>").map((text, index) => (
                                 text !== "" && <li key={index}><b style={{ color: "red" }}>{text}</b></li>
                             ))
                             : <li key={"0"}><b style={{ color: "red" }}>{formMessage?.error}</b></li>)

@@ -1,7 +1,7 @@
 import { getUserWeekPicks, getUserSeasonsData, getUser, getConfigValue } from "../actions/serverRequests";
 import OptimizedTable from "./OptimizedTable";
 
-export default async function ProfileHandler({ id }) {
+export default async function ProfileHandler({ id }): Promise<JSX.Element> {
     const currentSeason = await getConfigValue("CURRENT_SEASON")
     const currentWeek = await getConfigValue("CURRENT_WEEK")
     const user = await getUser(id)

@@ -4,7 +4,7 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 import { faUserPlus, faUsers, faChartSimple, faFlagCheckered, faCalendar, faWrench } from "@fortawesome/free-solid-svg-icons"
 import { usePathname } from "next/navigation"
 
-export default function Sidebar({sessionType}) {
+export default function Sidebar({sessionType}): JSX.Element {
     const pathname = usePathname()
     return (
         <div className="sidebar">

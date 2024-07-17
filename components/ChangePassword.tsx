@@ -1,23 +1,23 @@
 "use client"
-import { useState, useEffect, useRef } from "react"
+import { useState, useEffect, useRef, FormEvent } from "react"
 import { useFormState } from "react-dom"
 import { changePassword } from "../actions/userRequests"
 
-export default function ChangePassword({session}) {
+export default function ChangePassword({session}): JSX.Element {
     const [showForm, setShowForm] = useState(false)
     const [formResponse, formAction] = useFormState(changePassword, null)
-    const currentForm = useRef()
-    const formMessage = useRef()
-    const [sumbitButton, setSumbitButton] = useState()
+    const currentForm = useRef<HTMLFormElement>()
+    const formMessage = useRef({message: null, error: null})
+    const [sumbitButton, setSumbitButton] = useState({disabled: false, text: "Submit"})
 
     const toggleForm = () => {
         formMessage.current = null
         setShowForm(!showForm)
     }
 
-    const handleForm = (event) => {
+    const handleForm = (event: FormEvent<HTMLFormElement>) => {
         event.preventDefault()
-        const formData = new FormData(event.target)
+        const formData = new FormData(event.target as HTMLFormElement)
         formAction(formData)
         setSumbitButton({
             disabled: true,
@@ -28,10 +28,10 @@ export default function ChangePassword({session}) {
     useEffect(() => {
         setSumbitButton({ disabled: false, text: "Submit" })
         if (formResponse?.message) {
-            formMessage.current = {message: formResponse?.message}
+            formMessage.current = {message: formResponse?.message, error: null}
             currentForm.current.reset()
         } else if (formResponse?.error) {
-            formMessage.current = {error: formResponse?.error} 
+            formMessage.current = {message: null, error: formResponse?.error} 
         }
     }, [formResponse])
 

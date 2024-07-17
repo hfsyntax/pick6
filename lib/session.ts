@@ -35,7 +35,7 @@ async function validateRecaptcha(token: string) {
   return responseBody?.success && responseBody?.score >= 0.3
 }
 
-export async function login(prevState: string, formData: FormData) {
+export async function login(prevState: any, formData: FormData) {
   // Verify credentials && get the user
   const username = String(formData.get("username"))
   const password = String(formData.get("password"))

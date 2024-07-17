@@ -1262,7 +1262,7 @@ export async function revalidateCache() {
     return "Successfully refreshed data"
 }
 
-export async function handleAdminForm(prevState: string, formData: FormData) {
+export async function handleAdminForm(prevState: any, formData: FormData) {
     const session = await getSession()
 
     if (!session) {

@@ -3,7 +3,7 @@ import { logout } from "../lib/session";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 import { faRightFromBracket } from "@fortawesome/free-solid-svg-icons"
 
-export default function LogoutButton() {
+export default function LogoutButton(): JSX.Element {
     const handleSubmit = async () => {
         await logout()
     }

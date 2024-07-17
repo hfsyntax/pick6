@@ -1,12 +1,12 @@
 "use client"
-import { useEffect, useRef, useState } from "react"
+import { useEffect, useRef, useState, FormEvent } from "react"
 import { useFormState } from "react-dom"
 import { handlePicks } from "../actions/userRequests";
 import { getSession } from "../lib/session";
 import OptimizedTable from "./OptimizedTable";
 
 export default function TeamsHandler({ weekGames, timerPaused, timerTime, currentSeason, currentWeek }) {
-  const [countdown, setCountdown] = useState()
+  const [countdown, setCountdown] = useState<string>()
   const [formResponse, formAction] = useFormState(handlePicks, null)
   const [storePicks, setStorePicks] = useState({ key: null, values: null })
   const currentForm = useRef()
@@ -29,11 +29,11 @@ export default function TeamsHandler({ weekGames, timerPaused, timerTime, curren
     }
   }
 
-  const submitHandler = async (event) => {
+  const submitHandler = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
     const session = await getSession()
     const username = session?.user?.username
-    const teamCheckboxes = document.querySelectorAll("input[type='checkbox']")
+    const teamCheckboxes = document.querySelectorAll<HTMLInputElement>("input[type='checkbox']")
     const selections = {}
     for (let checkbox of teamCheckboxes) {
       const teamID = checkbox.name
@@ -62,12 +62,12 @@ export default function TeamsHandler({ weekGames, timerPaused, timerTime, curren
   useEffect(() => {
     getSession()
       .then(result => {
-        const teamCheckboxes = document.querySelectorAll("input[type='checkbox']")
+        const teamCheckboxes = document.querySelectorAll<HTMLInputElement>("input[type='checkbox']")
         const username = result?.user?.username
-        const picks = JSON.parse(localStorage.getItem(`${username}_picks`))
+        const picks: object | null = JSON.parse(localStorage.getItem(`${username}_picks`))
         if (picks) {
           // every pick matches current week
-          const picksCurrentWeek = Object.values(picks).every(value => {
+          const picksCurrentWeek = Object.values(picks).every((value: string) => {
             const [season, week] = value.split('-');
             return season === currentSeason && week === currentWeek;
           })
