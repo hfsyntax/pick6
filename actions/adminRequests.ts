@@ -60,7 +60,7 @@ async function toggleTimer(): Promise<FormResult> {
 
 async function setTimer(time: FormDataEntryValue = ""): Promise<FormResult> {
     try {
-        const addedTime = time ? ms(time.toString()) : ms("7d")
+        const addedTime = time ? ms(time.toString().trim()) : ms("7d")
         const newTime = new Date(Date.now() + addedTime)
         await setConfigValue("TARGET_RESET_TIME", newTime.getTime())
         revalidatePath("/teams")
@@ -74,8 +74,8 @@ async function setTimer(time: FormDataEntryValue = ""): Promise<FormResult> {
 
 async function setSeasonAndWeek(season: FormDataEntryValue = "", week: FormDataEntryValue = ""): Promise<FormResult> {
     try {
-        const targetSeason = isNaN(Number(season)) ? 0 : Number(season)
-        const targetWeek = isNaN(Number(week)) ? 0 : Number(week)
+        const targetSeason = isNaN(Number(season.toString().trim())) ? 0 : Number(season)
+        const targetWeek = isNaN(Number(week.toString().trim())) ? 0 : Number(week)
         const timerPaused = await getConfigValue("TIMER_PAUSED")
         let currentSeason = Number(await getConfigValue("CURRENT_SEASON"))
         let currentWeek = Number(await getConfigValue("CURRENT_WEEK"))
@@ -171,6 +171,11 @@ async function insertUser(formData: FormData): Promise<FormResult> {
             return { error: `Error: the season/week need to be set to a value greater than 0 before users can be created.` }
         }
 
+        if (currentWeek !== 1) {
+            revalidatePath("/admin_utility")
+            return { error: `Error: new users cannot be created after week 1 of the season` }
+        }
+
         let username = formData.get("username")
         let password = formData.get("password")
         let userType = formData.get("userType")
@@ -182,9 +187,9 @@ async function insertUser(formData: FormData): Promise<FormResult> {
         if (username && password && userType && group && groupNumber) {
             username = String(username).trim().replace(/[^a-zA-Z0-9]/, "").toLowerCase()
             password = String(password)
-            userType = String(userType).toLowerCase()
-            group = String(group).toUpperCase()
-            groupNumber = String(groupNumber)
+            userType = String(userType).toLowerCase().trim()
+            group = String(group).toUpperCase().trim()
+            groupNumber = String(groupNumber).trim()
 
             if (isNaN(parseInt(groupNumber))) {
                 revalidatePath("/admin_utility")
@@ -213,6 +218,12 @@ async function insertUser(formData: FormData): Promise<FormResult> {
                 return { error: "Error: username already exists." }
             }
 
+            queryResult = await sql`SELECT group_number from players where gp = ${group} AND group_number = ${groupNumber}`
+            if (queryResult.rowCount > 0) {
+                revalidatePath("/admin_utility")
+                return { error: `Error: group number ${groupNumber} already exists for group ${group}.` }
+            }
+
             const salt = await genSalt()
             const hashed_password = await hash(password, salt)
             await sql`INSERT INTO playerauth (type, username, password)
@@ -231,6 +242,7 @@ async function insertUser(formData: FormData): Promise<FormResult> {
         else if (fileInput) {
             const text = await fileInput.text()
             const type = fileInput.type
+            const groups = {}
 
             if (type !== "text/plain" && type !== "text/csv") {
                 revalidatePath("/admin_utility")
@@ -245,29 +257,39 @@ async function insertUser(formData: FormData): Promise<FormResult> {
             const lines = text.trim().split(/\r?\n|\r/)
             let skippedLines = [] as String[]
             let successfulEntires = 0
-            const createdUsers = []
-            const createTempUserSql = "INSERT INTO TempPlayerAuth (type, username, password, sha256) VALUES ";
+            const createdUsers = {}
+            const createTempUserSql = "INSERT INTO tempplayerauth (type, username, password, sha256, gp, group_number) VALUES ";
             const createTempValues = [] as String[]
-            const createPlayerSql = "INSERT INTO Players (player_id, name, gp, group_number) VALUES ";
+            const createPlayerSql = "INSERT INTO players (player_id, name, gp, group_number) VALUES ";
             const createPlayerValues = [] as String[]
 
             //username,password,gp,type,group_number
             for (let line of lines) {
                 if (line.match(/^[a-zA-Z0-9]+\s*,\s*[a-zA-Z0-9]+\s*,\s*[a-zA-Z0-9]+\s*,\s*(admin|user)\s*,\s*[0-9]+\s*$/)) {
                     const userData = line.split(",")
-                    const username = userData[0].toLowerCase()
+                    const username = userData[0].toLowerCase().trim()
                     const password = userData[1]
+                    const group = userData[2].toUpperCase().trim()
+                    const groupNumber = userData[4].trim()
 
                     if (!password.match(/^(?=.*[A-Z])(?=.*\d).{6,}$/)) {
                         skippedLines.push(`Line: ${line} (password must contain at least 6 characters, 1 uppercase letter and 1 number)<br/>`)
                         continue
                     }
 
+                    if (!groups[group]) {
+                        groups[group] = new Set()
+                    }
+
+                    if (groups[group].has(groupNumber)) {
+                        skippedLines.push(`Line: ${line} (duplicate group number)<br/>`)
+                        continue
+                    }
+
                     const salt = await genSalt(1)
                     const hashed_password = await hash(password, salt)
-                    const group = userData[2].toUpperCase()
-                    const userType = userData[3].toLowerCase()
-                    const groupNumber = userData[4]
+                    const userType = userData[3].toLowerCase().trim()
+
 
                     if (isNaN(parseInt(groupNumber))) {
                         skippedLines.push(`Line: ${line} (group number must be a number)`)
@@ -283,7 +305,8 @@ async function insertUser(formData: FormData): Promise<FormResult> {
                             "groupNumber": groupNumber,
                             "authID": null
                         }
-                        createTempValues.push(`('${userType}', '${username}', '${hashed_password}', '0')`)
+                        groups[group].add(groupNumber)
+                        createTempValues.push(`('${userType}', '${username}', '${hashed_password}', '0', '${group}', '${groupNumber}')`)
                     }
                 } else {
                     skippedLines.push(`Line: ${line} (invalid format)<br/>`)
@@ -291,8 +314,7 @@ async function insertUser(formData: FormData): Promise<FormResult> {
             }
 
             if (Object.keys(createdUsers).length > 0) {
-                await sql`TRUNCATE TABLE TempPlayerAuth`
-
+                await sql`TRUNCATE TABLE tempplayerauth`
                 const batchSize = 1000000
                 for (let i = 0; i < createTempValues.length; i += batchSize) {
                     const batch = createTempValues.slice(i, i + batchSize)
@@ -310,6 +332,22 @@ async function insertUser(formData: FormData): Promise<FormResult> {
                         const existingUser = row["username"]
                         skippedLines.push(`${existingUser} (username already exists)<br/>`)
                     }
+                }
+
+                // detect duplicate group and group number TODO
+                const duplicateGroupIdQuery = await sql`
+                SELECT ta.username
+                FROM tempplayerauth ta
+                WHERE EXISTS (
+                    SELECT 1
+                    FROM players pa
+                    WHERE pa.group_number = ta.group_number
+                    AND pa.gp = ta.gp
+                )`
+
+                if (duplicateGroupIdQuery.rowCount > 0) {
+                    revalidatePath("/admin_utility")
+                    return { error: `Error: found new users with duplicate group and group numbers: ${duplicateGroupIdQuery.rows.map(user => user).join(", ")}` }
                 }
 
                 // insert new players
@@ -382,7 +420,7 @@ async function deleteUser(formData: FormData): Promise<FormResult> {
     try {
         // single deletion
         if (formData.get("username")) {
-            const username = formData.get("username") as string
+            const username = String(formData.get("username")).trim()
             const authIDRow = await sql`SELECT auth_id, is_active FROM playerauth WHERE username = ${username}`
 
             if (authIDRow.rowCount === 0) {
@@ -565,7 +603,7 @@ async function uploadGames(formData: FormData): Promise<FormResult> {
             const line = fileTextByLine[i].split(",")
             const lineEmpty = line.every(entry => entry.trim() === "")
             if (line.length >= 5 && !lineEmpty) {
-                const gameNumber = Number(line[0])
+                const gameNumber = Number(line[0].trim())
                 const favorite = line[2].trim()
                 const spread = Number(line[3].trim())
                 const underdog = line[4].trim()
@@ -1093,8 +1131,8 @@ async function uploadPicks(formData: FormData): Promise<FormResult> {
             return { error: `Error: no games have been uploaded for week ${currentWeek} of season ${currentSeason}` }
         }
 
-        const createdUsers = []
-        const createTempUserSql = "INSERT INTO tempplayerauth (username, password, sha256) VALUES ";
+        const createdUsers = {}
+        const createTempUserSql = "INSERT INTO tempplayerauth (username, password, sha256, gp, group_number) VALUES ";
         const createTempUserValues = [];
         const createPlayerSql = "INSERT INTO players (player_id, name, gp, group_number) VALUES ";
         const createPlayerValues = [];
@@ -1103,23 +1141,32 @@ async function uploadPicks(formData: FormData): Promise<FormResult> {
         const createWeekStatSql = "INSERT INTO playerweekstats (player_id, season_number, week_number, rank, won, lost, played, win_percentage, gp, group_number) VALUES ";
         const createWeekStatValues = [];
         const skippedLines = []
-
+        const groups = {}
         const fileTextByLine = fileText.trim().split(/\r?\n|\r/)
         const firstLine = fileTextByLine[0].split(",").filter(text => text !== "")
         for (let i = 1; i < fileTextByLine.length; i++) {
             const line = fileTextByLine[i].split(",").filter(text => text !== "")
             if (line.length >= firstLine.length) {
-                const groupNumber = line[0]
+                const groupNumber = line[0].trim()
 
                 if (isNaN(parseInt(groupNumber))) {
                     skippedLines.push(`found invalid group number for player ${line[2]}<br/>`)
                     continue
                 }
 
-                const group = line[1]
+                const group = line[1].trim()
 
                 if (group.length !== 2) {
                     skippedLines.push(`found invalid group not of length 2 for player ${line[2]}<br/>`)
+                    continue
+                }
+
+                if (!groups[group]) {
+                    groups[group] = new Set()
+                }
+
+                if (groups[group].has(groupNumber)) {
+                    skippedLines.push(`found duplicate group number: ${groupNumber} for group: ${group} for player ${line[2]}<br/>`)
                     continue
                 }
 
@@ -1137,7 +1184,8 @@ async function uploadPicks(formData: FormData): Promise<FormResult> {
                         "groupNumber": groupNumber,
                         "new": false
                     }
-                    createTempUserValues.push(`('${playerName}', '${hashedPassword}', '1')`)
+                    groups[group].add(groupNumber)
+                    createTempUserValues.push(`('${playerName}', '${hashedPassword}', '1', '${group}', '${groupNumber}')`)
                 } else {
                     skippedLines.push(`player ${line[2]} skipped due to no alphanumeric characters or is a duplicate<br/>`)
                     continue
@@ -1160,13 +1208,35 @@ async function uploadPicks(formData: FormData): Promise<FormResult> {
 
         // mark new players
         const newUsers = []
-        const newUsersQuery = await sql`SELECT ta.username FROM TempPlayerAuth ta
+        const newUsersQuery = await sql`SELECT ta.username FROM tempplayerauth ta
             LEFT JOIN PlayerAuth pa ON ta.username = pa.username
             WHERE pa.username IS NULL`
+
+        // ensure group and group number does not already exist
+        const duplicateGroupIdQuery = await sql`
+        SELECT t.username
+        FROM tempplayerauth t
+        WHERE EXISTS (
+            SELECT 1
+            FROM players p
+            WHERE p.group_number = t.group_number
+            AND p.gp = t.gp
+        )`
+
+        if (duplicateGroupIdQuery.rowCount > 0) {
+            revalidatePath("/admin_utility")
+            return { error: `Error: found new players with duplicate group and group numbers: ${duplicateGroupIdQuery.rows.map(user => user).join(", ")}` }
+        }
 
         if (currentWeek !== "1" && newUsersQuery.rowCount > 0) {
             revalidatePath("/admin_utility")
             return { error: `Error: found new players after the first week: ${newUsersQuery.rows.map(user => user.username).join(" ")}` }
+        }
+
+        // clear previously inserted players
+        if (currentWeek === "1") {
+            await sql`DELETE from playerseasonstats WHERE season_number = ${currentSeason}`
+            await sql`DELETE from playerweekstats WHERE season_number = ${currentSeason} AND week_number = ${currentWeek}`
         }
 
         for (let row of newUsersQuery.rows) {

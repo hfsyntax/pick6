@@ -188,7 +188,7 @@ export default function AdminUtilityHandler({ season, week, timerStatus, resetTi
                                                 <span>Inserts new users. Format for file uploads is: (user,password,gp,type,group_number) per line. Type is either admin or user</span>
                                                 <div>
                                                     <label>from file</label>
-                                                    <input type="checkbox" onClick={checkboxHandler}></input>
+                                                    <input type="checkbox" onClick={checkboxHandler} defaultChecked={fromFile}></input>
                                                 </div>
                                                 {fromFile ?
                                                     <input type="file" name="fileInput" required />
@@ -212,7 +212,7 @@ export default function AdminUtilityHandler({ season, week, timerStatus, resetTi
                                                     <span>If hard delete is checked all of the users data/stats will be removed otherwise it sets user(s) as inactive. Format for file uploads is: (user,user ...).</span>
                                                     <div>
                                                         <label>from file</label>
-                                                        <input type="checkbox" onClick={checkboxHandler}></input>
+                                                        <input type="checkbox" onClick={checkboxHandler} defaultChecked={fromFile}></input>
                                                         <label>Hard Delete</label>
                                                         <input type="checkbox" name="hardDelete" onClick={checkboxHandler}></input>
                                                     </div>
