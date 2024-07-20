@@ -1212,7 +1212,7 @@ async function uploadPicks(formData: FormData): Promise<FormResult> {
             LEFT JOIN PlayerAuth pa ON ta.username = pa.username
             WHERE pa.username IS NULL`
 
-        // ensure group and group number does not already exist
+        // ensure group and group number does not already exist at the start for the first week of a new season
         const duplicateGroupIdQuery = await sql`
         SELECT t.username
         FROM tempplayerauth t
@@ -1223,14 +1223,32 @@ async function uploadPicks(formData: FormData): Promise<FormResult> {
             AND p.gp = t.gp
         )`
 
-        if (duplicateGroupIdQuery.rowCount > 0) {
+        if (currentWeek === "1" && duplicateGroupIdQuery.rowCount > 0) {
             revalidatePath("/admin_utility")
-            return { error: `Error: found new players with duplicate group and group numbers: ${duplicateGroupIdQuery.rows.map(user => user).join(", ")}` }
+            return { error: `Error: found new players with duplicate group and group numbers: ${duplicateGroupIdQuery.rows.map(user => user.username).join(", ")}` }
         }
 
         if (currentWeek !== "1" && newUsersQuery.rowCount > 0) {
             revalidatePath("/admin_utility")
             return { error: `Error: found new players after the first week: ${newUsersQuery.rows.map(user => user.username).join(" ")}` }
+        }
+
+        // check any insertions that do not match an existing player after the first week
+        const invalidPlayer = await sql`
+        SELECT t.username
+        FROM tempplayerauth t
+        JOIN playerauth a ON t.username = a.username
+        WHERE NOT EXISTS (
+            SELECT 1
+            FROM players p
+            WHERE p.player_id = a.auth_id
+            AND p.group_number = t.group_number
+            AND p.gp = t.gp
+        )`
+
+        if (currentWeek !== "1" && invalidPlayer.rowCount > 0) {
+            revalidatePath("/admin_utility")
+            return { error: `Error: found existing players after the first week without the same username group and group number: ${invalidPlayer.rows.map(user => user.username).join(" ")}` }
         }
 
         // clear previously inserted players

@@ -51,7 +51,7 @@ export default function OptimizedTable({ headers, rows }: {headers: string[], ro
                                             .map((text, i) => (
                                                 <span key={`result_player_${i}`}>
                                                     <Image width={"25"} height={"25"} src={text.split(" ")[0] ? text.split(" ")[0] : "/img/default.png"} alt="profile_picture" />
-                                                    <Link href={`/profile/${text.split(" ")[2]}`}>&nbsp;{text.split(" ")[1]}</Link>
+                                                    <Link href={`/profile/${text.split(" ")[2]}`} draggable={false}>&nbsp;{text.split(" ")[1]}</Link>
                                                 </span>
                                             ))
                                         }
@@ -73,14 +73,14 @@ export default function OptimizedTable({ headers, rows }: {headers: string[], ro
                                         !["NONE!!!", "ROLL-OVER!!!"].includes(rows[index - 1][field]) ?
                                         <li key={`result_player_${index - 1}`} className={field === "loser_names" ? "loser" : null}>
                                             <Image width={25} height={25} src={rows[index - 1][field].split(" ")[0] ? rows[index - 1][field].split(" ")[0] : "/img/default.png"} alt="profile_picture" />
-                                            <Link href={`/profile/${rows[index - 1][field].split(" ")[2]}`}>&nbsp;{rows[index - 1][field].split(" ")[1]}</Link>
+                                            <Link href={`/profile/${rows[index - 1][field].split(" ")[2]}`} draggable={false}>&nbsp;{rows[index - 1][field].split(" ")[1]}</Link>
                                         </li>
                                         :
                                         // link to player profile
                                         (field === "player_name" ?
                                             <Fragment key={`player_profile_${index}`}>
                                                 <Image className="list-item-player" width={50} height={50} src={rows[index - 1]["picture_url"] ? rows[index - 1]["picture_url"] : "/img/default.png"} alt="profile_picture" />
-                                                <li className="list-item-player"><Link href={`/profile/${rows[index - 1]["player_id"]}`}>{rows[index - 1][field]}<br /></Link></li>
+                                                <li className="list-item-player"><Link href={`/profile/${rows[index - 1]["player_id"]}`} draggable={false}>{rows[index - 1][field]}<br /></Link></li>
                                             </Fragment>
                                             :
                                             <li key={`${field}_${index - 1}`} className={field === "loser_names" ? "loser" : null}>{rows[index - 1][field]}</li>)))
@@ -103,7 +103,8 @@ export default function OptimizedTable({ headers, rows }: {headers: string[], ro
             {Row}
         </VariableSizeList> :
         <FixedSizeList
-            className={"list"}
+            /* 50px row height * n rows < 500 -> unset the height */
+            className={rows?.length + 1 < 10 ? "list no-height" : "list"}
             height={500}
             itemCount={rows?.length + 1}
             itemSize={50}

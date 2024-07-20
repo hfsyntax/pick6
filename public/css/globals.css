@@ -275,6 +275,10 @@ table th,
     margin-top: 10px;
 }
 
+.no-height {
+    height: unset !important;
+}
+
 .list-item {
     display: flex;
     align-items: center;

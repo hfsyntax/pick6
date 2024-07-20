@@ -116,8 +116,8 @@ export const getWeekResults = cache(async (season: string, currentSeason: string
             w.week_number,
             COALESCE(pl.picture_url, '') || ' ' || pl.name || ' ' || pl.player_id AS loser_info,
             COALESCE(pw.picture_url, '') || ' ' || pw.name || ' ' || pw.player_id AS winner_info,
-            CASE WHEN ls.player_id IS NOT NULL THEN 1 ELSE 0 END AS is_loser,
-            CASE WHEN wn.player_id IS NOT NULL THEN 1 ELSE 0 END AS is_winner
+            ls.player_id AS loser_id,
+            wn.player_id AS winner_id
         FROM
             Weeks w
         LEFT JOIN Winners wn ON w.season_number = wn.season_number AND w.week_number = wn.week_number
@@ -135,8 +135,8 @@ export const getWeekResults = cache(async (season: string, currentSeason: string
             COALESCE(
                 string_agg(DISTINCT winner_info, '<br>' ORDER BY winner_info), 'ROLL-OVER!!!'
             ) AS winner_names,
-            SUM(is_loser) AS losers_count,
-            SUM(is_winner) AS winners_count
+            COUNT(DISTINCT loser_id) AS losers_count,
+            COUNT(DISTINCT winner_id) AS winners_count
         FROM
             players_info
         GROUP BY
