@@ -23,7 +23,6 @@
 package-lock.json
 /.vscode
 clear-cache.bat
-user_credentials.csv
 TODO
 
 # debug
