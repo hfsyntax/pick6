@@ -2,7 +2,6 @@ import { getSession } from "../../../lib/session"
 import { NextResponse } from "next/server"
 import { promises } from "fs"
 import { join } from "path"
-import { tmpdir } from "os"
 
 export async function GET() {
   const session = await getSession()
@@ -11,9 +10,7 @@ export async function GET() {
   }
 
   try {
-    const filePath = process.env.DEVELOPMENT
-      ? join(process.cwd(), "tmp", "user_credentials.csv")
-      : join(tmpdir(), "user_credentials.csv")
+    const filePath = join(process.cwd(), "user_credentials.csv")
     const buffer = await promises.readFile(filePath)
     if (buffer.length === 0) {
       return new Response(null, { status: 204 })

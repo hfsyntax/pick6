@@ -8,7 +8,6 @@ import ms from "ms"
 import { genSalt, hash } from "bcryptjs"
 import { sql } from "@vercel/postgres"
 import { join } from "path"
-import { tmpdir } from "os"
 
 function randomPassword(): string {
   let str = ""
@@ -1693,9 +1692,7 @@ async function uploadPicks(formData: FormData): Promise<FormResult> {
       const csvUserText = newUsers
         .map((user) => `${user.username},${user.password}`)
         .join("\n")
-      const filePath = process.env.DEVELOPMENT
-        ? join(process.cwd(), "tmp", "user_credentials.csv")
-        : join(tmpdir(), "user_credentials.csv")
+      const filePath = join(process.cwd(), "user_credentials.csv")
       const file = createWriteStream(filePath)
       file.write(csvUserText)
       file.end()
