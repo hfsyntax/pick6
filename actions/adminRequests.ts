@@ -3,11 +3,9 @@ import { getConfigValue } from "./serverRequests"
 import { getSession } from "../lib/session"
 import { redirect } from "next/navigation"
 import { revalidatePath } from "next/cache"
-import { createWriteStream } from "fs"
 import ms from "ms"
 import { genSalt, hash } from "bcryptjs"
 import { sql } from "@vercel/postgres"
-import { join } from "path"
 
 function randomPassword(): string {
   let str = ""
@@ -1688,14 +1686,24 @@ async function uploadPicks(formData: FormData): Promise<FormResult> {
       await sql.query(`${createPicksSql} ${batch.join()}`)
     }
 
+    let responseJson
     if (newUsers.length > 0) {
       const csvUserText = newUsers
         .map((user) => `${user.username},${user.password}`)
         .join("\n")
-      const filePath = join(process.cwd(), "user_credentials.csv")
-      const file = createWriteStream(filePath)
-      file.write(csvUserText)
-      file.end()
+      const fileBlob = new Blob([csvUserText], { type: "text/csv" })
+      const token = process.env.USER_CREDENTIALS_TOKEN
+      const formData = new FormData()
+      formData.append("file", fileBlob, "user_credentials.csv")
+      formData.append("token", token)
+      const response = await fetch(
+        `${process.env.WINDOW_ORIGIN}/api/addCredentials`,
+        {
+          method: "POST",
+          body: formData,
+        }
+      )
+      responseJson = await response.json()
     }
 
     if (currentWeek === "1") {
@@ -1704,8 +1712,13 @@ async function uploadPicks(formData: FormData): Promise<FormResult> {
 
     revalidatePath("/weekly")
     revalidatePath("/admin_utility")
-    return { message: `All picks from file created` }
+    return {
+      message: responseJson
+        ? responseJson.downloadUrl
+        : `All picks from file created`,
+    }
   } catch (error) {
+    console.error(error)
     revalidatePath("/admin_utility")
     if (error?.name === "AppConfigError") {
       return { error: "Error: failed to set/get app configuration variables" }

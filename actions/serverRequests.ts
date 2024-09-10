@@ -1,49 +1,48 @@
 "use server"
 import { cache } from "react"
-import { join } from "path"
-import { truncate as truncateFn } from "fs"
-import { promisify } from "util"
-import { revalidatePath } from "next/cache"
 import { getSession } from "../lib/session"
 import type { QueryResultRow } from "@vercel/postgres"
-import { sql } from '@vercel/postgres';
+import { sql } from "@vercel/postgres"
+import { list, del } from "@vercel/blob"
 
-const truncate = promisify(truncateFn)
-
-export async function getConfigValue(key: string): Promise<QueryResultRow[string]> {
-    try {
-        const queryResult = await sql`SELECT value from app_settings WHERE key = ${key}`
-        return queryResult?.rows?.[0]?.value
-    } catch (error) {
-        const newError = new Error(`Error: failed getting app configuration key: ${key}`)
-        newError.name = "AppConfigError"
-        throw newError
-    }
-
+export async function getConfigValue(
+  key: string
+): Promise<QueryResultRow[string]> {
+  try {
+    const queryResult =
+      await sql`SELECT value from app_settings WHERE key = ${key}`
+    return queryResult?.rows?.[0]?.value
+  } catch (error) {
+    const newError = new Error(
+      `Error: failed getting app configuration key: ${key}`
+    )
+    newError.name = "AppConfigError"
+    throw newError
+  }
 }
 
 export const getSeasons = cache(async (): Promise<QueryResultRow[]> => {
-    try {
-        const queryResult = await sql`SELECT * FROM Seasons`
-        return queryResult?.rows
-    } catch (error) {
-        return []
-    }
+  try {
+    const queryResult = await sql`SELECT * FROM Seasons`
+    return queryResult?.rows
+  } catch (error) {
+    return []
+  }
 })
 
 export const getWeeks = cache(async (): Promise<QueryResultRow[]> => {
-    try {
-        const queryResult = await sql`SELECT * FROM weeks`
-        return queryResult?.rows
-    } catch (error) {
-        return []
-    }
-
+  try {
+    const queryResult = await sql`SELECT * FROM weeks`
+    return queryResult?.rows
+  } catch (error) {
+    return []
+  }
 })
 
-export const getWeekGames = cache(async (season: string, week: string): Promise<QueryResultRow[]> => {
+export const getWeekGames = cache(
+  async (season: string, week: string): Promise<QueryResultRow[]> => {
     try {
-        const queryResult = await sql`SELECT 
+      const queryResult = await sql`SELECT 
         ROW_NUMBER() OVER (ORDER BY G.game_id) AS game_counter,
         T1.team_name AS favorite_team,
         T1.team_id AS favorite_id,
@@ -62,15 +61,17 @@ export const getWeekGames = cache(async (season: string, week: string): Promise<
     ORDER BY 
         G.game_id ASC;
         `
-        return queryResult?.rows
+      return queryResult?.rows
     } catch (error) {
-        return []
+      return []
     }
-})
+  }
+)
 
-export const getWeekGameResults = cache(async (season: string, week: string): Promise<QueryResultRow[]> => {
+export const getWeekGameResults = cache(
+  async (season: string, week: string): Promise<QueryResultRow[]> => {
     try {
-        const queryResult = await sql`SELECT 
+      const queryResult = await sql`SELECT 
         ROW_NUMBER() OVER (ORDER BY G.game_id) AS game_counter,
         G.favorite_score,
         T1.team_name AS favorite,
@@ -93,24 +94,33 @@ export const getWeekGameResults = cache(async (season: string, week: string): Pr
     ORDER BY 
         G.game_id ASC;
         `
-        return queryResult?.rows
+      return queryResult?.rows
     } catch (error) {
-        return []
+      return []
     }
-})
+  }
+)
 
-export const getGameCountForWeek = cache(async (season: string, week: string): Promise<number> => {
+export const getGameCountForWeek = cache(
+  async (season: string, week: string): Promise<number> => {
     try {
-        const queryResult = await sql`SELECT COUNT(game_id) AS game_count FROM Games WHERE season_number = ${season} AND week_number = ${week}`
-        return queryResult?.rows?.[0]?.game_count
+      const queryResult =
+        await sql`SELECT COUNT(game_id) AS game_count FROM Games WHERE season_number = ${season} AND week_number = ${week}`
+      return queryResult?.rows?.[0]?.game_count
     } catch (error) {
-        return 0
+      return 0
     }
-})
+  }
+)
 
-export const getWeekResults = cache(async (season: string, currentSeason: string, week: string): Promise<QueryResultRow[]> => {
+export const getWeekResults = cache(
+  async (
+    season: string,
+    currentSeason: string,
+    week: string
+  ): Promise<QueryResultRow[]> => {
     try {
-        const queryResult = await sql`
+      const queryResult = await sql`
         WITH players_info AS (
         SELECT
             w.week_number,
@@ -143,19 +153,28 @@ export const getWeekResults = cache(async (season: string, currentSeason: string
             week_number
         ORDER BY
             week_number ASC;`
-        return queryResult.rows
+      return queryResult.rows
     } catch (error) {
-        return []
+      return []
     }
-})
+  }
+)
 
-export const getSeasonStats = cache(async (season: string, order: string, fields: Array<string>): Promise<QueryResultRow[]> => {
+export const getSeasonStats = cache(
+  async (
+    season: string,
+    order: string,
+    fields: Array<string>
+  ): Promise<QueryResultRow[]> => {
     try {
-        const orderQuery = fields.length > 0 ? `ORDER BY ${fields.map(f => `ps.${f} ${order}`).join(", ")}` : ""
+      const orderQuery =
+        fields.length > 0
+          ? `ORDER BY ${fields.map((f) => `ps.${f} ${order}`).join(", ")}`
+          : ""
 
-        const seasonNumber = isNaN(parseInt(season)) ? 0 : season
+      const seasonNumber = isNaN(parseInt(season)) ? 0 : season
 
-        const queryResult = await sql.query(`SELECT
+      const queryResult = await sql.query(`SELECT
         ps.rank,
         ps.group_number,
         ps.gp,
@@ -170,23 +189,33 @@ export const getSeasonStats = cache(async (season: string, order: string, fields
         WHERE ps.season_number = ${seasonNumber}
         GROUP BY ps.rank, ps.group_number, ps.gp, p.player_id, p.name, ps.won, ps.played, ps.win_percentage
         ${orderQuery}`)
-        return queryResult.rows
+      return queryResult.rows
     } catch (error) {
-        return []
+      return []
     }
-})
+  }
+)
 
 interface PickResult {
-    picks: QueryResultRow[],
-    headers: string[]
+  picks: QueryResultRow[]
+  headers: string[]
 }
 
-export const getPicks = cache(async (season: string, week: string, order: string = "", fields: Array<string>): Promise<PickResult> => {
+export const getPicks = cache(
+  async (
+    season: string,
+    week: string,
+    order: string = "",
+    fields: Array<string>
+  ): Promise<PickResult> => {
     try {
-        const orderQuery = fields.length > 0 ? `ORDER BY ${fields.map(f => `subquery.${f} ${order}`).join(", ")}` : ""
-        const seasonNumber = isNaN(parseInt(season)) ? 0 : season
-        const weekNumber = isNaN(parseInt(week)) ? 0 : week
-        const queryResult = await sql.query(`SELECT DISTINCT
+      const orderQuery =
+        fields.length > 0
+          ? `ORDER BY ${fields.map((f) => `subquery.${f} ${order}`).join(", ")}`
+          : ""
+      const seasonNumber = isNaN(parseInt(season)) ? 0 : season
+      const weekNumber = isNaN(parseInt(week)) ? 0 : week
+      const queryResult = await sql.query(`SELECT DISTINCT
         subquery.player_id,
         subquery.rank,
         subquery.group_number,
@@ -260,49 +289,69 @@ export const getPicks = cache(async (season: string, week: string, order: string
     AND g.week_number = ${weekNumber}
     ${orderQuery}
     `)
-        const gameCount = await getGameCountForWeek(season, week)
-        const picks = queryResult.rows.map((row: Object) => {
-            let rowCopy = { ...row }
-            for (let i = 6; i > gameCount; i--) {
-                delete rowCopy[`pick${i}`]
-            }
-            return rowCopy;
-        })
-        const headers = ["Rank", "#", "GP", "Player", "Won", "Played", "%"]
-            .concat(Array.from({ length: Math.min(gameCount, 6) }, (_, i) => "pick" + (i + 1)))
-        return { picks: picks, headers: headers }
+      const gameCount = await getGameCountForWeek(season, week)
+      const picks = queryResult.rows.map((row: Object) => {
+        let rowCopy = { ...row }
+        for (let i = 6; i > gameCount; i--) {
+          delete rowCopy[`pick${i}`]
+        }
+        return rowCopy
+      })
+      const headers = [
+        "Rank",
+        "#",
+        "GP",
+        "Player",
+        "Won",
+        "Played",
+        "%",
+      ].concat(
+        Array.from(
+          { length: Math.min(gameCount, 6) },
+          (_, i) => "pick" + (i + 1)
+        )
+      )
+      return { picks: picks, headers: headers }
     } catch (error) {
-        return { picks: [], headers: [] }
+      return { picks: [], headers: [] }
     }
-})
+  }
+)
 
 export async function getUser(id: string): Promise<QueryResultRow[]> {
-    try {
-        if (isNaN(Number(id))) return null
-        const queryResult = await sql`SELECT auth_id, username from PlayerAuth where auth_id = ${id}`
-        return queryResult.rows
-    } catch (error) {
-        return []
-    }
+  try {
+    if (isNaN(Number(id))) return null
+    const queryResult =
+      await sql`SELECT auth_id, username from PlayerAuth where auth_id = ${id}`
+    return queryResult.rows
+  } catch (error) {
+    return []
+  }
 }
 
-export async function getUsersByName(users: string[]): Promise<QueryResultRow[]> {
-    try {
-        if (users.length > 10) {
-            throw new Error("too many users to parse")
-        }
-        const queryResult = await sql.query(`SELECT username from playerauth where username IN (${users.map(user => `'${user}'`).join()})`)
-        return queryResult.rows
-    } catch (error) {
-        return []
+export async function getUsersByName(
+  users: string[]
+): Promise<QueryResultRow[]> {
+  try {
+    if (users.length > 10) {
+      throw new Error("too many users to parse")
     }
+    const queryResult = await sql.query(
+      `SELECT username from playerauth where username IN (${users
+        .map((user) => `'${user}'`)
+        .join()})`
+    )
+    return queryResult.rows
+  } catch (error) {
+    return []
+  }
 }
 
 export async function getUserWeekPicks(id: string): Promise<PickResult> {
-    try {
-        const currentSeason = await getConfigValue("CURRENT_SEASON")
-        const currentWeek = await getConfigValue("CURRENT_WEEK")
-        const queryResult = await sql`SELECT DISTINCT
+  try {
+    const currentSeason = await getConfigValue("CURRENT_SEASON")
+    const currentWeek = await getConfigValue("CURRENT_WEEK")
+    const queryResult = await sql`SELECT DISTINCT
         subquery.name,
         CASE
             WHEN array_length(selected_teams_arr, 1) >= 1 THEN selected_teams_arr[1]
@@ -368,25 +417,28 @@ export async function getUserWeekPicks(id: string): Promise<PickResult> {
         g.season_number = ${currentSeason}
         AND g.week_number = ${currentWeek};
     `
-        const gameCount = await getGameCountForWeek(currentSeason, currentWeek)
-        const picks = queryResult.rows.map((row: {}) => {
-            let rowCopy = { ...row }
-            for (let i = 6; i > gameCount; i--) {
-                delete rowCopy[`pick${i}`]
-            }
-            return rowCopy
-        })
-        const headers = ["Player"]
-            .concat(Array.from({ length: Math.min(gameCount, 6) }, (_, i) => "pick" + (i + 1)))
-        return { picks: picks, headers: headers }
-    } catch (error) {
-        return { picks: [], headers: [] }
-    }
+    const gameCount = await getGameCountForWeek(currentSeason, currentWeek)
+    const picks = queryResult.rows.map((row: {}) => {
+      let rowCopy = { ...row }
+      for (let i = 6; i > gameCount; i--) {
+        delete rowCopy[`pick${i}`]
+      }
+      return rowCopy
+    })
+    const headers = ["Player"].concat(
+      Array.from({ length: Math.min(gameCount, 6) }, (_, i) => "pick" + (i + 1))
+    )
+    return { picks: picks, headers: headers }
+  } catch (error) {
+    return { picks: [], headers: [] }
+  }
 }
 
-export async function getUserSeasonsData(id: string): Promise<QueryResultRow[]> {
-    try {
-        const queryResult = await sql`SELECT
+export async function getUserSeasonsData(
+  id: string
+): Promise<QueryResultRow[]> {
+  try {
+    const queryResult = await sql`SELECT
         ps.season_number,
         ps.group_number,
         ps.gp,
@@ -398,54 +450,64 @@ export async function getUserSeasonsData(id: string): Promise<QueryResultRow[]> 
         FROM PlayerSeasonStats ps
         JOIN Players p ON ps.player_id = p.player_id
         WHERE p.player_id = ${id}`
-        return queryResult.rows
-    } catch (error) {
-        return []
-    }
+    return queryResult.rows
+  } catch (error) {
+    return []
+  }
 }
 
 export async function isTimerPaused(): Promise<boolean> {
-    try {
-        return await getConfigValue("TIMER_PAUSED") === "1" ? true : false
-    } catch (error) {
-        return true
-    }
+  try {
+    return (await getConfigValue("TIMER_PAUSED")) === "1" ? true : false
+  } catch (error) {
+    return true
+  }
 }
 
 export async function calculateTimeUntilReset(): Promise<number> {
-    try {
-        const timerEnds = Number(await getConfigValue("TARGET_RESET_TIME"))
-        const now = Date.now()
-        return timerEnds - now
-    } catch (error) {
-        return 0
-    }
+  try {
+    const timerEnds = Number(await getConfigValue("TARGET_RESET_TIME"))
+    const now = Date.now()
+    return timerEnds - now
+  } catch (error) {
+    return 0
+  }
 }
 
 export async function clearUserCredentialsFile() {
-    const session = await getSession()
-    if (!session || session?.user?.type !== "admin") return
-    const filePath = process.env.DEVELOPMENT ?
-        join(process.cwd(), "tmp", "user_credentials.csv") :
-        join("/tmp", "user_credentials.csv")
-    try {
-        await truncate(filePath)
-        revalidatePath("/admin_utility")
-        return true
-    } catch (error) {
-        console.error(error)
-        revalidatePath("/admin_utility")
-        return { error: "Error: failed to clear contents of user_credentials.csv" }
-    }
+  try {
+    let cursor
+
+    do {
+      const listResult = await list({
+        cursor,
+        limit: 1000,
+      })
+
+      if (listResult.blobs.length > 0) {
+        await del(listResult.blobs.map((blob) => blob.url))
+      }
+
+      cursor = listResult.cursor
+    } while (cursor)
+
+    return true
+  } catch (error) {
+    console.error(error)
+    return false
+  }
 }
 
-export async function getProfilePictureURL(): Promise<QueryResultRow[string]> | null {
-    try {
-        const session = await getSession()
-        const authID = session?.user?.authID
-        const profileURL = await sql`SELECT picture_url FROM Players WHERE player_id = ${authID}`
-        return profileURL?.rows?.[0]?.picture_url
-    } catch (error) {
-        return null
-    }
+export async function getProfilePictureURL(): Promise<
+  QueryResultRow[string]
+> | null {
+  try {
+    const session = await getSession()
+    const authID = session?.user?.authID
+    const profileURL =
+      await sql`SELECT picture_url FROM Players WHERE player_id = ${authID}`
+    return profileURL?.rows?.[0]?.picture_url
+  } catch (error) {
+    return null
+  }
 }

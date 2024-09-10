@@ -74,11 +74,23 @@ export default function AdminUtilityHandler({
     }
   }
 
+  const isValidURL = (urlString: string) => {
+    try {
+      const url = new URL(urlString)
+      return true
+    } catch (error) {
+      return false
+    }
+  }
+
   useEffect(() => {
     setSumbitButton({ disabled: false, text: "Submit" })
     if (formResponse?.message) {
-      if (option === "Upload Picks") {
-        fetch("/api/downloadCredentials").then(async (response) => {
+      if (option === "Upload Picks" && isValidURL(formResponse.message)) {
+        fetch(formResponse.message, {
+          method: "GET",
+          mode: "cors",
+        }).then(async (response) => {
           if (response.ok) {
             if (response.status === 204) return // empty user credentials file
             const blob = await response.blob()
@@ -128,7 +140,12 @@ export default function AdminUtilityHandler({
     if (formResponse?.message) {
       if (!formMessageSet.current) {
         formMessageSet.current = true
-        setFormMessage({ message: formResponse?.message, error: null })
+        if (isValidURL(formResponse?.message))
+          setFormMessage({
+            ...formMessage,
+            message: "All picks from file created",
+          })
+        else setFormMessage({ message: formResponse?.message, error: null })
       } else {
         // form success already set
         setFormMessage({ message: null, error: null })
