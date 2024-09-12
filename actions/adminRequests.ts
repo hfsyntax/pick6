@@ -739,7 +739,7 @@ async function uploadGames(formData: FormData): Promise<FormResult> {
             continue
           } else if (!teamIDs[underdog]) {
             skippedLines.push(
-              `${line} favorite ${favorite} does not exist as a team in the database<br/>`
+              `${line} underdog ${underdog} does not exist as a team in the database<br/>`
             )
             continue
           } else {
