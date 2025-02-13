@@ -1,137 +1,178 @@
 "use client"
-import type { FormEvent } from "react";
-import type { QueryResultRow } from "@vercel/postgres";
+import type { FormEvent } from "react"
+import type { QueryResultRow } from "@vercel/postgres"
+import type { FormResult } from "../actions/adminRequests"
 import { useEffect, useRef, useState } from "react"
-import { useFormState } from "react-dom"
-import { handlePicks } from "../actions/userRequests";
-import { getSession } from "../lib/session";
-import OptimizedTable from "./OptimizedTable";
+import { handlePicks } from "../actions/userRequests"
+import { getSession } from "../lib/session"
+import FixedTable from "./FixedTable"
 
 interface ComponentProps {
-  weekGames: QueryResultRow[],
-  timerPaused: boolean,
-  timerTime: number,
-  currentSeason: QueryResultRow[string],
-  currentWeek: QueryResultRow[string],
+  weekGames: QueryResultRow[]
+  timerPaused: boolean
+  timerTime: number
+  currentSeason: QueryResultRow[string]
+  currentWeek: QueryResultRow[string]
 }
 
-export default function TeamsHandler({ weekGames, timerPaused, timerTime, currentSeason, currentWeek }: ComponentProps) {
+export default function TeamsHandler({
+  weekGames,
+  timerPaused,
+  timerTime,
+  currentSeason,
+  currentWeek,
+}: ComponentProps) {
   const [countdown, setCountdown] = useState<string>()
-  const [formResponse, formAction] = useFormState(handlePicks, null)
-  const [storePicks, setStorePicks] = useState({ key: null, values: null })
+  const [formResponse, setFormResponse] = useState<FormResult>()
+  const [selectedTeams, setSelectedTeams] = useState<{
+    [key: string]: boolean
+  }>({})
   const currentForm = useRef()
   const updateCountdown = (timeUntilReset: number, paused: boolean) => {
     // Convert the time until reset to days, hours, minutes, and seconds
-    const days = Math.floor(timeUntilReset / (1000 * 60 * 60 * 24));
-    const hours = Math.floor((timeUntilReset % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-    const minutes = Math.floor((timeUntilReset % (1000 * 60 * 60)) / (1000 * 60));
-    const seconds = Math.floor((timeUntilReset % (1000 * 60)) / 1000);
+    const days = Math.floor(timeUntilReset / (1000 * 60 * 60 * 24))
+    const hours = Math.floor(
+      (timeUntilReset % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)
+    )
+    const minutes = Math.floor(
+      (timeUntilReset % (1000 * 60 * 60)) / (1000 * 60)
+    )
+    const seconds = Math.floor((timeUntilReset % (1000 * 60)) / 1000)
 
     // Update the countdown display
     if (!paused) {
-      setCountdown(`${days} days, ${hours} hours, ${minutes} minutes, ${seconds} seconds`);
+      setCountdown(
+        `${days} days, ${hours} hours, ${minutes} minutes, ${seconds} seconds`
+      )
       setTimeout(() => {
-        timeUntilReset -= 1000;
-        updateCountdown(timeUntilReset, paused);
-      }, 1000);
+        timeUntilReset -= 1000
+        updateCountdown(timeUntilReset, paused)
+      }, 1000)
     } else {
       setCountdown("Paused")
     }
   }
 
-  const submitHandler = async (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault()
-    const session = await getSession()
-    const username = session?.user?.username
-    const teamCheckboxes = document.querySelectorAll<HTMLInputElement>("input[type='checkbox']")
-    const selections = {}
-    for (let checkbox of teamCheckboxes) {
-      const teamID = checkbox.name
-      if (checkbox.checked) {
-        selections[teamID] = `${currentSeason}-${currentWeek}`
+  const handleCheckboxChange = (teamId: string, checked: boolean) => {
+    setSelectedTeams((prev) => {
+      const updatedTeams = { ...prev }
+      if (checked) {
+        updatedTeams[teamId] = true
+      } else {
+        delete updatedTeams[teamId]
       }
-    }
-    setStorePicks({ key: `${username}_picks`, values: JSON.stringify(selections, null, 2) })
+      return updatedTeams
+    })
   }
 
-  // wait for picks to be set to localstorage before validating
-  useEffect(() => {
-    if (storePicks?.key && storePicks?.values) {
-      const formData = new FormData(currentForm.current)
-      formAction(formData)
-    }
-  }, [storePicks])
+  const submitHandler = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault()
 
-  // on form success set picks to localstorage
-  useEffect(() => {
-    if (formResponse?.message) {
-      localStorage.setItem(storePicks.key, storePicks.values)
-    }
-  }, [formResponse])
+    const formData = new FormData(currentForm.current)
+    const response = await handlePicks(formData)
+    setFormResponse(response)
+  }
 
   useEffect(() => {
-    getSession()
-      .then(result => {
-        const teamCheckboxes = document.querySelectorAll<HTMLInputElement>("input[type='checkbox']")
-        const username = result?.user?.username
-        const picks: object | null = JSON.parse(localStorage.getItem(`${username}_picks`))
-        if (picks) {
-          // every pick matches current week
-          const picksCurrentWeek = Object.values(picks).every((value: string) => {
-            const [season, week] = value.split('-');
-            return season === currentSeason && week === currentWeek;
-          })
-          if (!picksCurrentWeek) {
-            localStorage.removeItem(`${username}_picks`)
-          } else {
-            // every pick matches a game id for the current week
-            const checkboxNames = Array.from(teamCheckboxes).map(checkbox => checkbox.name)
-            const picksMatchGames = Object.keys(picks).every(gameId => checkboxNames.includes(gameId));
-            if (!picksMatchGames) {
-              localStorage.removeItem(`${username}_picks`)
-            } else {
-              // restore checkbox state for selected teams
-              for (let checkbox of teamCheckboxes) {
-                for (let teamid of Object.keys(picks)) {
-                  if (checkbox.name === teamid) {
-                    checkbox.checked = true
-                  }
-                }
-              }
-            }
-          }
+    getSession().then((result) => {
+      const username = result?.user?.username
+      const picks: object | null = JSON.parse(
+        localStorage.getItem(`${username}_picks`)
+      )
+      if (picks) {
+        // every pick matches current week
+        const picksCurrentWeek = Object.values(picks).every((value: string) => {
+          const [season, week] = value.split("-")
+          return season === currentSeason && week === currentWeek
+        })
+        if (!picksCurrentWeek) {
+          localStorage.removeItem(`${username}_picks`)
+        } else {
+          // restore checkbox state for selected teams
+          const restoredTeams = Object.keys(picks).reduce((acc, key) => {
+            acc[key] = true
+            return acc
+          }, {} as { [key: string]: boolean })
+          setSelectedTeams(restoredTeams)
         }
-      })
+      }
+    })
 
     updateCountdown(timerTime, timerPaused)
   }, [])
+
+  useEffect(() => {
+    // form success
+    if (formResponse?.message) {
+      getSession().then((response) => {
+        const username = response?.user?.username
+        if (username) {
+          const selections = {}
+          const teamIds = Object.keys(selectedTeams)
+          for (let teamId of teamIds) {
+            selections[teamId] = `${currentSeason}-${currentWeek}`
+          }
+          localStorage.setItem(
+            `${username}_picks`,
+            JSON.stringify(selections, null, 2)
+          )
+        }
+      })
+    }
+  }, [formResponse])
 
   return (
     <>
       <h2>Time Remaining: {countdown}</h2>
       <form ref={currentForm} className="default-form" onSubmit={submitHandler}>
         {!timerPaused && <input type="submit" value="submit" />}
-        {weekGames?.length > 0 ?
-          <OptimizedTable
-            headers={["Game", "Favorite", "Spread", "Underdog"]}
-            rows={weekGames}
-          /> : <h3 style={{ color: "red" }}>no data</h3>
-        }
+        {weekGames?.length > 0 ? (
+          <FixedTable
+            data={[weekGames[0], ...weekGames]}
+            columns={["Game", "Favorite", "Spread", "Underdog"]}
+            columnWidths={{
+              game_counter: { small: 50, medium: 100, large: 200 },
+              favorite_team: { small: 100, medium: 200, large: 300 },
+              spread: { small: 50, medium: 100, large: 165 },
+              underdog_team: { small: 100, medium: 200, large: 300 },
+            }}
+            selectedCheckboxes={selectedTeams}
+            onCheckboxChange={handleCheckboxChange}
+          />
+        ) : (
+          <h3 style={{ color: "red" }}>no data</h3>
+        )}
         <ul>
           {formResponse?.message &&
-            (formResponse?.message.includes("<br/>") ?
-              formResponse?.message.split("<br/>").map((text, index) => (
-                text !== "" && <li key={index}><b style={{ color: "green" }}>{text}</b></li>
-              ))
-              : <li key={"0"}><b style={{ color: "green" }}>{formResponse?.message}</b></li>)
-          }
+            (formResponse?.message.includes("<br/>") ? (
+              formResponse?.message.split("<br/>").map(
+                (text, index) =>
+                  text !== "" && (
+                    <li key={index}>
+                      <b style={{ color: "green" }}>{text}</b>
+                    </li>
+                  )
+              )
+            ) : (
+              <li key={"0"}>
+                <b style={{ color: "green" }}>{formResponse?.message}</b>
+              </li>
+            ))}
           {formResponse?.error &&
-            (formResponse?.error.includes("<br/>") ?
-              formResponse?.error.split("<br/>").map((text, index) => (
-                text !== "" && <li key={index}><b style={{ color: "red" }}>{text}</b></li>
-              ))
-              : <li key={"0"}><b style={{ color: "red" }}>{formResponse?.error}</b></li>)
-          }
+            (formResponse?.error.includes("<br/>") ? (
+              formResponse?.error.split("<br/>").map(
+                (text, index) =>
+                  text !== "" && (
+                    <li key={index}>
+                      <b style={{ color: "red" }}>{text}</b>
+                    </li>
+                  )
+              )
+            ) : (
+              <li key={"0"}>
+                <b style={{ color: "red" }}>{formResponse?.error}</b>
+              </li>
+            ))}
         </ul>
       </form>
     </>
