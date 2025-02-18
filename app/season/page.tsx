@@ -27,8 +27,10 @@ export default async function Season(): Promise<JSX.Element> {
     player_name: { small: 105, medium: 160, large: 150 },
   }
   return (
-    <div id="container">
-      <h1>Pick6 - Season</h1>
+    <div className="absolute top-0 left-[50px] w-[calc(100%-50px)] min-h-full flex flex-col text-center items-center overflow-x-hidden">
+      <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl mt-1">
+        Season Stats
+      </h1>
       {seasons.length > 0 ? (
         <SeasonWeeksHandler
           currentSeason={currentSeason}
@@ -40,7 +42,7 @@ export default async function Season(): Promise<JSX.Element> {
           columnWidths={columnWidths}
         />
       ) : (
-        <h3 style={{ color: "red" }}>no data</h3>
+        <h3 className="text-red-500">no data</h3>
       )}
     </div>
   )

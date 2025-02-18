@@ -1,7 +1,8 @@
 "use client"
 import type { columnSettings } from "../types"
 import type { QueryResultRow } from "@vercel/postgres"
-import { useState, useRef, useEffect, ChangeEvent, MouseEvent } from "react"
+import type { ChangeEvent, MouseEvent } from "react"
+import { useState, useRef, useEffect } from "react"
 import { usePathname } from "next/navigation"
 import {
   getPicks,
@@ -38,10 +39,12 @@ export default function SeasonWeeksHandler({
     week: currentWeek,
     id: selectedId,
   })
+
   const [data, setData] = useState({
     currentData: initialData,
     dataHeaders: headers,
   })
+
   const [sorts, setSorts] = useState({
     order: "asc",
     rank: true,
@@ -56,11 +59,26 @@ export default function SeasonWeeksHandler({
     const selectedOptionId = currentOption.value
     const selectedSeason = currentOption.getAttribute("data-season")
     const selectedWeek = currentOption.getAttribute("data-week")
+
+    // do not update state if the same option is selected
+    if (pathname === "/weekly" || pathname === "/games") {
+      if (
+        selectedOption.season == selectedSeason &&
+        selectedOption.week == selectedWeek
+      )
+        return
+    }
+
+    if (pathname === "/season" || pathname === "/results") {
+      if (selectedOption.season == selectedSeason) return
+    }
+
     setSelectedOption({
       season: selectedSeason,
       week: selectedWeek,
       id: selectedOptionId,
     })
+
     if (pathname === "/weekly") {
       const picks = await getPicks(selectedSeason, selectedWeek, "asc", [
         "rank",
@@ -130,16 +148,15 @@ export default function SeasonWeeksHandler({
   return (
     <>
       <>
-        <h1>
-          {pathname === "/weekly" || pathname === "/games"
-            ? `Week ${selectedOption.week} of Season ${selectedOption.season}`
-            : `Season ${selectedOption.season}`}
-        </h1>
-        <div id="select-container">
-          <label>
+        <div className="flex items-center">
+          <label className="text-sm sm:text-base lg:text-xl font-bold">
             {pathname === "/weekly" ? "Select Week" : "Select Season"}&nbsp;
           </label>
-          <select onChange={handleSelection} defaultValue={selectedOption.id}>
+          <select
+            className="m-[10px] border border-black focus:outline-none h-[25px] text-xs lg:text-base text-center w-[155px] lg:w-[200px]"
+            onChange={handleSelection}
+            defaultValue={selectedOption.id}
+          >
             {selectOptions.map((row) =>
               pathname === "/weekly" || pathname === "/games" ? (
                 <option
@@ -164,20 +181,40 @@ export default function SeasonWeeksHandler({
         </div>
         {data?.currentData?.length > 0 &&
           (pathname === "/weekly" || pathname === "/season") && (
-            <div id="checkbox-container">
-              <label>Descending</label>
-              <input id="desc" type="checkbox" onClick={handleCheckbox}></input>
-              <label>Rank</label>
+            <div id="checkbox-container" className="text-center">
+              <label className="text-xs sm:text-sm md:text-base xl:text-lg font-bold align-middle mr-1">
+                Descending
+              </label>
               <input
+                className="align-middle mr-[10px]"
+                id="desc"
+                type="checkbox"
+                onClick={handleCheckbox}
+              ></input>
+              <label className="text-xs sm:text-sm md:text-base xl:text-lg font-bold align-middle mr-1">
+                Rank
+              </label>
+              <input
+                className="align-middle mr-[10px]"
                 id="rank"
                 type="checkbox"
                 onClick={handleCheckbox}
                 defaultChecked
               ></input>
-              <label>GP</label>
-              <input id="gp" type="checkbox" onClick={handleCheckbox}></input>
-              <label>Group Number</label>
+              <label className="text-xs sm:text-sm md:text-base xl:text-lg font-bold align-middle mr-1">
+                GP
+              </label>
               <input
+                className="align-middle mr-[10px]"
+                id="gp"
+                type="checkbox"
+                onClick={handleCheckbox}
+              ></input>
+              <label className="text-xs sm:text-sm md:text-base xl:text-lg font-bold align-middle mr-1">
+                Group Number
+              </label>
+              <input
+                className="align-middle mr-[10px]"
                 id="group_number"
                 type="checkbox"
                 onClick={handleCheckbox}
@@ -206,7 +243,7 @@ export default function SeasonWeeksHandler({
           />
         )
       ) : (
-        <h3 style={{ color: "red", textAlign: "center" }}>No data</h3>
+        <h3 className="text-red-500 text-center mt-3">No data</h3>
       )}
     </>
   )

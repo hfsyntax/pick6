@@ -123,9 +123,21 @@ export default function TeamsHandler({
 
   return (
     <>
-      <h2>Time Remaining: {countdown}</h2>
-      <form ref={currentForm} className="default-form" onSubmit={submitHandler}>
-        {!timerPaused && <input type="submit" value="submit" />}
+      <h2 className="text-xs sm:text-sm md:text-lg lg:text-xl">
+        Time Remaining: {countdown}
+      </h2>
+      <form
+        ref={currentForm}
+        className="flex items-center flex-col w-full ml-auto mr-auto"
+        onSubmit={submitHandler}
+      >
+        {!timerPaused && (
+          <input
+            type="submit"
+            value="submit"
+            className="block mt-[10px] bg-black text-white rounded-md p-2 text-xs sm:text-sm md:text-base cursor-pointer hover:bg-gray-500"
+          />
+        )}
         {weekGames?.length > 0 ? (
           <FixedTable
             data={[weekGames[0], ...weekGames]}
@@ -140,7 +152,7 @@ export default function TeamsHandler({
             onCheckboxChange={handleCheckboxChange}
           />
         ) : (
-          <h3 style={{ color: "red" }}>no data</h3>
+          <h3 className="text-red-500">no data</h3>
         )}
         <ul>
           {formResponse?.message &&
@@ -149,13 +161,13 @@ export default function TeamsHandler({
                 (text, index) =>
                   text !== "" && (
                     <li key={index}>
-                      <b style={{ color: "green" }}>{text}</b>
+                      <b className="text-green-500">{text}</b>
                     </li>
                   )
               )
             ) : (
               <li key={"0"}>
-                <b style={{ color: "green" }}>{formResponse?.message}</b>
+                <b className="text-green-500">{formResponse?.message}</b>
               </li>
             ))}
           {formResponse?.error &&
@@ -164,13 +176,13 @@ export default function TeamsHandler({
                 (text, index) =>
                   text !== "" && (
                     <li key={index}>
-                      <b style={{ color: "red" }}>{text}</b>
+                      <b className="text-red-500">{text}</b>
                     </li>
                   )
               )
             ) : (
               <li key={"0"}>
-                <b style={{ color: "red" }}>{formResponse?.error}</b>
+                <b className="text-red-500">{formResponse?.error}</b>
               </li>
             ))}
         </ul>

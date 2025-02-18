@@ -51,7 +51,7 @@ export default async function ProfileHandler({
           />
         </>
       ) : (
-        <h3 style={{ color: "red" }}>None</h3>
+        <h3 className="text-red-500">None</h3>
       )}
       <h1>Season Data</h1>
       {seasonData.length > 0 ? (
@@ -75,10 +75,10 @@ export default async function ProfileHandler({
           }
         </>
       ) : (
-        <h3 style={{ color: "red" }}>None</h3>
+        <h3 className="text-red-500">None</h3>
       )}
     </>
   ) : (
-    <h3 style={{ color: "red" }}>user not found</h3>
+    <h3 className="text-red-500">user not found</h3>
   )
 }

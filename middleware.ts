@@ -1,8 +1,9 @@
-import { NextRequest, NextResponse } from "next/server";
-import { updateSession, getSession } from "./lib/session";
+import { NextRequest, NextResponse } from "next/server"
+import { updateSession, getSession } from "./lib/session"
 
 export const config = {
-  matcher: "/((?!api|_next/static|_next/image|favicon.ico|static-assets|img|profile_pictures|http|https).*)"
+  matcher:
+    "/((?!api|_next/static|_next/image|favicon.ico|p6.png|static-assets|profile_pictures|http|https).*)",
 }
 
 export async function middleware(request: NextRequest) {
@@ -13,8 +14,10 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(new URL("/games", request.url))
   } else if (!session && request.nextUrl.pathname === "/profile") {
     return NextResponse.redirect(new URL("/games", request.url))
-  }
-  else if (session?.user?.type !== "admin" && ["/admin_utility", "/admin_guide"].includes(request.nextUrl.pathname)) {
+  } else if (
+    session?.user?.type !== "admin" &&
+    ["/admin_utility", "/admin_guide"].includes(request.nextUrl.pathname)
+  ) {
     return NextResponse.redirect(new URL("/games", request.url))
   } else {
     return response

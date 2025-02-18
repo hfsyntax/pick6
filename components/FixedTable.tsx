@@ -7,6 +7,7 @@ import { FixedSizeList } from "react-window"
 import { usePathname } from "next/navigation"
 import AutoSizer from "react-virtualized-auto-sizer"
 import Image from "next/image"
+import Link from "next/link"
 
 const nonDisplayedCols = [
   "player_id",
@@ -38,7 +39,7 @@ function Row({
   const row = data[index]
 
   return (
-    <div style={{ ...style, display: "flex", alignItems: "center" }}>
+    <div style={{ ...style }} className="flex items-center">
       {Object.keys(row)
         .filter((field) => !nonDisplayedCols.includes(field))
         .map((field: string, rowIndex: number) => (
@@ -61,18 +62,23 @@ function Row({
               columns[rowIndex]
             ) : field === "player_name" ? (
               <span className="relative w-full h-full block">
-                <span className="block w-fit ml-[30px] lg:ml-[40px]">
-                  {row[field]}
-                </span>
-                <Image
-                  width={0}
-                  height={0}
-                  src={
-                    row["picture_url"] ? row["picture_url"] : "/img/default.png"
-                  }
-                  alt="profile_pic"
-                  className="absolute top-1/2 -translate-y-1/2 left-0 h-3/4 lg:h-full w-auto"
-                />
+                <Link href={`/profile/${row["player_id"]}`} className="peer">
+                  <Image
+                    width={0}
+                    height={0}
+                    src={
+                      row["picture_url"] ? row["picture_url"] : "/default.png"
+                    }
+                    alt="profile_pic"
+                    className="absolute top-1/2 -translate-y-1/2 left-0 h-3/4 lg:h-full w-auto"
+                  />
+                </Link>
+                <Link
+                  href={`/profile/${row["player_id"]}`}
+                  className="block w-fit ml-[30px] lg:ml-[40px] peer-hover:text-white peer-hover:bg-black hover:text-white hover:bg-black"
+                >
+                  <span>{row[field]}</span>
+                </Link>
               </span>
             ) : field === "favorite_team" || field === "underdog_team" ? (
               <Fragment key={`${field}_${index}`}>

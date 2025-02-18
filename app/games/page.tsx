@@ -38,8 +38,10 @@ export default async function Games(): Promise<JSX.Element> {
     spread: { small: 32, medium: 70, large: 100 },
   }
   return (
-    <div id="container">
-      <h1>Pick6 - Games</h1>
+    <div className="min-h-full w-[calc(100%-50px)] absolute top-0 left-[50px] flex flex-col text-center items-center overflow-x-hidden">
+      <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl mt-1">
+        Games
+      </h1>
       {weeks.length > 0 ? (
         <SeasonWeeksHandler
           currentSeason={currentSeason}
@@ -51,7 +53,7 @@ export default async function Games(): Promise<JSX.Element> {
           columnWidths={columnWidths}
         />
       ) : (
-        <h3 style={{ color: "red" }}>no data</h3>
+        <h3 className="text-red-500">no data</h3>
       )}
     </div>
   )

@@ -7,6 +7,7 @@ import { VariableSizeList } from "react-window"
 import { usePathname } from "next/navigation"
 import AutoSizer from "react-virtualized-auto-sizer"
 import Image from "next/image"
+import Link from "next/link"
 
 const nonDisplayedCols = [
   "player_id",
@@ -37,10 +38,9 @@ function Row({
 
   return (
     <div
+      className="flex items-center"
       style={{
         ...style,
-        display: "flex",
-        alignItems: "center",
       }}
     >
       {index !== 0 && (
@@ -53,9 +53,6 @@ function Row({
             id={`${field}_${index}`}
             key={`${field}_${index}`}
             style={{
-              display: "flex",
-              flexDirection: "column",
-              gap: "5px",
               width:
                 windowWidth < 768
                   ? columnWidths[field].small
@@ -63,27 +60,28 @@ function Row({
                   ? columnWidths[field].medium
                   : columnWidths[field].large,
             }}
-            className={`inline-block relative ${
+            className={`flex flex-col gap-[5px] relative ${
               index === 0 ? "text-white bg-black mb-2" : "text-black bg-white"
             } leading-[35px] flex-shrink-0`}
           >
             {index === 0 ? (
               columns[rowIndex]
             ) : field === "player_name" ? (
-              <span className="relative w-full h-full block">
-                <span className="block w-fit ml-[30px] lg:ml-[40px]">
+              <Link
+                className="relative w-full h-full block group"
+                href={`/profile/${row["player_id"]}`}
+              >
+                <span className="block w-fit ml-[30px] lg:ml-[40px] group-hover:text-white group-hover:bg-black">
                   {row[field]}
                 </span>
                 <Image
                   width={0}
                   height={0}
-                  src={
-                    row["picture_url"] ? row["picture_url"] : "/img/default.png"
-                  }
+                  src={row["picture_url"] ? row["picture_url"] : "/default.png"}
                   alt="profile_pic"
                   className="absolute top-1/2 -translate-y-1/2 left-0 h-3/4 lg:h-full w-auto"
                 />
-              </span>
+              </Link>
             ) : field === "favorite_team" || field === "underdog_team" ? (
               <Fragment key={`${field}_${index}`}>
                 <input
@@ -105,18 +103,28 @@ function Row({
                     className={`flex items-center`}
                     key={entry.split(" ")[2]}
                   >
-                    <Image
-                      width={0}
-                      height={0}
-                      src={
-                        entry.split(" ")[0]
-                          ? entry.split(" ")[0]
-                          : "/img/default.png"
-                      }
-                      alt="profile_pic"
-                      className="h-[25px] lg:h-[35px] w-auto"
-                    />
-                    <span className="ml-1">{entry.split(" ")[1]}</span>
+                    <Link
+                      href={`/profile/${entry.split(" ")[2]}`}
+                      className="peer"
+                    >
+                      <Image
+                        width={0}
+                        height={0}
+                        src={
+                          entry.split(" ")[0]
+                            ? entry.split(" ")[0]
+                            : "/default.png"
+                        }
+                        alt="profile_pic"
+                        className="h-[25px] lg:h-[35px] w-auto"
+                      />
+                    </Link>
+                    <Link
+                      href={`/profile/${entry.split(" ")[2]}`}
+                      className="peer-hover:bg-black peer-hover:text-white hover:bg-black hover:text-white"
+                    >
+                      <span className="ml-1">{entry.split(" ")[1]}</span>
+                    </Link>
                   </div>
                 )
               })
@@ -184,7 +192,7 @@ export default function DynamicTable({
     return acc
   }, 0)
   return (
-    <div className="overflow-auto w-full" style={{ height: height }}>
+    <div className="overflow-auto w-full mt-3" style={{ height: height }}>
       <div
         className={`h-full text-[10px] md:text-[14px] lg:text-[14px] ml-auto mr-auto`}
         style={{

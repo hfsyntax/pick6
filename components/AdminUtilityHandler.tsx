@@ -159,43 +159,81 @@ export default function AdminUtilityHandler({
 
   return (
     <>
-      <div id="modal-overlay" style={{ display: message.display }}>
-        <div id="modal">
-          <FontAwesomeIcon icon={faXmark} size="xl" onClick={closeModal} />
-          <span>{message.text}</span>
-          <button onClick={closeModal}>Ok</button>
+      <div
+        className="absolute top-0 left-0 w-full h-full bg-[rgba(0, 0, 0, 0.5)] backdrop-blur-[10px] z-[1]"
+        style={{ display: message.display }}
+      >
+        <div className="showing:bg-white absolute flex items-center flex-col left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[250px] h-[130px] text-center z-[2]">
+          <FontAwesomeIcon
+            className="mr-auto ml-[5px] cursor-pointer"
+            icon={faXmark}
+            size="xl"
+            onClick={closeModal}
+          />
+          <span className="relative top-[25px]">{message.text}</span>
+          <button
+            className="inline-block relative top-[30px] ml-[10px]"
+            onClick={closeModal}
+          >
+            Ok
+          </button>
         </div>
       </div>
-      <h1>Pick6 - Admin Utility</h1>
-      <b>
-        Admin guide:{" "}
-        <Link style={{ color: "inherit" }} href={"/admin_guide"}>
-          here
-        </Link>
-      </b>
-      <span>
-        <b>Current:&nbsp;</b>Week {week} of Season {season}
-      </span>
-      <span>
-        <b>Timer status:&nbsp;</b>
-        {timerStatus}
-      </span>
-      <span>
-        <b>Timer Ends:&nbsp;</b>
-        {resetTime}
-      </span>
+      <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl mt-1">
+        Admin Utility
+      </h1>
+      <div className="border border-black flex flex-col mt-2 p-3">
+        <b>
+          Admin guide:
+          <Link
+            className="text-blue-700 hover:text-blue-300"
+            href={"/admin_guide"}
+          >
+            &nbsp;here
+          </Link>
+        </b>
+        <span>
+          <b>Season:&nbsp;</b>Week {week} of Season {season}
+        </span>
+        <span
+          className={
+            timerStatus === "Paused"
+              ? "text-red-500 font-bold"
+              : "text-green-500 font-bold"
+          }
+        >
+          <b className="text-black font-bold">Timer status:&nbsp;</b>
+          {timerStatus}
+        </span>
+        <span>
+          <b>Timer Ends:&nbsp;</b>
+          {resetTime}
+        </span>
+      </div>
+
       <button
-        style={{ width: "fit-content" }}
+        className="block mt-[10px] bg-black text-white rounded-md p-2 text-xs sm:text-sm md:text-base cursor-pointer hover:bg-gray-500"
         onClick={refreshData}
         disabled={refreshButton.disabled}
       >
         {refreshButton.text}
       </button>
 
-      <form ref={currentForm} className="default-form" onSubmit={submitHandler}>
-        <div>
-          <b style={{ marginRight: "10px" }}>Select Task:</b>
-          <select onChange={selectHandler} defaultValue="Upload Games">
+      <form
+        ref={currentForm}
+        className="flex items-center flex-col w-full ml-auto mr-auto"
+        onSubmit={submitHandler}
+      >
+        <div className="flex items-center mt-3">
+          <label className="text-sm sm:text-base lg:text-xl font-bold">
+            Select Task:
+          </label>
+
+          <select
+            className="m-[10px] border border-black focus:outline-none h-[25px] text-xs lg:text-base text-center w-[155px] lg:w-[200px]"
+            onChange={selectHandler}
+            defaultValue="Upload Games"
+          >
             <option value="Upload Games">Upload Games</option>
             <option value="Upload Picks">Upload Picks</option>
             <option value="Toggle Timer">Toggle Timer</option>
@@ -211,14 +249,23 @@ export default function AdminUtilityHandler({
             <span>
               Uploads games for the current week from a games csv file.
             </span>
-            <input name="fileInput" type="file" />
+            <input
+              name="fileInput"
+              type="file"
+              className="block m-[10px] w-fit"
+            />
           </>
         ) : option === "Upload Picks" ? (
           <>
             <span>
               Uploads picks for the current week from a picks csv file.
             </span>
-            <input type="file" name="fileInput" required />
+            <input
+              type="file"
+              className="block m-[10px] w-fit"
+              name="fileInput"
+              required
+            />
           </>
         ) : option === "Toggle Timer" ? (
           <>
@@ -234,7 +281,12 @@ export default function AdminUtilityHandler({
               also sets all players week stats, next weeks stats and season
               stats based on the result of a games csv file.
             </span>
-            <input type="file" name="fileInput" required />
+            <input
+              className="block m-[10px] w-fit"
+              type="file"
+              name="fileInput"
+              required
+            />
           </>
         ) : option === "Edit Timer" ? (
           <>
@@ -245,7 +297,12 @@ export default function AdminUtilityHandler({
                 Format
               </a>
             </span>
-            <input type="text" name="time" placeholder="Enter time" />
+            <input
+              className="block border border-black focus:outline-none indent-1"
+              type="text"
+              name="time"
+              placeholder="Enter time"
+            />
           </>
         ) : option === "Insert User" ? (
           <>
@@ -257,17 +314,24 @@ export default function AdminUtilityHandler({
             <div>
               <label>from file</label>
               <input
+                className="ml-1"
                 type="checkbox"
                 onClick={checkboxHandler}
                 defaultChecked={fromFile}
               ></input>
             </div>
             {fromFile ? (
-              <input type="file" name="fileInput" required />
+              <input
+                className="block m-[10px] w-fit"
+                type="file"
+                name="fileInput"
+                required
+              />
             ) : (
               <>
                 <label>Username</label>
                 <input
+                  className="block border border-black focus:outline-none indent-1"
                   type="text"
                   name="username"
                   placeholder="username"
@@ -276,24 +340,43 @@ export default function AdminUtilityHandler({
                 />
                 <label>Password</label>
                 <input
+                  className="block border border-black focus:outline-none indent-1"
                   type="password"
                   name="password"
                   placeholder="password"
                   autoComplete="new-password"
                   required
                 />
-                <label>User Type</label>
+                <label>Confirm Password</label>
                 <input
-                  type="text"
-                  name="userType"
-                  placeholder="User Type"
+                  className="block border border-black focus:outline-none indent-1"
+                  type="password"
+                  name="confirm-password"
+                  placeholder="confirm password"
+                  autoComplete="new-password"
                   required
                 />
+                <label>User Type</label>
+                <select
+                  name="userType"
+                  className=" block border border-black focus:outline-none w-[200px] h-[26px] pl-1"
+                  required
+                >
+                  <option value="user">user</option>
+                  <option value="admin">admin</option>
+                </select>
                 <label>Group</label>
-                <input type="text" name="group" placeholder="Group" required />
+                <input
+                  className="block border border-black focus:outline-none indent-1"
+                  type="text"
+                  name="group"
+                  placeholder="Group"
+                  required
+                />
                 <label>Group Number</label>
                 <input
-                  type="text"
+                  className="block border border-black focus:outline-none indent-1"
+                  type="number"
                   name="groupNumber"
                   placeholder="Group Number"
                   required
@@ -323,9 +406,15 @@ export default function AdminUtilityHandler({
               ></input>
             </div>
             {fromFile ? (
-              <input type="file" name="fileInput" required />
+              <input
+                className="block m-[10px] w-fit"
+                type="file"
+                name="fileInput"
+                required
+              />
             ) : (
               <input
+                className="block border border-black focus:outline-none indent-1"
                 type="text"
                 name="username"
                 placeholder="Username"
@@ -341,12 +430,23 @@ export default function AdminUtilityHandler({
               week/season will be set to the environment variables set.
             </span>
             <label>Season Number</label>
-            <input type="text" name="season" placeholder="Season Number" />
+            <input
+              className="block border border-black focus:outline-none indent-1"
+              type="number"
+              name="season"
+              placeholder="Season Number"
+            />
             <label>Week Number</label>
-            <input type="text" name="week" placeholder="Week Number" />
+            <input
+              className="block border border-black focus:outline-none indent-1"
+              type="number"
+              name="week"
+              placeholder="Week Number"
+            />
           </>
         ) : null}
         <input
+          className="block mt-[10px] mb-2 bg-black text-white rounded-md p-2 text-xs sm:text-sm md:text-base cursor-pointer w-fit hover:bg-gray-500"
           type="submit"
           value={sumbitButton.text}
           disabled={sumbitButton.disabled}
@@ -358,13 +458,13 @@ export default function AdminUtilityHandler({
                 (text, index) =>
                   text !== "" && (
                     <li key={index}>
-                      <b style={{ color: "green" }}>{text}</b>
+                      <b className="text-green-500">{text}</b>
                     </li>
                   )
               )
             ) : (
               <li key={"0"}>
-                <b style={{ color: "green" }}>{formMessage?.message}</b>
+                <b className="text-green-500">{formMessage?.message}</b>
               </li>
             ))}
           {formMessage?.error &&
@@ -373,13 +473,13 @@ export default function AdminUtilityHandler({
                 (text, index) =>
                   text !== "" && (
                     <li key={index}>
-                      <b style={{ color: "red" }}>{text}</b>
+                      <b className="text-red-500">{text}</b>
                     </li>
                   )
               )
             ) : (
               <li key={"0"}>
-                <b style={{ color: "red" }}>{formMessage?.error}</b>
+                <b className="text-red-500">{formMessage?.error}</b>
               </li>
             ))}
         </ul>

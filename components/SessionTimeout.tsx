@@ -5,60 +5,74 @@ import { useEffect, useState } from "react"
 import { getSession, redirectToLogin } from "../lib/session"
 
 export default function SessionTimeout(): JSX.Element {
-    const [message, showMessage] = useState("none")
-    const [redirectTimeout, setRedirectTimeout] = useState<NodeJS.Timeout>()
-    
-    const promptSessionTimeout = async () => {
-        const session = await getSession()
-        const sessionExpiration = (session?.exp - Math.floor(Date.now() / 1000)) * 1000
-        const fiveMinutes = 60 * 5 * 1000
-        const warningTimeout = setTimeout(async () => {
-            if (session) {
-                showMessage("block")
-            }
-        }, sessionExpiration - fiveMinutes);
+  const [message, showMessage] = useState("none")
+  const [redirectTimeout, setRedirectTimeout] = useState<NodeJS.Timeout>()
 
-        const redirectTimeout = setTimeout(async () => {
-            await redirectToLogin()
-        }, sessionExpiration);
+  const promptSessionTimeout = async () => {
+    const session = await getSession()
+    const sessionExpiration =
+      (session?.exp - Math.floor(Date.now() / 1000)) * 1000
+    const fiveMinutes = 60 * 5 * 1000
+    const warningTimeout = setTimeout(async () => {
+      if (session) {
+        showMessage("block")
+      }
+    }, sessionExpiration - fiveMinutes)
 
-        setRedirectTimeout(redirectTimeout)
+    const redirectTimeout = setTimeout(async () => {
+      await redirectToLogin()
+    }, sessionExpiration)
 
-        return () => {
-            clearTimeout(warningTimeout)
-            clearTimeout(redirectTimeout)
-        }
+    setRedirectTimeout(redirectTimeout)
+
+    return () => {
+      clearTimeout(warningTimeout)
+      clearTimeout(redirectTimeout)
     }
+  }
 
-    const requestNewSession = async () => {
-        const session = await getSession()
-        if (session) {
-            showMessage("none")
-            const response = await fetch("/api/newSession")
-            if (response.ok) {
-                if (redirectTimeout)
-                clearTimeout(redirectTimeout)
-                await promptSessionTimeout()
-            }
-        }
+  const requestNewSession = async () => {
+    const session = await getSession()
+    if (session) {
+      showMessage("none")
+      const response = await fetch("/api/newSession")
+      if (response.ok) {
+        if (redirectTimeout) clearTimeout(redirectTimeout)
+        await promptSessionTimeout()
+      }
     }
+  }
 
-    const closeModal = () => {
-        if (message === "block")
-        showMessage("none")
-    }
+  const closeModal = () => {
+    if (message === "block") showMessage("none")
+  }
 
-    useEffect(() => {
-        promptSessionTimeout() 
-    }, [])
-    
-    return (
-        <div id="modal-overlay" style={{display: message}}>
-                <div id="modal">
-                <FontAwesomeIcon icon={faXmark} size="xl" onClick={closeModal}/>
-                    <span>your session expires in 5 minutes, click ok to reset your session time</span>
-                    <button onClick={requestNewSession}>Ok</button>
-                </div>
-        </div>
-    )
+  useEffect(() => {
+    promptSessionTimeout()
+  }, [])
+
+  return (
+    <div
+      className="absolute top-0 left-0 w-full h-full bg-[rgba(0, 0, 0, 0.5)] backdrop-blur-[10px] z-[1]"
+      style={{ display: message }}
+    >
+      <div className="showing:bg-white absolute flex items-center flex-col left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[250px] h-[130px] text-center z-[2]">
+        <FontAwesomeIcon
+          className="mr-auto ml-[5px] cursor-pointer"
+          icon={faXmark}
+          size="xl"
+          onClick={closeModal}
+        />
+        <span className="relative top-[25px]">
+          your session expires in 5 minutes, click ok to reset your session time
+        </span>
+        <button
+          className="inline-block relative top-[30px] ml-[10px]"
+          onClick={requestNewSession}
+        >
+          Ok
+        </button>
+      </div>
+    </div>
+  )
 }

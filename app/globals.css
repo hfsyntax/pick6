@@ -1,0 +1,12 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+.grecaptcha-badge {
+  left: 0px !important;
+  bottom: -60px !important;
+}
+
+ol > li::marker {
+  font-weight: bold;
+}

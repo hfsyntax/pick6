@@ -204,18 +204,27 @@ async function insertUser(formData: FormData): Promise<FormResult> {
 
     let username = formData.get("username")
     let password = formData.get("password")
+    let confirmPassword = formData.get("confirm-password")
     let userType = formData.get("userType")
     let group = formData.get("group")
     let groupNumber = formData.get("groupNumber")
     const fileInput = formData.get("fileInput") as File
 
     // single user
-    if (username && password && userType && group && groupNumber) {
+    if (
+      username &&
+      password &&
+      confirmPassword &&
+      userType &&
+      group &&
+      groupNumber
+    ) {
       username = String(username)
         .trim()
         .replace(/[^a-zA-Z0-9]/, "")
         .toLowerCase()
       password = String(password)
+      confirmPassword = String(confirmPassword)
       userType = String(userType).toLowerCase().trim()
       group = String(group).toUpperCase().trim()
       groupNumber = String(groupNumber).trim()
@@ -240,6 +249,13 @@ async function insertUser(formData: FormData): Promise<FormResult> {
         return {
           error:
             "Error: password must contain at least 6 characters, 1 uppercase letter and 1 number",
+        }
+      }
+
+      if (password !== confirmPassword) {
+        revalidatePath("/admin_utility")
+        return {
+          error: "Error: password confirmation must match the password",
         }
       }
 

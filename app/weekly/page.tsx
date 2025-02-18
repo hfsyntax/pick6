@@ -35,8 +35,10 @@ export default async function Weekly(): Promise<JSX.Element> {
     pick6: { small: 60, medium: 90, large: 90 },
   }
   return (
-    <div id="container">
-      <h1>Pick6 - All Picks</h1>
+    <div className="absolute top-0 left-[50px] w-[calc(100%-50px)] min-h-full flex flex-col text-center items-center overflow-x-hidden">
+      <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl mt-1">
+        Week Picks
+      </h1>
       {weeks.length > 0 ? (
         <SeasonWeeksHandler
           currentSeason={currentSeason}
@@ -48,7 +50,7 @@ export default async function Weekly(): Promise<JSX.Element> {
           columnWidths={columnWidths}
         />
       ) : (
-        <h3 style={{ color: "red" }}>no data</h3>
+        <h3 className="text-red-500">no data</h3>
       )}
     </div>
   )
