@@ -9,7 +9,7 @@ export default function ChangePassword({ session }): JSX.Element {
   const [formResponse, formAction] = useFormState(changePassword, null)
   const currentForm = useRef<HTMLFormElement>()
   const formMessage = useRef({ message: null, error: null })
-  const [sumbitButton, setSumbitButton] = useState({
+  const [submitButton, setSubmitButton] = useState({
     disabled: false,
     text: "Submit",
   })
@@ -23,14 +23,14 @@ export default function ChangePassword({ session }): JSX.Element {
     event.preventDefault()
     const formData = new FormData(event.target as HTMLFormElement)
     formAction(formData)
-    setSumbitButton({
+    setSubmitButton({
       disabled: true,
       text: "Loading...",
     })
   }
 
   useEffect(() => {
-    setSumbitButton({ disabled: false, text: "Submit" })
+    setSubmitButton({ disabled: false, text: "Submit" })
     if (formResponse?.message) {
       formMessage.current = { message: formResponse?.message, error: null }
       currentForm.current.reset()
@@ -89,8 +89,8 @@ export default function ChangePassword({ session }): JSX.Element {
             <input
               className="mt-[10px] block"
               type="submit"
-              value={sumbitButton.text}
-              disabled={sumbitButton.disabled}
+              value={submitButton.text}
+              disabled={submitButton.disabled}
             />
           </form>
           {formMessage?.current?.message && (

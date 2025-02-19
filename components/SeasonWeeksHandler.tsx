@@ -86,26 +86,41 @@ export default function SeasonWeeksHandler({
       setData({ currentData: picks.picks, dataHeaders: picks.headers })
     } else if (pathname === "/season") {
       const seasonStats = await getSeasonStats(selectedSeason, "asc", ["rank"])
-      setData({ ...data, currentData: seasonStats })
+      setData((prevState) => ({
+        ...prevState,
+        currentData: seasonStats,
+      }))
     } else if (pathname === "/games") {
       const weekGames = await getWeekGameResults(selectedSeason, selectedWeek)
-      setData({ ...data, currentData: weekGames })
+      setData((prevState) => ({
+        ...prevState,
+        currentData: weekGames,
+      }))
     } else {
       const weekResults = await getWeekResults(
         selectedSeason,
         currentSeason,
         currentWeek,
       )
-      setData({ ...data, currentData: weekResults })
+      setData((prevState) => ({
+        ...prevState,
+        currentData: weekResults,
+      }))
     }
   }
 
   const handleCheckbox = async (event: MouseEvent<HTMLInputElement>) => {
     const { id, checked } = event.currentTarget
     if (id === "desc") {
-      setSorts({ ...sorts, order: checked ? "desc" : "asc" })
+      setSorts((prevState) => ({
+        ...prevState,
+        order: checked ? "desc" : "asc",
+      }))
     } else {
-      setSorts({ ...sorts, [id]: checked ? true : false })
+      setSorts((prevState) => ({
+        ...prevState,
+        [id]: checked ? true : false,
+      }))
     }
   }
 
@@ -139,7 +154,10 @@ export default function SeasonWeeksHandler({
             sorts.group_number && "group_number",
           ].filter((x) => x),
         ).then((response) => {
-          setData({ ...data, currentData: response })
+          setData((prevState) => ({
+            ...prevState,
+            currentData: response,
+          }))
         })
       }
     }

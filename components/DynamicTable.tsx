@@ -2,7 +2,7 @@
 import type { columnSettings } from "../types"
 import type { CSSProperties } from "react"
 import type { Size } from "react-virtualized-auto-sizer"
-import { Fragment, useState, useRef, useEffect } from "react"
+import { useState, useRef, useEffect } from "react"
 import { VariableSizeList } from "react-window"
 import { usePathname } from "next/navigation"
 import AutoSizer from "react-virtualized-auto-sizer"

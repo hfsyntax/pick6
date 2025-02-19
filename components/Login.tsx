@@ -21,22 +21,22 @@ export default function Login(): JSX.Element {
     await recaptcha.current.executeAsync()
     const formData = new FormData(event.target)
     if (!formData.get("username")) {
-      setFormState({
-        ...formState,
+      setFormState((prevState) => ({
+        ...prevState,
         error: "username is empty",
-      })
+      }))
     } else if (!formData.get("password")) {
-      setFormState({
-        ...formState,
-        error: `password is empty`,
-      })
+      setFormState((prevState) => ({
+        ...prevState,
+        error: "password is empty",
+      }))
     } else {
       formAction(formData)
-      setFormState({
-        ...formState,
+      setFormState((prevState) => ({
+        ...prevState,
         disabled: true,
         text: "loading...",
-      })
+      }))
     }
   }
 
@@ -54,10 +54,10 @@ export default function Login(): JSX.Element {
   useEffect(() => {
     checkSessionTimeout().then((response) => {
       if (response === "session timeout") {
-        setFormState({
-          ...formState,
+        setFormState((prevState) => ({
+          ...prevState,
           error: response,
-        })
+        }))
       }
     })
     // remove localstorage for deleted users

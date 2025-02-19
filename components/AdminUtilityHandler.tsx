@@ -29,7 +29,7 @@ export default function AdminUtilityHandler({
     disabled: false,
     text: "Refresh Data",
   })
-  const [sumbitButton, setSumbitButton] = useState({
+  const [submitButton, setSubmitButton] = useState({
     disabled: false,
     text: "Submit",
   })
@@ -54,7 +54,7 @@ export default function AdminUtilityHandler({
     formData.append("option", option)
     formMessageSet.current = false
     formAction(formData)
-    setSumbitButton({
+    setSubmitButton({
       disabled: true,
       text: "Loading...",
     })
@@ -84,7 +84,7 @@ export default function AdminUtilityHandler({
   }
 
   useEffect(() => {
-    setSumbitButton({ disabled: false, text: "Submit" })
+    setSubmitButton({ disabled: false, text: "Submit" })
     if (formResponse?.message) {
       if (option === "Upload Picks" && isValidURL(formResponse.message)) {
         fetch(formResponse.message, {
@@ -141,10 +141,10 @@ export default function AdminUtilityHandler({
       if (!formMessageSet.current) {
         formMessageSet.current = true
         if (isValidURL(formResponse?.message))
-          setFormMessage({
-            ...formMessage,
+          setFormMessage((prevState) => ({
+            ...prevState,
             message: "All picks from file created",
-          })
+          }))
         else setFormMessage({ message: formResponse?.message, error: null })
       } else {
         // form success already set
@@ -448,8 +448,8 @@ export default function AdminUtilityHandler({
         <input
           className="mb-2 mt-[10px] block w-fit cursor-pointer rounded-md bg-black p-2 text-xs text-white hover:bg-gray-500 sm:text-sm md:text-base"
           type="submit"
-          value={sumbitButton.text}
-          disabled={sumbitButton.disabled}
+          value={submitButton.text}
+          disabled={submitButton.disabled}
         />
         <ul>
           {formMessage?.message &&
