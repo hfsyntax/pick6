@@ -20,7 +20,7 @@ function randomPassword(): string {
 
 async function setConfigValue(
   key: string,
-  value: string | number
+  value: string | number,
 ): Promise<boolean> {
   try {
     const queryResult = await sql`
@@ -31,7 +31,7 @@ async function setConfigValue(
     return queryResult?.rowCount > 0
   } catch (error) {
     const newError = new Error(
-      `Error: failed setting app configuration value: ${value} for key: ${key}`
+      `Error: failed setting app configuration value: ${value} for key: ${key}`,
     )
     newError.name = "AppConfigError"
     throw newError
@@ -48,7 +48,7 @@ async function toggleTimer(): Promise<FormResult> {
     const timerPaused = await getConfigValue("TIMER_PAUSED")
     const setTimerState = await setConfigValue(
       "TIMER_PAUSED",
-      timerPaused === "1" ? "0" : "1"
+      timerPaused === "1" ? "0" : "1",
     )
     if (setTimerState) {
       const timerStatus = timerPaused === "1" ? "unpaused" : "paused"
@@ -81,7 +81,7 @@ async function setTimer(time: FormDataEntryValue = ""): Promise<FormResult> {
 
 async function setSeasonAndWeek(
   season: FormDataEntryValue = "",
-  week: FormDataEntryValue = ""
+  week: FormDataEntryValue = "",
 ): Promise<FormResult> {
   try {
     const targetSeason = isNaN(Number(season.toString().trim()))
@@ -325,7 +325,7 @@ async function insertUser(formData: FormData): Promise<FormResult> {
       for (let line of lines) {
         if (
           line.match(
-            /^[a-zA-Z0-9]+\s*,\s*[a-zA-Z0-9]+\s*,\s*[a-zA-Z0-9]+\s*,\s*(admin|user)\s*,\s*[0-9]+\s*$/
+            /^[a-zA-Z0-9]+\s*,\s*[a-zA-Z0-9]+\s*,\s*[a-zA-Z0-9]+\s*,\s*(admin|user)\s*,\s*[0-9]+\s*$/,
           )
         ) {
           const userData = line.split(",")
@@ -336,7 +336,7 @@ async function insertUser(formData: FormData): Promise<FormResult> {
 
           if (!password.match(/^(?=.*[A-Z])(?=.*\d).{6,}$/)) {
             skippedLines.push(
-              `Line: ${line} (password must contain at least 6 characters, 1 uppercase letter and 1 number)<br/>`
+              `Line: ${line} (password must contain at least 6 characters, 1 uppercase letter and 1 number)<br/>`,
             )
             continue
           }
@@ -370,7 +370,7 @@ async function insertUser(formData: FormData): Promise<FormResult> {
             }
             groups[group].add(groupNumber)
             createTempValues.push(
-              `('${userType}', '${username}', '${hashed_password}', '0', '${group}', '${groupNumber}')`
+              `('${userType}', '${username}', '${hashed_password}', '0', '${group}', '${groupNumber}')`,
             )
           }
         } else {
@@ -443,7 +443,7 @@ async function insertUser(formData: FormData): Promise<FormResult> {
             const group = createdUsers[user]["group"]
             const groupNumber = createdUsers[user]["groupNumber"]
             createPlayerValues.push(
-              `('${authID}', '${user}', '${group}', '${groupNumber}')`
+              `('${authID}', '${user}', '${group}', '${groupNumber}')`,
             )
             successfulEntires++
           }
@@ -603,13 +603,13 @@ async function deleteUser(formData: FormData): Promise<FormResult> {
       } else if (skippedLines.length > 0 && successfulEntires > 0) {
         return {
           error: `Some users from file were not ${operation}. Skipped lines:<br/>${skippedLines.join(
-            ""
+            "",
           )}`,
         }
       } else {
         return {
           error: `No users from file ${operation}. Skipped lines:<br/>${skippedLines.join(
-            ""
+            "",
           )}`,
         }
       }
@@ -738,8 +738,8 @@ async function uploadGames(formData: FormData): Promise<FormResult> {
         if (!gameNumber || !favorite || isNaN(spread) || !underdog) {
           skippedLines.push(
             `${line} (invalid format)<br/>game number incorrect: ${!gameNumber} favorite incorrect: ${!favorite} spread incorrect: ${isNaN(
-              spread
-            )} underdog incorrect: ${!underdog}<br/>`
+              spread,
+            )} underdog incorrect: ${!underdog}<br/>`,
           )
           continue
         }
@@ -750,19 +750,19 @@ async function uploadGames(formData: FormData): Promise<FormResult> {
         ) {
           if (!teamIDs[favorite]) {
             skippedLines.push(
-              `${line} favorite ${favorite} does not exist as a team in the database<br/>`
+              `${line} favorite ${favorite} does not exist as a team in the database<br/>`,
             )
             continue
           } else if (!teamIDs[underdog]) {
             skippedLines.push(
-              `${line} underdog ${underdog} does not exist as a team in the database<br/>`
+              `${line} underdog ${underdog} does not exist as a team in the database<br/>`,
             )
             continue
           } else {
             const favoriteID = teamIDs[favorite]
             const underdogID = teamIDs[underdog]
             createGamesValues.push(
-              `('${currentSeason}', '${currentWeek}', '${favoriteID}', '${spread}', '${underdogID}')`
+              `('${currentSeason}', '${currentWeek}', '${favoriteID}', '${spread}', '${underdogID}')`,
             )
             successfulEntries++
           }
@@ -774,7 +774,7 @@ async function uploadGames(formData: FormData): Promise<FormResult> {
       revalidatePath("/admin_utility")
       return {
         error: `Error: (need to reprocess) some games not created, skipped lines:<br/>${skippedLines.join(
-          ""
+          "",
         )}`,
       }
     }
@@ -935,12 +935,12 @@ async function handleWeekResults(formData: FormData): Promise<FormResult> {
         ) {
           if (!teamIDs[favorite]) {
             skippedLines.push(
-              `${line} favorite ${favorite} does not exist as a team in the database<br/>`
+              `${line} favorite ${favorite} does not exist as a team in the database<br/>`,
             )
             continue
           } else if (!teamIDs[underdog]) {
             skippedLines.push(
-              `${line} favorite ${favorite} does not exist as a team in the database<br/>`
+              `${line} favorite ${favorite} does not exist as a team in the database<br/>`,
             )
             continue
           } else {
@@ -962,7 +962,7 @@ async function handleWeekResults(formData: FormData): Promise<FormResult> {
               const underdogID = teamIDs[underdog]
               const winnerID = teamIDs[winner]
               createTempValues.push(
-                `('${currentSeason}', '${currentWeek}', '${favoriteID}', '${underdogID}', '${winnerID}', '${favoriteScore}', '${underdogScore}')`
+                `('${currentSeason}', '${currentWeek}', '${favoriteID}', '${underdogID}', '${winnerID}', '${favoriteScore}', '${underdogScore}')`,
               )
             }
           }
@@ -993,7 +993,7 @@ async function handleWeekResults(formData: FormData): Promise<FormResult> {
         const favorite = row["favorite"]
         const underdog = row["underdog"]
         skippedLines.push(
-          `line with favorite: ${favorite} and underdog: ${underdog} (game doesn't exist)<br/>`
+          `line with favorite: ${favorite} and underdog: ${underdog} (game doesn't exist)<br/>`,
         )
       }
 
@@ -1029,7 +1029,7 @@ async function handleWeekResults(formData: FormData): Promise<FormResult> {
         revalidatePath("/admin_utility")
         return {
           error: `Error: the number of game results to update does not match the number of games for the week (need to reprocess)<br/>Skipped lines: ${skippedLines.join(
-            ""
+            "",
           )}`,
         }
       }
@@ -1088,7 +1088,7 @@ async function handleWeekResults(formData: FormData): Promise<FormResult> {
                 )`
       if (playersWithNoPicks.rowCount > 0) {
         message.push(
-          `Created new player week stat entries for players who did not make selections for week ${currentWeek}<br/>`
+          `Created new player week stat entries for players who did not make selections for week ${currentWeek}<br/>`,
         )
       }
 
@@ -1126,7 +1126,7 @@ async function handleWeekResults(formData: FormData): Promise<FormResult> {
 
       if (playersWithPicks.rowCount > 0) {
         message.push(
-          `Created new player week stats entries for next week week ${weekNumber} who have made selections<br/>`
+          `Created new player week stats entries for next week week ${weekNumber} who have made selections<br/>`,
         )
       }
 
@@ -1153,7 +1153,7 @@ async function handleWeekResults(formData: FormData): Promise<FormResult> {
 
       if (nextWeekRanks.rowCount > 0) {
         message.push(
-          `Updated player ranks for next weeks stats week ${weekNumber}<br/>`
+          `Updated player ranks for next weeks stats week ${weekNumber}<br/>`,
         )
       }
 
@@ -1186,7 +1186,7 @@ async function handleWeekResults(formData: FormData): Promise<FormResult> {
 
       if (seasonStats.rowCount > 0) {
         message.push(
-          `Updated player season stats entries for sesaon ${currentSeason}<br/>`
+          `Updated player season stats entries for sesaon ${currentSeason}<br/>`,
         )
       }
 
@@ -1266,14 +1266,14 @@ async function handleWeekResults(formData: FormData): Promise<FormResult> {
 
       if (losersWithNoPicks.rowCount > 0) {
         message.push(
-          `Inserted losers for week ${currentWeek} who didn't make selections<br/>`
+          `Inserted losers for week ${currentWeek} who didn't make selections<br/>`,
         )
       }
 
       // update week env
       await setConfigValue("CURRENT_WEEK", weekNumber)
       message.push(
-        `Updated the current week to the next week ${weekNumber}<br/>`
+        `Updated the current week to the next week ${weekNumber}<br/>`,
       )
       revalidatePath("/teams")
       revalidatePath("/weekly")
@@ -1286,7 +1286,7 @@ async function handleWeekResults(formData: FormData): Promise<FormResult> {
       revalidatePath("/admin_utility")
       return {
         error: `Error: game results from file could not be parsed.<br/>Skipped lines: ${skippedLines.join(
-          ""
+          "",
         )}`,
       }
     }
@@ -1398,7 +1398,7 @@ async function uploadPicks(formData: FormData): Promise<FormResult> {
 
         if (isNaN(parseInt(groupNumber))) {
           skippedLines.push(
-            `found invalid group number for player ${line[2]}<br/>`
+            `found invalid group number for player ${line[2]}<br/>`,
           )
           continue
         }
@@ -1407,7 +1407,7 @@ async function uploadPicks(formData: FormData): Promise<FormResult> {
 
         if (group.length !== 2) {
           skippedLines.push(
-            `found invalid group not of length 2 for player ${line[2]}<br/>`
+            `found invalid group not of length 2 for player ${line[2]}<br/>`,
           )
           continue
         }
@@ -1418,7 +1418,7 @@ async function uploadPicks(formData: FormData): Promise<FormResult> {
 
         if (groups[group].has(groupNumber)) {
           skippedLines.push(
-            `found duplicate group number: ${groupNumber} for group: ${group} for player ${line[2]}<br/>`
+            `found duplicate group number: ${groupNumber} for group: ${group} for player ${line[2]}<br/>`,
           )
           continue
         }
@@ -1439,11 +1439,11 @@ async function uploadPicks(formData: FormData): Promise<FormResult> {
           }
           groups[group].add(groupNumber)
           createTempUserValues.push(
-            `('${playerName}', '${hashedPassword}', '1', '${group}', '${groupNumber}')`
+            `('${playerName}', '${hashedPassword}', '1', '${group}', '${groupNumber}')`,
           )
         } else {
           skippedLines.push(
-            `player ${line[2]} skipped due to no alphanumeric characters or is a duplicate<br/>`
+            `player ${line[2]} skipped due to no alphanumeric characters or is a duplicate<br/>`,
           )
           continue
         }
@@ -1454,7 +1454,7 @@ async function uploadPicks(formData: FormData): Promise<FormResult> {
       revalidatePath("/admin_utility")
       return {
         error: `Error: need to reprocess picks due to skipped lines:<br/>${skippedLines.join(
-          ""
+          "",
         )}`,
       }
     }
@@ -1480,8 +1480,10 @@ async function uploadPicks(formData: FormData): Promise<FormResult> {
         WHERE EXISTS (
             SELECT 1
             FROM players p
+            JOIN playerauth pa ON p.player_id = pa.auth_id
             WHERE p.group_number = t.group_number
             AND p.gp = t.gp
+            AND pa.username <> t.username
         )`
 
     if (currentWeek === "1" && duplicateGroupIdQuery.rowCount > 0) {
@@ -1556,25 +1558,25 @@ async function uploadPicks(formData: FormData): Promise<FormResult> {
       const authID = row["auth_id"]
       createdUsers[user]["authID"] = authID
       const groupNumber = createdUsers[user]["groupNumber"]
+      const group = createdUsers[user]["group"]
       if (createdUsers[user]["new"]) {
-        const group = createdUsers[user]["group"]
         createPlayerValues.push(
-          `('${authID}', '${user}', '${group}', '${groupNumber}')`
-        )
-        createStatValues.push(
-          `('${authID}', '${currentSeason}', '0', '0', '0', '0', '0', '${group}', '${groupNumber}')`
-        )
-        createWeekStatValues.push(
-          `('${authID}', '${currentSeason}', '${currentWeek}', '0', '0', '0', '0', '0', '${group}', '${groupNumber}')`
+          `('${authID}', '${user}', '${group}', '${groupNumber}')`,
         )
       }
+      createStatValues.push(
+        `('${authID}', '${currentSeason}', '0', '0', '0', '0', '0', '${group}', '${groupNumber}')`,
+      )
+      createWeekStatValues.push(
+        `('${authID}', '${currentSeason}', '${currentWeek}', '0', '0', '0', '0', '0', '${group}', '${groupNumber}')`,
+      )
     }
 
     // batch insert new users
     for (let i = 0; i < createPlayerValues.length; i += batchSize) {
       const batch = createPlayerValues.slice(i, i + batchSize)
       await sql.query(
-        `${createPlayerSql} ${batch.join()} ON CONFLICT(name) DO NOTHING`
+        `${createPlayerSql} ${batch.join()} ON CONFLICT(name) DO NOTHING`,
       )
     }
 
@@ -1650,7 +1652,7 @@ async function uploadPicks(formData: FormData): Promise<FormResult> {
 
         if (createdUsers[playerName]) {
           const picks = [pick1, pick2, pick3, pick4, pick5, pick6].filter(
-            (pick) => pick && pick.trim() !== ""
+            (pick) => pick && pick.trim() !== "",
           )
 
           for (let pick of picks) {
@@ -1671,7 +1673,7 @@ async function uploadPicks(formData: FormData): Promise<FormResult> {
               if (!playerSelections[playerID][gameID]) {
                 playerSelections[playerID][gameID] = teamID
                 createPicksValues.push(
-                  `('${playerID}', '${gameID}', '${teamID}')`
+                  `('${playerID}', '${gameID}', '${teamID}')`,
                 )
               }
             }
@@ -1684,7 +1686,7 @@ async function uploadPicks(formData: FormData): Promise<FormResult> {
       revalidatePath("/admin_utility")
       return {
         error: `Error: need to reprocess picks due to skipped lines:<br/>${skippedLines.join(
-          ""
+          "",
         )}`,
       }
     }
@@ -1695,6 +1697,14 @@ async function uploadPicks(formData: FormData): Promise<FormResult> {
         error: `Error: no picks were created due to all lines not containing the exact field values`,
       }
     }
+
+    // clear previously set picks
+    await sql`DELETE FROM playerselections
+         WHERE game_id IN (
+             SELECT game_id
+             FROM games
+             WHERE season_number = ${currentSeason} AND week_number = ${currentWeek}
+         )`
 
     // batch insert picks
     for (let i = 0; i < createPicksValues.length; i += batchSize) {
@@ -1717,7 +1727,7 @@ async function uploadPicks(formData: FormData): Promise<FormResult> {
         {
           method: "POST",
           body: formData,
-        }
+        },
       )
       responseJson = await response.json()
     }
@@ -1758,7 +1768,7 @@ export async function revalidateCache(): Promise<string> {
 
 export async function handleAdminForm(
   prevState: any,
-  formData: FormData
+  formData: FormData,
 ): Promise<FormResult> {
   const session = await getSession()
 

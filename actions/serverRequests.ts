@@ -6,7 +6,7 @@ import { sql } from "@vercel/postgres"
 import { list, del } from "@vercel/blob"
 
 export async function getConfigValue(
-  key: string
+  key: string,
 ): Promise<QueryResultRow[string]> {
   try {
     const queryResult =
@@ -14,7 +14,7 @@ export async function getConfigValue(
     return queryResult?.rows?.[0]?.value
   } catch (error) {
     const newError = new Error(
-      `Error: failed getting app configuration key: ${key}`
+      `Error: failed getting app configuration key: ${key}`,
     )
     newError.name = "AppConfigError"
     throw newError
@@ -65,7 +65,7 @@ export const getWeekGames = cache(
     } catch (error) {
       return []
     }
-  }
+  },
 )
 
 export const getWeekGameResults = cache(
@@ -98,7 +98,7 @@ export const getWeekGameResults = cache(
     } catch (error) {
       return []
     }
-  }
+  },
 )
 
 export const getGameCountForWeek = cache(
@@ -110,14 +110,14 @@ export const getGameCountForWeek = cache(
     } catch (error) {
       return 0
     }
-  }
+  },
 )
 
 export const getWeekResults = cache(
   async (
     season: string,
     currentSeason: string,
-    week: string
+    week: string,
   ): Promise<QueryResultRow[]> => {
     try {
       const queryResult = await sql`
@@ -157,14 +157,14 @@ export const getWeekResults = cache(
     } catch (error) {
       return []
     }
-  }
+  },
 )
 
 export const getSeasonStats = cache(
   async (
     season: string,
     order: string,
-    fields: Array<string>
+    fields: Array<string>,
   ): Promise<QueryResultRow[]> => {
     try {
       const orderQuery =
@@ -193,7 +193,7 @@ export const getSeasonStats = cache(
     } catch (error) {
       return []
     }
-  }
+  },
 )
 
 interface PickResult {
@@ -206,7 +206,7 @@ export const getPicks = cache(
     season: string,
     week: string,
     order: string = "",
-    fields: Array<string>
+    fields: Array<string>,
   ): Promise<PickResult> => {
     try {
       const orderQuery =
@@ -289,6 +289,82 @@ export const getPicks = cache(
     AND g.week_number = ${weekNumber}
     ${orderQuery}
     `)
+
+      console.log(`SELECT DISTINCT
+        subquery.player_id,
+        subquery.rank,
+        subquery.group_number,
+        subquery.gp,
+        subquery.picture_url,
+        subquery.player_name,
+        subquery.won,
+        subquery.played,
+        subquery.win_percentage,
+        CASE
+            WHEN array_length(selected_teams_arr, 1) >= 1 THEN selected_teams_arr[1]
+            ELSE NULL
+        END AS pick1,
+        CASE
+            WHEN array_length(selected_teams_arr, 1) >= 2 THEN selected_teams_arr[2]
+            ELSE NULL
+        END AS pick2,
+        CASE
+            WHEN array_length(selected_teams_arr, 1) >= 3 THEN selected_teams_arr[3]
+            ELSE NULL
+        END AS pick3,
+        CASE
+            WHEN array_length(selected_teams_arr, 1) >= 4 THEN selected_teams_arr[4]
+            ELSE NULL
+        END AS pick4,
+        CASE
+            WHEN array_length(selected_teams_arr, 1) >= 5 THEN selected_teams_arr[5]
+            ELSE NULL
+        END AS pick5,
+        CASE
+            WHEN array_length(selected_teams_arr, 1) >= 6 THEN selected_teams_arr[6]
+            ELSE NULL
+        END AS pick6
+    FROM (
+        SELECT
+            pw.stat_id,
+            p.name AS player_name,
+            p.picture_url,
+            pw.gp,
+            pw.group_number,
+            pw.player_id,
+            pw.season_number,
+            pw.week_number,
+            pw.rank,
+            pw.won,
+            pw.lost,
+            pw.played,
+            pw.win_percentage,
+            ARRAY(
+                SELECT t.team_name
+                FROM PlayerSelections AS ps
+                INNER JOIN Games AS g ON ps.game_id = g.game_id
+                INNER JOIN Teams AS t ON ps.selected_team_id = t.team_id
+                WHERE ps.player_id = pw.player_id
+                    AND g.season_number = pw.season_number
+                    AND g.week_number = pw.week_number
+                ORDER BY ps.selection_id
+            ) AS selected_teams_arr
+        FROM
+            PlayerWeekStats pw
+        INNER JOIN
+            Players p ON pw.player_id = p.player_id
+        WHERE
+            pw.season_number = ${seasonNumber}
+            AND pw.week_number = ${weekNumber}
+    ) AS subquery
+    INNER JOIN PlayerSelections AS ps ON subquery.player_id = ps.player_id
+    INNER JOIN Games AS g ON ps.game_id = g.game_id
+    WHERE
+    g.season_number = ${seasonNumber}
+    AND g.week_number = ${weekNumber}
+    ${orderQuery}
+    `)
+
       const gameCount = await getGameCountForWeek(season, week)
       const picks = queryResult.rows.map((row: Object) => {
         let rowCopy = { ...row }
@@ -308,14 +384,14 @@ export const getPicks = cache(
       ].concat(
         Array.from(
           { length: Math.min(gameCount, 6) },
-          (_, i) => "pick" + (i + 1)
-        )
+          (_, i) => "pick" + (i + 1),
+        ),
       )
       return { picks: picks, headers: headers }
     } catch (error) {
       return { picks: [], headers: [] }
     }
-  }
+  },
 )
 
 export async function getUser(id: string): Promise<QueryResultRow[]> {
@@ -330,7 +406,7 @@ export async function getUser(id: string): Promise<QueryResultRow[]> {
 }
 
 export async function getUsersByName(
-  users: string[]
+  users: string[],
 ): Promise<QueryResultRow[]> {
   try {
     if (users.length > 10) {
@@ -339,7 +415,7 @@ export async function getUsersByName(
     const queryResult = await sql.query(
       `SELECT username from playerauth where username IN (${users
         .map((user) => `'${user}'`)
-        .join()})`
+        .join()})`,
     )
     return queryResult.rows
   } catch (error) {
@@ -426,7 +502,10 @@ export async function getUserWeekPicks(id: string): Promise<PickResult> {
       return rowCopy
     })
     const headers = ["Player"].concat(
-      Array.from({ length: Math.min(gameCount, 6) }, (_, i) => "pick" + (i + 1))
+      Array.from(
+        { length: Math.min(gameCount, 6) },
+        (_, i) => "pick" + (i + 1),
+      ),
     )
     return { picks: picks, headers: headers }
   } catch (error) {
@@ -435,7 +514,7 @@ export async function getUserWeekPicks(id: string): Promise<PickResult> {
 }
 
 export async function getUserSeasonsData(
-  id: string
+  id: string,
 ): Promise<QueryResultRow[]> {
   try {
     const queryResult = await sql`SELECT
