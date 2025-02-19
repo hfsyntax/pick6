@@ -27,13 +27,17 @@ export default async function results(): Promise<JSX.Element> {
     winner_names: { small: 100, medium: 200, large: 200 },
     loser_names: { small: 100, medium: 200, large: 200 },
   }
+
   const rowHeights = [
     35,
-    ...results.map((week, index) => {
-      const weekLosers = week["loser_names"]?.split("<br>")?.length
-      const weekWinners = week["winner_names"]?.split("<br>")?.length
-      const maxPlayers = Math.max(weekLosers, weekWinners)
-      return maxPlayers * 35 + 10 + (index !== 0 && 10)
+    ...results.map((week) => {
+      const maxPlayers = Math.max(
+        week["winners_count"],
+        week["losers_count"],
+        1
+      )
+      // 35px row height + gap of 10px between each row
+      return maxPlayers * 35 + (maxPlayers - 1) * 10
     }),
   ]
 

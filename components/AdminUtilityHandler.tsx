@@ -163,16 +163,16 @@ export default function AdminUtilityHandler({
         className="absolute top-0 left-0 w-full h-full bg-[rgba(0, 0, 0, 0.5)] backdrop-blur-[10px] z-[1]"
         style={{ display: message.display }}
       >
-        <div className="showing:bg-white absolute flex items-center flex-col left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[250px] h-[130px] text-center z-[2]">
+        <div className="shadow-lg bg-white absolute flex items-center flex-col left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[250px] h-[170px] text-center z-[2]">
           <FontAwesomeIcon
-            className="mr-auto ml-[5px] cursor-pointer"
+            className="mr-auto ml-[5px] cursor-pointer hover:text-gray-500"
             icon={faXmark}
             size="xl"
             onClick={closeModal}
           />
           <span className="relative top-[25px]">{message.text}</span>
           <button
-            className="inline-block relative top-[30px] ml-[10px]"
+            className="inline-block relative top-[30px] ml-[10px] bg-black text-white p-1 rounded-md hover:bg-gray-500"
             onClick={closeModal}
           >
             Ok

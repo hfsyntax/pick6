@@ -64,73 +64,42 @@ function Row({
               index === 0 ? "text-white bg-black mb-2" : "text-black bg-white"
             } leading-[35px] flex-shrink-0`}
           >
-            {index === 0 ? (
-              columns[rowIndex]
-            ) : field === "player_name" ? (
-              <Link
-                className="relative w-full h-full block group"
-                href={`/profile/${row["player_id"]}`}
-              >
-                <span className="block w-fit ml-[30px] lg:ml-[40px] group-hover:text-white group-hover:bg-black">
-                  {row[field]}
-                </span>
-                <Image
-                  width={0}
-                  height={0}
-                  src={row["picture_url"] ? row["picture_url"] : "/default.png"}
-                  alt="profile_pic"
-                  className="absolute top-1/2 -translate-y-1/2 left-0 h-3/4 lg:h-full w-auto"
-                />
-              </Link>
-            ) : field === "favorite_team" || field === "underdog_team" ? (
-              <Fragment key={`${field}_${index}`}>
-                <input
-                  type="checkbox"
-                  name={
-                    field === "favorite_team"
-                      ? row["favorite_id"]
-                      : row["underdog_id"]
-                  }
-                  value={row["game_id"]}
-                  className="inline-block absolute left-0 translate-y-[-50%] top-1/2"
-                />
-                <li className="inline-block">{row[field]}</li>
-              </Fragment>
-            ) : field === "loser_names" || field === "winner_names" ? (
-              row[field].split("<br>").map((entry: string, index: number) => {
-                return (
-                  <div
-                    className={`flex items-center`}
-                    key={entry.split(" ")[2]}
-                  >
-                    <Link
-                      href={`/profile/${entry.split(" ")[2]}`}
-                      className="peer"
+            {index === 0
+              ? columns[rowIndex]
+              : ["winner_names", "loser_names"].includes(field) &&
+                !["NONE!!!", "ROLL-OVER!!!"].includes(row[field])
+              ? row[field].split("<br>").map((entry: string, index: number) => {
+                  return (
+                    <div
+                      className={`flex items-center`}
+                      key={entry.split(" ")[2]}
                     >
-                      <Image
-                        width={0}
-                        height={0}
-                        src={
-                          entry.split(" ")[0]
-                            ? entry.split(" ")[0]
-                            : "/default.png"
-                        }
-                        alt="profile_pic"
-                        className="h-[25px] lg:h-[35px] w-auto"
-                      />
-                    </Link>
-                    <Link
-                      href={`/profile/${entry.split(" ")[2]}`}
-                      className="peer-hover:bg-black peer-hover:text-white hover:bg-black hover:text-white"
-                    >
-                      <span className="ml-1">{entry.split(" ")[1]}</span>
-                    </Link>
-                  </div>
-                )
-              })
-            ) : (
-              row[field]
-            )}
+                      <Link
+                        href={`/profile/${entry.split(" ")[2]}`}
+                        className="peer"
+                      >
+                        <Image
+                          width={0}
+                          height={0}
+                          src={
+                            entry.split(" ")[0]
+                              ? entry.split(" ")[0]
+                              : "/default.png"
+                          }
+                          alt="profile_pic"
+                          className="h-[25px] lg:h-[35px] w-auto"
+                        />
+                      </Link>
+                      <Link
+                        href={`/profile/${entry.split(" ")[2]}`}
+                        className="peer-hover:bg-black peer-hover:text-white hover:bg-black hover:text-white"
+                      >
+                        <span className="ml-1">{entry.split(" ")[1]}</span>
+                      </Link>
+                    </div>
+                  )
+                })
+              : row[field]}
           </div>
         ))}
     </div>
