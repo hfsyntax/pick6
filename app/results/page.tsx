@@ -16,11 +16,11 @@ export default async function results(): Promise<JSX.Element> {
   const results = await getWeekResults(
     currentSeason,
     currentSeason,
-    currentWeek
+    currentWeek,
   )
   const seasons = await getSeasons()
   const seasonID = seasons.find(
-    (season) => season.season_number == currentSeason
+    (season) => season.season_number == currentSeason,
   )?.season_id
   const columnWidths = {
     week_number: { small: 40, medium: 70, large: 100 },
@@ -34,7 +34,7 @@ export default async function results(): Promise<JSX.Element> {
       const maxPlayers = Math.max(
         week["winners_count"],
         week["losers_count"],
-        1
+        1,
       )
       // 35px row height + gap of 10px between each row
       return maxPlayers * 35 + (maxPlayers - 1) * 10
@@ -42,8 +42,8 @@ export default async function results(): Promise<JSX.Element> {
   ]
 
   return (
-    <div className="absolute top-0 left-[50px] w-[calc(100%-50px)] min-h-full flex flex-col text-center items-center overflow-x-hidden">
-      <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl mt-1">
+    <div className="absolute left-[50px] top-0 flex min-h-full w-[calc(100%-50px)] flex-col items-center overflow-x-hidden text-center">
+      <h1 className="mt-1 text-2xl sm:text-3xl md:text-4xl lg:text-5xl">
         Winners & 0'fers
       </h1>
       {seasons.length > 0 ? (

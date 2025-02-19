@@ -45,12 +45,12 @@ export default function ChangePassword({ session }): JSX.Element {
         type="button"
         onClick={toggleForm}
         value={showForm ? "Cancel new password" : "Change password"}
-        className="m-[10px] w-fit ml-auto mr-auto"
+        className="m-[10px] ml-auto mr-auto w-fit"
       />
       {showForm && (
         <>
           <form
-            className="flex items-center flex-col w-full ml-auto mr-auto"
+            className="ml-auto mr-auto flex w-full flex-col items-center"
             ref={currentForm}
             onSubmit={handleForm}
           >
@@ -87,7 +87,7 @@ export default function ChangePassword({ session }): JSX.Element {
               required
             />
             <input
-              className="block mt-[10px]"
+              className="mt-[10px] block"
               type="submit"
               value={sumbitButton.text}
               disabled={sumbitButton.disabled}

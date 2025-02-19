@@ -18,9 +18,9 @@ export default async function Teams(): Promise<JSX.Element> {
   const timerPaused = await isTimerPaused()
   const timerTime = await calculateTimeUntilReset()
   return (
-    <div className="absolute top-0 left-[50px] w-[calc(100%-50px)] min-h-full flex flex-col text-center items-center overflow-x-hidden">
+    <div className="absolute left-[50px] top-0 flex min-h-full w-[calc(100%-50px)] flex-col items-center overflow-x-hidden text-center">
       {weekGames?.length > 0 && (
-        <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl mt-1">
+        <h1 className="mt-1 text-2xl sm:text-3xl md:text-4xl lg:text-5xl">
           Week {currentWeek ? currentWeek : "N/A"} of Season{" "}
           {currentSeason ? currentSeason : "N/A"}
         </h1>

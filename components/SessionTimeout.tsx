@@ -53,12 +53,12 @@ export default function SessionTimeout(): JSX.Element {
 
   return (
     <div
-      className="absolute top-0 left-0 w-full h-full bg-[rgba(0, 0, 0, 0.5)] backdrop-blur-[10px] z-[1]"
+      className="bg-[rgba(0, 0, 0, 0.5)] absolute left-0 top-0 z-[1] h-full w-full backdrop-blur-[10px]"
       style={{ display: message }}
     >
-      <div className="showing:bg-white absolute flex items-center flex-col left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[250px] h-[130px] text-center z-[2]">
+      <div className="showing:bg-white absolute left-1/2 top-1/2 z-[2] flex h-[130px] w-[250px] -translate-x-1/2 -translate-y-1/2 flex-col items-center text-center">
         <FontAwesomeIcon
-          className="mr-auto ml-[5px] cursor-pointer"
+          className="ml-[5px] mr-auto cursor-pointer"
           icon={faXmark}
           size="xl"
           onClick={closeModal}
@@ -67,7 +67,7 @@ export default function SessionTimeout(): JSX.Element {
           your session expires in 5 minutes, click ok to reset your session time
         </span>
         <button
-          className="inline-block relative top-[30px] ml-[10px]"
+          className="relative top-[30px] ml-[10px] inline-block"
           onClick={requestNewSession}
         >
           Ok

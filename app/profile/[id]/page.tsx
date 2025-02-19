@@ -11,11 +11,11 @@ export default async function profileID({ params }): Promise<JSX.Element> {
   const user = await getUser(params.id)
   const profilePicURL = await getProfilePictureURL()
   return (
-    <div className="absolute top-0 left-[50px] w-[calc(100%-50px)] min-h-full flex flex-col text-center items-center overflow-x-hidden">
-      <div className="relative ml-auto mr-auto w-[200px] h-[200px]">
+    <div className="absolute left-[50px] top-0 flex min-h-full w-[calc(100%-50px)] flex-col items-center overflow-x-hidden text-center">
+      <div className="relative ml-auto mr-auto h-[200px] w-[200px]">
         <Image
           key={Date.now()}
-          className="absolute top-0 left-0 h-full w-full bg-[#bbb] bg-cover rounded-[50%]"
+          className="absolute left-0 top-0 h-full w-full rounded-[50%] bg-[#bbb] bg-cover"
           src={profilePicURL ? profilePicURL : `/default.png`}
           priority
           width={"200"}

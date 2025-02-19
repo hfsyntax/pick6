@@ -44,7 +44,7 @@ function Row({
       }}
     >
       {index !== 0 && (
-        <div className="bottom-0 absolute h-[1px] w-[93%] md:w-[97%] bg-black"></div>
+        <div className="absolute bottom-0 h-[1px] w-[93%] bg-black md:w-[97%]"></div>
       )}
       {Object.keys(row)
         .filter((field) => !nonDisplayedCols.includes(field))
@@ -57,49 +57,51 @@ function Row({
                 windowWidth < 768
                   ? columnWidths[field].small
                   : windowWidth < 1200
-                  ? columnWidths[field].medium
-                  : columnWidths[field].large,
+                    ? columnWidths[field].medium
+                    : columnWidths[field].large,
             }}
-            className={`flex flex-col gap-[5px] relative ${
-              index === 0 ? "text-white bg-black mb-2" : "text-black bg-white"
-            } leading-[35px] flex-shrink-0`}
+            className={`relative flex flex-col gap-[5px] ${
+              index === 0 ? "mb-2 bg-black text-white" : "bg-white text-black"
+            } flex-shrink-0 leading-[35px]`}
           >
             {index === 0
               ? columns[rowIndex]
               : ["winner_names", "loser_names"].includes(field) &&
-                !["NONE!!!", "ROLL-OVER!!!"].includes(row[field])
-              ? row[field].split("<br>").map((entry: string, index: number) => {
-                  return (
-                    <div
-                      className={`flex items-center`}
-                      key={entry.split(" ")[2]}
-                    >
-                      <Link
-                        href={`/profile/${entry.split(" ")[2]}`}
-                        className="peer"
-                      >
-                        <Image
-                          width={0}
-                          height={0}
-                          src={
-                            entry.split(" ")[0]
-                              ? entry.split(" ")[0]
-                              : "/default.png"
-                          }
-                          alt="profile_pic"
-                          className="h-[25px] lg:h-[35px] w-auto"
-                        />
-                      </Link>
-                      <Link
-                        href={`/profile/${entry.split(" ")[2]}`}
-                        className="peer-hover:bg-black peer-hover:text-white hover:bg-black hover:text-white"
-                      >
-                        <span className="ml-1">{entry.split(" ")[1]}</span>
-                      </Link>
-                    </div>
-                  )
-                })
-              : row[field]}
+                  !["NONE!!!", "ROLL-OVER!!!"].includes(row[field])
+                ? row[field]
+                    .split("<br>")
+                    .map((entry: string, index: number) => {
+                      return (
+                        <div
+                          className={`flex items-center`}
+                          key={entry.split(" ")[2]}
+                        >
+                          <Link
+                            href={`/profile/${entry.split(" ")[2]}`}
+                            className="peer"
+                          >
+                            <Image
+                              width={0}
+                              height={0}
+                              src={
+                                entry.split(" ")[0]
+                                  ? entry.split(" ")[0]
+                                  : "/default.png"
+                              }
+                              alt="profile_pic"
+                              className="h-[25px] w-auto lg:h-[35px]"
+                            />
+                          </Link>
+                          <Link
+                            href={`/profile/${entry.split(" ")[2]}`}
+                            className="hover:bg-black hover:text-white peer-hover:bg-black peer-hover:text-white"
+                          >
+                            <span className="ml-1">{entry.split(" ")[1]}</span>
+                          </Link>
+                        </div>
+                      )
+                    })
+                : row[field]}
           </div>
         ))}
     </div>
@@ -156,14 +158,14 @@ export default function DynamicTable({
       windowWidth < 768
         ? width.small
         : windowWidth < 1200
-        ? width.medium
-        : width.large
+          ? width.medium
+          : width.large
     return acc
   }, 0)
   return (
-    <div className="overflow-auto w-full mt-3" style={{ height: height }}>
+    <div className="mt-3 w-full overflow-auto" style={{ height: height }}>
       <div
-        className={`h-full text-[10px] md:text-[14px] lg:text-[14px] ml-auto mr-auto`}
+        className={`ml-auto mr-auto h-full text-[10px] md:text-[14px] lg:text-[14px]`}
         style={{
           width: `${totalFixedWidth + 18}px`,
         }}

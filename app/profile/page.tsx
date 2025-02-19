@@ -14,7 +14,7 @@ export default async function Profile(): Promise<JSX.Element> {
   const session = await getSession()
   const profilePicURL = await getProfilePictureURL()
   return (
-    <div className="absolute top-0 left-[50px] w-[calc(100%-50px)] min-h-full flex flex-col text-center items-center overflow-x-hidden">
+    <div className="absolute left-[50px] top-0 flex min-h-full w-[calc(100%-50px)] flex-col items-center overflow-x-hidden text-center">
       <EdgeStoreProvider>
         <ProfilePictureHandler
           pictureURL={profilePicURL ? profilePicURL : "/default.png"}

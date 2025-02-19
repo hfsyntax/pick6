@@ -15,7 +15,7 @@ export default async function Season(): Promise<JSX.Element> {
   const seasons = await getSeasons()
   const seasonStats = await getSeasonStats(currentSeason, "asc", ["rank"])
   const seasonID = seasons.find(
-    (season) => season.season_number == currentSeason
+    (season) => season.season_number == currentSeason,
   )?.season_id
   const columnWidths = {
     rank: { small: 30, medium: 60, large: 50 },
@@ -27,8 +27,8 @@ export default async function Season(): Promise<JSX.Element> {
     player_name: { small: 105, medium: 160, large: 150 },
   }
   return (
-    <div className="absolute top-0 left-[50px] w-[calc(100%-50px)] min-h-full flex flex-col text-center items-center overflow-x-hidden">
-      <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl mt-1">
+    <div className="absolute left-[50px] top-0 flex min-h-full w-[calc(100%-50px)] flex-col items-center overflow-x-hidden text-center">
+      <h1 className="mt-1 text-2xl sm:text-3xl md:text-4xl lg:text-5xl">
         Season Stats
       </h1>
       {seasons.length > 0 ? (

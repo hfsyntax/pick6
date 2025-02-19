@@ -8,8 +8,8 @@ import LogoutButton from "./LogoutButton"
 export default async function Navbar(): Promise<JSX.Element> {
   const session = await getSession()
   return (
-    <div className="navbar absolute top-0 left-0 h-[50px] w-full flex justify-end items-center bg-[#3181d2] text-white">
-      <span className="block select-none mr-auto bg-[#0f56a6] hover:bg-[#00fff2]">
+    <div className="navbar absolute left-0 top-0 flex h-[50px] w-full items-center justify-end bg-[#3181d2] text-white">
+      <span className="mr-auto block select-none bg-[#0f56a6] hover:bg-[#00fff2]">
         <Link
           href="/"
           draggable="false"
@@ -35,12 +35,12 @@ export default async function Navbar(): Promise<JSX.Element> {
           </span>
           <Link
             href="/profile"
-            className="text-inherit no-underline ml-[10px] mr-[10px]"
+            className="ml-[10px] mr-[10px] text-inherit no-underline"
           >
             <FontAwesomeIcon
               icon={faIdBadge}
               size="2xl"
-              className=" hover:text-gray-500 hover:cursor-pointer"
+              className="hover:cursor-pointer hover:text-gray-500"
             />
           </Link>
 
@@ -49,7 +49,7 @@ export default async function Navbar(): Promise<JSX.Element> {
       ) : (
         <Link
           href={"/"}
-          className="text-inherit no-underline mr-[10px] hover:text-blue-300"
+          className="mr-[10px] text-inherit no-underline hover:text-blue-300"
         >
           login
         </Link>

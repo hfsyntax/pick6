@@ -85,10 +85,10 @@ export default function ProfilePictureHandler({
 
   return (
     <>
-      <div className="relative ml-auto mr-auto w-[200px] h-[200px] group">
+      <div className="group relative ml-auto mr-auto h-[200px] w-[200px]">
         <Image
           key={Date.now()}
-          className="absolute top-0 left-0 h-full w-full bg-[#bbb] bg-cover rounded-[50%]"
+          className="absolute left-0 top-0 h-full w-full rounded-[50%] bg-[#bbb] bg-cover"
           src={url}
           priority
           width={"200"}
@@ -96,14 +96,14 @@ export default function ProfilePictureHandler({
           alt="profile_picture"
         />
         <FontAwesomeIcon
-          className="hidden relative top-1/2 -translate-y-1/2 ml-[10px] mr-[10px] bg-gray-500 text-white cursor-pointer group-hover:inline-block"
+          className="relative top-1/2 ml-[10px] mr-[10px] hidden -translate-y-1/2 cursor-pointer bg-gray-500 text-white group-hover:inline-block"
           icon={faPenToSquare}
           size="xl"
           onClick={handleSubmit}
         />
         {!pictureURL.includes("default") && (
           <FontAwesomeIcon
-            className="hidden relative top-1/2 -translate-y-1/2 ml-[10px] mr-[10px] bg-gray-500 text-white cursor-pointer group-hover:inline-block"
+            className="relative top-1/2 ml-[10px] mr-[10px] hidden -translate-y-1/2 cursor-pointer bg-gray-500 text-white group-hover:inline-block"
             icon={faTrash}
             size="xl"
             onClick={handleDelete}

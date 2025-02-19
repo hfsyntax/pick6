@@ -32,17 +32,17 @@ export default function TeamsHandler({
     // Convert the time until reset to days, hours, minutes, and seconds
     const days = Math.floor(timeUntilReset / (1000 * 60 * 60 * 24))
     const hours = Math.floor(
-      (timeUntilReset % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)
+      (timeUntilReset % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60),
     )
     const minutes = Math.floor(
-      (timeUntilReset % (1000 * 60 * 60)) / (1000 * 60)
+      (timeUntilReset % (1000 * 60 * 60)) / (1000 * 60),
     )
     const seconds = Math.floor((timeUntilReset % (1000 * 60)) / 1000)
 
     // Update the countdown display
     if (!paused) {
       setCountdown(
-        `${days} days, ${hours} hours, ${minutes} minutes, ${seconds} seconds`
+        `${days} days, ${hours} hours, ${minutes} minutes, ${seconds} seconds`,
       )
       setTimeout(() => {
         timeUntilReset -= 1000
@@ -77,7 +77,7 @@ export default function TeamsHandler({
     getSession().then((result) => {
       const username = result?.user?.username
       const picks: object | null = JSON.parse(
-        localStorage.getItem(`${username}_picks`)
+        localStorage.getItem(`${username}_picks`),
       )
       if (picks) {
         // every pick matches current week
@@ -89,10 +89,13 @@ export default function TeamsHandler({
           localStorage.removeItem(`${username}_picks`)
         } else {
           // restore checkbox state for selected teams
-          const restoredTeams = Object.keys(picks).reduce((acc, key) => {
-            acc[key] = true
-            return acc
-          }, {} as { [key: string]: boolean })
+          const restoredTeams = Object.keys(picks).reduce(
+            (acc, key) => {
+              acc[key] = true
+              return acc
+            },
+            {} as { [key: string]: boolean },
+          )
           setSelectedTeams(restoredTeams)
         }
       }
@@ -114,7 +117,7 @@ export default function TeamsHandler({
           }
           localStorage.setItem(
             `${username}_picks`,
-            JSON.stringify(selections, null, 2)
+            JSON.stringify(selections, null, 2),
           )
         }
       })
@@ -128,14 +131,14 @@ export default function TeamsHandler({
       </h2>
       <form
         ref={currentForm}
-        className="flex items-center flex-col w-full ml-auto mr-auto"
+        className="ml-auto mr-auto flex w-full flex-col items-center"
         onSubmit={submitHandler}
       >
         {!timerPaused && (
           <input
             type="submit"
             value="submit"
-            className="block mt-[10px] bg-black text-white rounded-md p-2 text-xs sm:text-sm md:text-base cursor-pointer hover:bg-gray-500"
+            className="mt-[10px] block cursor-pointer rounded-md bg-black p-2 text-xs text-white hover:bg-gray-500 sm:text-sm md:text-base"
           />
         )}
         {weekGames?.length > 0 ? (
@@ -163,7 +166,7 @@ export default function TeamsHandler({
                     <li key={index}>
                       <b className="text-green-500">{text}</b>
                     </li>
-                  )
+                  ),
               )
             ) : (
               <li key={"0"}>
@@ -178,7 +181,7 @@ export default function TeamsHandler({
                     <li key={index}>
                       <b className="text-red-500">{text}</b>
                     </li>
-                  )
+                  ),
               )
             ) : (
               <li key={"0"}>

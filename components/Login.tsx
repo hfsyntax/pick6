@@ -85,26 +85,26 @@ export default function Login(): JSX.Element {
     <form
       id="login"
       ref={currentForm}
-      className="w-[calc(100vw-50px-20px)] box-border left-1 shadow-md bg-white absolute sm:left-1/2 top-1/2 sm:-translate-x-1/2 -translate-y-1/2 sm:w-[500px] p-5"
+      className="absolute left-1 top-1/2 box-border w-[calc(100vw-50px-20px)] -translate-y-1/2 bg-white p-5 shadow-md sm:left-1/2 sm:w-[500px] sm:-translate-x-1/2"
       onSubmit={handleFormSubmit}
     >
       <h2 className="text-xl font-bold text-[#007bff]">Login</h2>
-      <label className="block text-sm md:text-base text-left mt-1 mb-1">
+      <label className="mb-1 mt-1 block text-left text-sm md:text-base">
         Username
       </label>
       <input
-        className=" block mt-1 mb-1 outline-none w-full p-1 box-border border border-gray-500 focus:border-2 focus:border-[#007bff]"
+        className="mb-1 mt-1 box-border block w-full border border-gray-500 p-1 outline-none focus:border-2 focus:border-[#007bff]"
         type="text"
         name="username"
         placeholder="username"
         autoComplete="username"
         required
       />
-      <label className="mt-1 mb-1 block text-sm md:text-base text-left">
+      <label className="mb-1 mt-1 block text-left text-sm md:text-base">
         Password
       </label>
       <input
-        className=" block mt-1 mb-1 outline-none w-full p-1 box-border border border-gray-500 focus:border-2 focus:border-[#007bff]"
+        className="mb-1 mt-1 box-border block w-full border border-gray-500 p-1 outline-none focus:border-2 focus:border-[#007bff]"
         type="password"
         name="password"
         placeholder="password"
@@ -115,7 +115,7 @@ export default function Login(): JSX.Element {
         type="submit"
         disabled={formState.disabled}
         value={formState.text}
-        className="block mb-1 w-full mt-3 cursor-pointer text-white bg-[#007bff] rounded-md p-[10px] border-none hover:bg-blue-400"
+        className="mb-1 mt-3 block w-full cursor-pointer rounded-md border-none bg-[#007bff] p-[10px] text-white hover:bg-blue-400"
       />
       <ReCAPTCHA ref={recaptcha} sitekey={recaptchaSiteKey} size="invisible" />
       {formState?.error && (

@@ -7,11 +7,11 @@ export const metadata = {
 
 export default function AdminGuide(): JSX.Element {
   return (
-    <div className="absolute top-0 left-[50px] w-[calc(100%-50px)] h-full flex flex-col items-center overflow-x-hidden">
-      <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl mt-1">
+    <div className="absolute left-[50px] top-0 flex h-full w-[calc(100%-50px)] flex-col items-center overflow-x-hidden">
+      <h1 className="mt-1 text-2xl sm:text-3xl md:text-4xl lg:text-5xl">
         Admin Guide
       </h1>
-      <ol className="text-xs sm:text-sm lg:text-base xl:text-lg list-inside list-decimal ml-2 mt-3 w-[95%] sm:w-[70%]">
+      <ol className="ml-2 mt-3 w-[95%] list-inside list-decimal text-xs sm:w-[70%] sm:text-sm lg:text-base xl:text-lg">
         <li className="mb-3">
           If you would like to create new users select Insert User(s). From a
           csv/text file the format is (user,password,gp,type,group_number) per

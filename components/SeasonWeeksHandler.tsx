@@ -94,7 +94,7 @@ export default function SeasonWeeksHandler({
       const weekResults = await getWeekResults(
         selectedSeason,
         currentSeason,
-        currentWeek
+        currentWeek,
       )
       setData({ ...data, currentData: weekResults })
     }
@@ -122,7 +122,7 @@ export default function SeasonWeeksHandler({
             sorts.rank && "rank",
             sorts.gp && "gp",
             sorts.group_number && "group_number",
-          ].filter((x) => x)
+          ].filter((x) => x),
         ).then((response) => {
           setData({
             currentData: response.picks,
@@ -137,7 +137,7 @@ export default function SeasonWeeksHandler({
             sorts.rank && "rank",
             sorts.gp && "gp",
             sorts.group_number && "group_number",
-          ].filter((x) => x)
+          ].filter((x) => x),
         ).then((response) => {
           setData({ ...data, currentData: response })
         })
@@ -149,11 +149,11 @@ export default function SeasonWeeksHandler({
     <>
       <>
         <div className="flex items-center">
-          <label className="text-sm sm:text-base lg:text-xl font-bold">
+          <label className="text-sm font-bold sm:text-base lg:text-xl">
             {pathname === "/weekly" ? "Select Week" : "Select Season"}&nbsp;
           </label>
           <select
-            className="m-[10px] border border-black focus:outline-none h-[25px] text-xs lg:text-base text-center w-[155px] lg:w-[200px]"
+            className="m-[10px] h-[25px] w-[155px] border border-black text-center text-xs focus:outline-none lg:w-[200px] lg:text-base"
             onChange={handleSelection}
             defaultValue={selectedOption.id}
           >
@@ -175,46 +175,46 @@ export default function SeasonWeeksHandler({
                 >
                   Season {row["season_number"]}
                 </option>
-              )
+              ),
             )}
           </select>
         </div>
         {data?.currentData?.length > 0 &&
           (pathname === "/weekly" || pathname === "/season") && (
             <div id="checkbox-container" className="text-center">
-              <label className="text-xs sm:text-sm md:text-base xl:text-lg font-bold align-middle mr-1">
+              <label className="mr-1 align-middle text-xs font-bold sm:text-sm md:text-base xl:text-lg">
                 Descending
               </label>
               <input
-                className="align-middle mr-[10px]"
+                className="mr-[10px] align-middle"
                 id="desc"
                 type="checkbox"
                 onClick={handleCheckbox}
               ></input>
-              <label className="text-xs sm:text-sm md:text-base xl:text-lg font-bold align-middle mr-1">
+              <label className="mr-1 align-middle text-xs font-bold sm:text-sm md:text-base xl:text-lg">
                 Rank
               </label>
               <input
-                className="align-middle mr-[10px]"
+                className="mr-[10px] align-middle"
                 id="rank"
                 type="checkbox"
                 onClick={handleCheckbox}
                 defaultChecked
               ></input>
-              <label className="text-xs sm:text-sm md:text-base xl:text-lg font-bold align-middle mr-1">
+              <label className="mr-1 align-middle text-xs font-bold sm:text-sm md:text-base xl:text-lg">
                 GP
               </label>
               <input
-                className="align-middle mr-[10px]"
+                className="mr-[10px] align-middle"
                 id="gp"
                 type="checkbox"
                 onClick={handleCheckbox}
               ></input>
-              <label className="text-xs sm:text-sm md:text-base xl:text-lg font-bold align-middle mr-1">
+              <label className="mr-1 align-middle text-xs font-bold sm:text-sm md:text-base xl:text-lg">
                 Group Number
               </label>
               <input
-                className="align-middle mr-[10px]"
+                className="mr-[10px] align-middle"
                 id="group_number"
                 type="checkbox"
                 onClick={handleCheckbox}
@@ -238,12 +238,12 @@ export default function SeasonWeeksHandler({
             rowHeights={rowHeights}
             height={`min(${rowHeights.reduce(
               (accumulator, currentValue) => accumulator + currentValue,
-              0
+              0,
             )}px, 65vh)`}
           />
         )
       ) : (
-        <h3 className="text-red-500 text-center mt-3">No data</h3>
+        <h3 className="mt-3 text-center text-red-500">No data</h3>
       )}
     </>
   )

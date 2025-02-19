@@ -13,10 +13,10 @@ export default async function AdminUtility(): Promise<JSX.Element> {
   const timerStatus =
     (await getConfigValue("TIMER_PAUSED")) === "1" ? "Paused" : "Unpaused"
   const timerResetTime = new Date(
-    Number(await getConfigValue("TARGET_RESET_TIME"))
+    Number(await getConfigValue("TARGET_RESET_TIME")),
   ).toLocaleString()
   return (
-    <div className="absolute top-0 left-[50px] w-[calc(100%-50px)] h-full overflow-auto flex flex-col text-center items-center overflow-x-hidden">
+    <div className="absolute left-[50px] top-0 flex h-full w-[calc(100%-50px)] flex-col items-center overflow-auto overflow-x-hidden text-center">
       <AdminUtilityHandler
         season={season ? season : "N/A"}
         week={week ? week : "N/A"}

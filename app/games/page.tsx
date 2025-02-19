@@ -26,7 +26,7 @@ export default async function Games(): Promise<JSX.Element> {
   const weeks = await getWeeks()
   const weekID = weeks.find(
     (week) =>
-      week.season_number == currentSeason && week.week_number == currentWeek
+      week.season_number == currentSeason && week.week_number == currentWeek,
   )?.week_id
   const columnWidths = {
     game_counter: { small: 25, medium: 70, large: 100 },
@@ -38,8 +38,8 @@ export default async function Games(): Promise<JSX.Element> {
     spread: { small: 32, medium: 70, large: 100 },
   }
   return (
-    <div className="min-h-full w-[calc(100%-50px)] absolute top-0 left-[50px] flex flex-col text-center items-center overflow-x-hidden">
-      <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl mt-1">
+    <div className="absolute left-[50px] top-0 flex min-h-full w-[calc(100%-50px)] flex-col items-center overflow-x-hidden text-center">
+      <h1 className="mt-1 text-2xl sm:text-3xl md:text-4xl lg:text-5xl">
         Games
       </h1>
       {weeks.length > 0 ? (

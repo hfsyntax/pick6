@@ -14,56 +14,56 @@ import { usePathname } from "next/navigation"
 export default function Sidebar({ sessionType }): JSX.Element {
   const pathname = usePathname()
   return (
-    <div className="absolute top-0 left-0 flex flex-col items-center bg-black text-white w-[50px] h-full">
+    <div className="absolute left-0 top-0 flex h-full w-[50px] flex-col items-center bg-black text-white">
       <Link
         href={"/teams"}
         className={
           pathname === "/teams"
-            ? "relative group h-[50px] w-full !box-border cursor-pointer bg-gray-500 border-l-[3px] border-l-blue-300"
-            : "relative group h-[50px] w-full !box-border hover:cursor-pointer hover:bg-gray-500 hover:border-l-[3px] hover:border-l-blue-300"
+            ? "group relative !box-border h-[50px] w-full cursor-pointer border-l-[3px] border-l-blue-300 bg-gray-500"
+            : "group relative !box-border h-[50px] w-full hover:cursor-pointer hover:border-l-[3px] hover:border-l-blue-300 hover:bg-gray-500"
         }
       >
-        <span className="relative inline-block invisible top-[5px] left-[55px] bg-black text-white pt-[10px] pr-0 pb-[10px] pl-[5px] w-[120px] text-left z-[1] group-hover:visible">
+        <span className="invisible relative left-[55px] top-[5px] z-[1] inline-block w-[120px] bg-black pb-[10px] pl-[5px] pr-0 pt-[10px] text-left text-white group-hover:visible">
           Select Teams
         </span>
         <FontAwesomeIcon
           icon={faUserPlus}
           size="xl"
-          className="absolute top-1/2 left-1/2 -translate-y-1/2 -translate-x-1/2 text-white"
+          className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 text-white"
         />
       </Link>
       <Link
         href={"/weekly"}
         className={
           pathname === "/weekly"
-            ? "relative group h-[50px] w-full !box-border cursor-pointer bg-gray-500 border-l-[3px] border-l-blue-300"
-            : "relative group h-[50px] w-full !box-border hover:cursor-pointer hover:bg-gray-500 hover:border-l-[3px] hover:border-l-blue-300"
+            ? "group relative !box-border h-[50px] w-full cursor-pointer border-l-[3px] border-l-blue-300 bg-gray-500"
+            : "group relative !box-border h-[50px] w-full hover:cursor-pointer hover:border-l-[3px] hover:border-l-blue-300 hover:bg-gray-500"
         }
       >
-        <span className="relative inline-block invisible top-[5px] left-[55px] bg-black text-white pt-[10px] pr-0 pb-[10px] pl-[5px] w-[120px] text-left z-[1] group-hover:visible">
+        <span className="invisible relative left-[55px] top-[5px] z-[1] inline-block w-[120px] bg-black pb-[10px] pl-[5px] pr-0 pt-[10px] text-left text-white group-hover:visible">
           Week Picks
         </span>
         <FontAwesomeIcon
           icon={faUsers}
           size="xl"
-          className="absolute top-1/2 left-1/2 -translate-y-1/2 -translate-x-1/2 text-white"
+          className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 text-white"
         />
       </Link>
       <Link
         href={"/season"}
         className={
           pathname === "/season"
-            ? "relative group h-[50px] w-full !box-border cursor-pointer bg-gray-500 border-l-[3px] border-l-blue-300"
-            : "relative group h-[50px] w-full !box-border hover:cursor-pointer hover:bg-gray-500 hover:border-l-[3px] hover:border-l-blue-300"
+            ? "group relative !box-border h-[50px] w-full cursor-pointer border-l-[3px] border-l-blue-300 bg-gray-500"
+            : "group relative !box-border h-[50px] w-full hover:cursor-pointer hover:border-l-[3px] hover:border-l-blue-300 hover:bg-gray-500"
         }
       >
-        <span className="relative inline-block invisible top-[5px] left-[55px] bg-black text-white pt-[10px] pr-0 pb-[10px] pl-[5px] w-[120px] text-left z-[1] group-hover:visible">
+        <span className="invisible relative left-[55px] top-[5px] z-[1] inline-block w-[120px] bg-black pb-[10px] pl-[5px] pr-0 pt-[10px] text-left text-white group-hover:visible">
           Season Stats
         </span>
         <FontAwesomeIcon
           icon={faChartSimple}
           size="xl"
-          className="text-white absolute top-1/2 left-1/2 -translate-y-1/2 -translate-x-1/2"
+          className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 text-white"
         />
       </Link>
       <Link
@@ -71,34 +71,34 @@ export default function Sidebar({ sessionType }): JSX.Element {
         id="results-link"
         className={
           pathname === "/results"
-            ? "relative group h-[50px] w-full !box-border cursor-pointer bg-gray-500 border-l-[3px] border-l-blue-300"
-            : "relative group h-[50px] w-full !box-border hover:cursor-pointer hover:bg-gray-500 hover:border-l-[3px] hover:border-l-blue-300"
+            ? "group relative !box-border h-[50px] w-full cursor-pointer border-l-[3px] border-l-blue-300 bg-gray-500"
+            : "group relative !box-border h-[50px] w-full hover:cursor-pointer hover:border-l-[3px] hover:border-l-blue-300 hover:bg-gray-500"
         }
       >
-        <span className="relative inline-block invisible top-[5px] left-[55px] bg-black text-white pt-[10px] pr-0 pb-[10px] pl-[5px] w-[120px] text-left z-[1] group-hover:visible">
+        <span className="invisible relative left-[55px] top-[5px] z-[1] inline-block w-[120px] bg-black pb-[10px] pl-[5px] pr-0 pt-[10px] text-left text-white group-hover:visible">
           Winners & 0'fers
         </span>
         <FontAwesomeIcon
           icon={faFlagCheckered}
           size="xl"
-          className="absolute top-1/2 left-1/2 -translate-y-1/2 -translate-x-1/2 text-white"
+          className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 text-white"
         />
       </Link>
       <Link
         href={"/games"}
         className={
           pathname === "/games"
-            ? "relative group h-[50px] w-full !box-border cursor-pointer bg-gray-500 border-l-[3px] border-l-blue-300"
-            : "relative group h-[50px] w-full !box-border hover:cursor-pointer hover:bg-gray-500 hover:border-l-[3px] hover:border-l-blue-300"
+            ? "group relative !box-border h-[50px] w-full cursor-pointer border-l-[3px] border-l-blue-300 bg-gray-500"
+            : "group relative !box-border h-[50px] w-full hover:cursor-pointer hover:border-l-[3px] hover:border-l-blue-300 hover:bg-gray-500"
         }
       >
-        <span className="relative inline-block invisible top-[5px] left-[55px] bg-black text-white pt-[10px] pr-0 pb-[10px] pl-[5px] w-[120px] text-left z-[1] group-hover:visible">
+        <span className="invisible relative left-[55px] top-[5px] z-[1] inline-block w-[120px] bg-black pb-[10px] pl-[5px] pr-0 pt-[10px] text-left text-white group-hover:visible">
           Week Games
         </span>
         <FontAwesomeIcon
           icon={faCalendar}
           size="xl"
-          className="absolute top-1/2 left-1/2 -translate-y-1/2 -translate-x-1/2 text-white"
+          className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 text-white"
         />
       </Link>
       {sessionType && sessionType === "admin" && (
@@ -106,17 +106,17 @@ export default function Sidebar({ sessionType }): JSX.Element {
           href={"/admin_utility"}
           className={
             pathname === "/admin_utility"
-              ? "relative group h-[50px] w-full !box-border cursor-pointer bg-gray-500 border-l-[3px] border-l-blue-300"
-              : "relative group h-[50px] w-full !box-border hover:cursor-pointer hover:bg-gray-500 hover:border-l-[3px] hover:border-l-blue-300"
+              ? "group relative !box-border h-[50px] w-full cursor-pointer border-l-[3px] border-l-blue-300 bg-gray-500"
+              : "group relative !box-border h-[50px] w-full hover:cursor-pointer hover:border-l-[3px] hover:border-l-blue-300 hover:bg-gray-500"
           }
         >
-          <span className="relative inline-block invisible top-[5px] left-[55px] bg-black text-white pt-[10px] pr-0 pb-[10px] pl-[5px] w-[120px] text-left z-[1] group-hover:visible">
+          <span className="invisible relative left-[55px] top-[5px] z-[1] inline-block w-[120px] bg-black pb-[10px] pl-[5px] pr-0 pt-[10px] text-left text-white group-hover:visible">
             Admin Utility
           </span>
           <FontAwesomeIcon
             icon={faWrench}
             size="xl"
-            className="absolute top-1/2 left-1/2 -translate-y-1/2 -translate-x-1/2 text-white"
+            className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 text-white"
           />
         </Link>
       )}

@@ -160,29 +160,29 @@ export default function AdminUtilityHandler({
   return (
     <>
       <div
-        className="absolute top-0 left-0 w-full h-full bg-[rgba(0, 0, 0, 0.5)] backdrop-blur-[10px] z-[1]"
+        className="bg-[rgba(0, 0, 0, 0.5)] absolute left-0 top-0 z-[1] h-full w-full backdrop-blur-[10px]"
         style={{ display: message.display }}
       >
-        <div className="shadow-lg bg-white absolute flex items-center flex-col left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[250px] h-[170px] text-center z-[2]">
+        <div className="absolute left-1/2 top-1/2 z-[2] flex h-[170px] w-[250px] -translate-x-1/2 -translate-y-1/2 flex-col items-center bg-white text-center shadow-lg">
           <FontAwesomeIcon
-            className="mr-auto ml-[5px] cursor-pointer hover:text-gray-500"
+            className="ml-[5px] mr-auto cursor-pointer hover:text-gray-500"
             icon={faXmark}
             size="xl"
             onClick={closeModal}
           />
           <span className="relative top-[25px]">{message.text}</span>
           <button
-            className="inline-block relative top-[30px] ml-[10px] bg-black text-white p-1 rounded-md hover:bg-gray-500"
+            className="relative top-[30px] ml-[10px] inline-block rounded-md bg-black p-1 text-white hover:bg-gray-500"
             onClick={closeModal}
           >
             Ok
           </button>
         </div>
       </div>
-      <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl mt-1">
+      <h1 className="mt-1 text-2xl sm:text-3xl md:text-4xl lg:text-5xl">
         Admin Utility
       </h1>
-      <div className="border border-black flex flex-col mt-2 p-3">
+      <div className="mt-2 flex flex-col border border-black p-3">
         <b>
           Admin guide:
           <Link
@@ -198,11 +198,11 @@ export default function AdminUtilityHandler({
         <span
           className={
             timerStatus === "Paused"
-              ? "text-red-500 font-bold"
-              : "text-green-500 font-bold"
+              ? "font-bold text-red-500"
+              : "font-bold text-green-500"
           }
         >
-          <b className="text-black font-bold">Timer status:&nbsp;</b>
+          <b className="font-bold text-black">Timer status:&nbsp;</b>
           {timerStatus}
         </span>
         <span>
@@ -212,7 +212,7 @@ export default function AdminUtilityHandler({
       </div>
 
       <button
-        className="block mt-[10px] bg-black text-white rounded-md p-2 text-xs sm:text-sm md:text-base cursor-pointer hover:bg-gray-500"
+        className="mt-[10px] block cursor-pointer rounded-md bg-black p-2 text-xs text-white hover:bg-gray-500 sm:text-sm md:text-base"
         onClick={refreshData}
         disabled={refreshButton.disabled}
       >
@@ -221,16 +221,16 @@ export default function AdminUtilityHandler({
 
       <form
         ref={currentForm}
-        className="flex items-center flex-col w-full ml-auto mr-auto"
+        className="ml-auto mr-auto flex w-full flex-col items-center"
         onSubmit={submitHandler}
       >
-        <div className="flex items-center mt-3">
-          <label className="text-sm sm:text-base lg:text-xl font-bold">
+        <div className="mt-3 flex items-center">
+          <label className="text-sm font-bold sm:text-base lg:text-xl">
             Select Task:
           </label>
 
           <select
-            className="m-[10px] border border-black focus:outline-none h-[25px] text-xs lg:text-base text-center w-[155px] lg:w-[200px]"
+            className="m-[10px] h-[25px] w-[155px] border border-black text-center text-xs focus:outline-none lg:w-[200px] lg:text-base"
             onChange={selectHandler}
             defaultValue="Upload Games"
           >
@@ -252,7 +252,7 @@ export default function AdminUtilityHandler({
             <input
               name="fileInput"
               type="file"
-              className="block m-[10px] w-fit"
+              className="m-[10px] block w-fit"
             />
           </>
         ) : option === "Upload Picks" ? (
@@ -262,7 +262,7 @@ export default function AdminUtilityHandler({
             </span>
             <input
               type="file"
-              className="block m-[10px] w-fit"
+              className="m-[10px] block w-fit"
               name="fileInput"
               required
             />
@@ -282,7 +282,7 @@ export default function AdminUtilityHandler({
               stats based on the result of a games csv file.
             </span>
             <input
-              className="block m-[10px] w-fit"
+              className="m-[10px] block w-fit"
               type="file"
               name="fileInput"
               required
@@ -298,7 +298,7 @@ export default function AdminUtilityHandler({
               </a>
             </span>
             <input
-              className="block border border-black focus:outline-none indent-1"
+              className="block border border-black indent-1 focus:outline-none"
               type="text"
               name="time"
               placeholder="Enter time"
@@ -322,7 +322,7 @@ export default function AdminUtilityHandler({
             </div>
             {fromFile ? (
               <input
-                className="block m-[10px] w-fit"
+                className="m-[10px] block w-fit"
                 type="file"
                 name="fileInput"
                 required
@@ -331,7 +331,7 @@ export default function AdminUtilityHandler({
               <>
                 <label>Username</label>
                 <input
-                  className="block border border-black focus:outline-none indent-1"
+                  className="block border border-black indent-1 focus:outline-none"
                   type="text"
                   name="username"
                   placeholder="username"
@@ -340,7 +340,7 @@ export default function AdminUtilityHandler({
                 />
                 <label>Password</label>
                 <input
-                  className="block border border-black focus:outline-none indent-1"
+                  className="block border border-black indent-1 focus:outline-none"
                   type="password"
                   name="password"
                   placeholder="password"
@@ -349,7 +349,7 @@ export default function AdminUtilityHandler({
                 />
                 <label>Confirm Password</label>
                 <input
-                  className="block border border-black focus:outline-none indent-1"
+                  className="block border border-black indent-1 focus:outline-none"
                   type="password"
                   name="confirm-password"
                   placeholder="confirm password"
@@ -359,7 +359,7 @@ export default function AdminUtilityHandler({
                 <label>User Type</label>
                 <select
                   name="userType"
-                  className=" block border border-black focus:outline-none w-[200px] h-[26px] pl-1"
+                  className="block h-[26px] w-[200px] border border-black pl-1 focus:outline-none"
                   required
                 >
                   <option value="user">user</option>
@@ -367,7 +367,7 @@ export default function AdminUtilityHandler({
                 </select>
                 <label>Group</label>
                 <input
-                  className="block border border-black focus:outline-none indent-1"
+                  className="block border border-black indent-1 focus:outline-none"
                   type="text"
                   name="group"
                   placeholder="Group"
@@ -375,7 +375,7 @@ export default function AdminUtilityHandler({
                 />
                 <label>Group Number</label>
                 <input
-                  className="block border border-black focus:outline-none indent-1"
+                  className="block border border-black indent-1 focus:outline-none"
                   type="number"
                   name="groupNumber"
                   placeholder="Group Number"
@@ -407,14 +407,14 @@ export default function AdminUtilityHandler({
             </div>
             {fromFile ? (
               <input
-                className="block m-[10px] w-fit"
+                className="m-[10px] block w-fit"
                 type="file"
                 name="fileInput"
                 required
               />
             ) : (
               <input
-                className="block border border-black focus:outline-none indent-1"
+                className="block border border-black indent-1 focus:outline-none"
                 type="text"
                 name="username"
                 placeholder="Username"
@@ -431,14 +431,14 @@ export default function AdminUtilityHandler({
             </span>
             <label>Season Number</label>
             <input
-              className="block border border-black focus:outline-none indent-1"
+              className="block border border-black indent-1 focus:outline-none"
               type="number"
               name="season"
               placeholder="Season Number"
             />
             <label>Week Number</label>
             <input
-              className="block border border-black focus:outline-none indent-1"
+              className="block border border-black indent-1 focus:outline-none"
               type="number"
               name="week"
               placeholder="Week Number"
@@ -446,7 +446,7 @@ export default function AdminUtilityHandler({
           </>
         ) : null}
         <input
-          className="block mt-[10px] mb-2 bg-black text-white rounded-md p-2 text-xs sm:text-sm md:text-base cursor-pointer w-fit hover:bg-gray-500"
+          className="mb-2 mt-[10px] block w-fit cursor-pointer rounded-md bg-black p-2 text-xs text-white hover:bg-gray-500 sm:text-sm md:text-base"
           type="submit"
           value={sumbitButton.text}
           disabled={sumbitButton.disabled}
@@ -460,7 +460,7 @@ export default function AdminUtilityHandler({
                     <li key={index}>
                       <b className="text-green-500">{text}</b>
                     </li>
-                  )
+                  ),
               )
             ) : (
               <li key={"0"}>
@@ -475,7 +475,7 @@ export default function AdminUtilityHandler({
                     <li key={index}>
                       <b className="text-red-500">{text}</b>
                     </li>
-                  )
+                  ),
               )
             ) : (
               <li key={"0"}>

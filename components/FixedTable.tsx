@@ -51,17 +51,17 @@ function Row({
                 windowWidth < 768
                   ? columnWidths[field].small
                   : windowWidth < 1200
-                  ? columnWidths[field].medium
-                  : columnWidths[field].large,
+                    ? columnWidths[field].medium
+                    : columnWidths[field].large,
             }}
-            className={`inline-block relative ${
-              index === 0 ? "text-white bg-black" : "text-black bg-white"
-            } leading-[35px] flex-shrink-0`}
+            className={`relative inline-block ${
+              index === 0 ? "bg-black text-white" : "bg-white text-black"
+            } flex-shrink-0 leading-[35px]`}
           >
             {index === 0 ? (
               columns[rowIndex]
             ) : field === "player_name" ? (
-              <span className="relative w-full h-full block">
+              <span className="relative block h-full w-full">
                 <Link href={`/profile/${row["player_id"]}`} className="peer">
                   <Image
                     width={0}
@@ -70,12 +70,12 @@ function Row({
                       row["picture_url"] ? row["picture_url"] : "/default.png"
                     }
                     alt="profile_pic"
-                    className="absolute top-1/2 -translate-y-1/2 left-0 h-3/4 lg:h-full w-auto"
+                    className="absolute left-0 top-1/2 h-3/4 w-auto -translate-y-1/2 lg:h-full"
                   />
                 </Link>
                 <Link
                   href={`/profile/${row["player_id"]}`}
-                  className="block w-fit ml-[30px] lg:ml-[40px] peer-hover:text-white peer-hover:bg-black hover:text-white hover:bg-black"
+                  className="ml-[30px] block w-fit hover:bg-black hover:text-white peer-hover:bg-black peer-hover:text-white lg:ml-[40px]"
                 >
                   <span>{row[field]}</span>
                 </Link>
@@ -101,11 +101,11 @@ function Row({
                           ? "favorite_id"
                           : "underdog_id"
                       ],
-                      event.target.checked
+                      event.target.checked,
                     )
                   }
                   value={row["game_id"]}
-                  className="inline-block absolute left-0 translate-y-[-50%] top-1/2"
+                  className="absolute left-0 top-1/2 inline-block translate-y-[-50%]"
                 />
                 <li className="inline-block">{row[field]}</li>
               </Fragment>
@@ -171,15 +171,15 @@ export default function FixedTable({
       windowWidth < 768
         ? width.small
         : windowWidth < 1200
-        ? width.medium
-        : width.large
+          ? width.medium
+          : width.large
     return acc
   }, 0)
 
   return (
-    <div className="overflow-auto w-full" style={{ height: height }}>
+    <div className="w-full overflow-auto" style={{ height: height }}>
       <div
-        className={`h-full text-[10px] md:text-[14px] lg:text-[14px] ml-auto mr-auto`}
+        className={`ml-auto mr-auto h-full text-[10px] md:text-[14px] lg:text-[14px]`}
         /* 20px scrollbar */
         style={{
           width: `${totalFixedWidth + 18 /*+ (windowWidth < 768 ? 5 : 20)*/}px`,

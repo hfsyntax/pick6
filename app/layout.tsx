@@ -13,11 +13,11 @@ export default async function RootLayout({ children }): Promise<JSX.Element> {
   const session = await getSession()
   return (
     <html lang="en">
-      <body className="m-0 font-sans has-showing:overflow-hidden">
+      <body className="has-showing:overflow-hidden m-0 font-sans">
         <Navbar />
         <div
           id="content"
-          className="min-h-[calc(100vh-50px)] absolute top-[50px] left-0 w-full flex flex-col items-center justify-center"
+          className="absolute left-0 top-[50px] flex min-h-[calc(100vh-50px)] w-full flex-col items-center justify-center"
         >
           <Sidebar sessionType={session?.user?.type} />
           {children}

@@ -12,7 +12,7 @@ export default function LogoutButton(): JSX.Element {
       onClick={handleSubmit}
       icon={faRightFromBracket}
       size="2xl"
-      className="ml-[10px] mr-[10px] hover:text-gray-500 hover:cursor-pointer"
+      className="ml-[10px] mr-[10px] hover:cursor-pointer hover:text-gray-500"
     />
   )
 }

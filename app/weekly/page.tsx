@@ -16,7 +16,7 @@ export default async function Weekly(): Promise<JSX.Element> {
   const weeks = await getWeeks()
   const weekID = weeks.find(
     (week) =>
-      week.season_number == currentSeason && week.week_number == currentWeek
+      week.season_number == currentSeason && week.week_number == currentWeek,
   )?.week_id
   const picks = await getPicks(currentSeason, currentWeek, "asc", ["rank"])
   const columnWidths = {
@@ -35,8 +35,8 @@ export default async function Weekly(): Promise<JSX.Element> {
     pick6: { small: 60, medium: 90, large: 90 },
   }
   return (
-    <div className="absolute top-0 left-[50px] w-[calc(100%-50px)] min-h-full flex flex-col text-center items-center overflow-x-hidden">
-      <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl mt-1">
+    <div className="absolute left-[50px] top-0 flex min-h-full w-[calc(100%-50px)] flex-col items-center overflow-x-hidden text-center">
+      <h1 className="mt-1 text-2xl sm:text-3xl md:text-4xl lg:text-5xl">
         Week Picks
       </h1>
       {weeks.length > 0 ? (
