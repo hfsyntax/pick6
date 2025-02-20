@@ -1,18 +1,22 @@
 "use client"
 import type { FormEvent } from "react"
-import { useState, useEffect, useRef } from "react"
-import { useFormState } from "react-dom"
+import {
+  useState,
+  useEffect,
+  useRef,
+  useActionState,
+  startTransition,
+} from "react"
 import { changePassword } from "../actions/userRequests"
 
-export default function ChangePassword({ session }): JSX.Element {
+export default function ChangePassword({ session }) {
   const [showForm, setShowForm] = useState(false)
-  const [formResponse, formAction] = useFormState(changePassword, null)
-  const currentForm = useRef<HTMLFormElement>()
+  const [formResponse, formAction, isPending] = useActionState(
+    changePassword,
+    null,
+  )
+  const currentForm = useRef<HTMLFormElement>(null)
   const formMessage = useRef({ message: null, error: null })
-  const [submitButton, setSubmitButton] = useState({
-    disabled: false,
-    text: "Submit",
-  })
 
   const toggleForm = () => {
     formMessage.current = null
@@ -22,15 +26,12 @@ export default function ChangePassword({ session }): JSX.Element {
   const handleForm = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
     const formData = new FormData(event.target as HTMLFormElement)
-    formAction(formData)
-    setSubmitButton({
-      disabled: true,
-      text: "Loading...",
+    startTransition(() => {
+      formAction(formData)
     })
   }
 
   useEffect(() => {
-    setSubmitButton({ disabled: false, text: "Submit" })
     if (formResponse?.message) {
       formMessage.current = { message: formResponse?.message, error: null }
       currentForm.current.reset()
@@ -53,6 +54,7 @@ export default function ChangePassword({ session }): JSX.Element {
             className="ml-auto mr-auto flex w-full flex-col items-center"
             ref={currentForm}
             onSubmit={handleForm}
+            action={formAction}
           >
             {/* username field required by chrome */}
             <input
@@ -89,8 +91,8 @@ export default function ChangePassword({ session }): JSX.Element {
             <input
               className="mt-[10px] block"
               type="submit"
-              value={submitButton.text}
-              disabled={submitButton.disabled}
+              value={isPending ? "Loading..." : "Submit"}
+              disabled={isPending}
             />
           </form>
           {formMessage?.current?.message && (

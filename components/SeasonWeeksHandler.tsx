@@ -33,7 +33,7 @@ export default function SeasonWeeksHandler({
   headers,
   columnWidths,
   rowHeights,
-}: ComponentProps): JSX.Element {
+}: ComponentProps) {
   const [selectedOption, setSelectedOption] = useState({
     season: currentSeason,
     week: currentWeek,

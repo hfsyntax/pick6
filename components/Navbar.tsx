@@ -5,7 +5,7 @@ import { getSession } from "../lib/session"
 import { faIdBadge } from "@fortawesome/free-solid-svg-icons"
 import LogoutButton from "./LogoutButton"
 
-export default async function Navbar(): Promise<JSX.Element> {
+export default async function Navbar() {
   const session = await getSession()
   return (
     <div className="navbar absolute left-0 top-0 flex h-[50px] w-full items-center justify-end bg-[#3181d2] text-white">

@@ -11,7 +11,7 @@ import {
 } from "@fortawesome/free-solid-svg-icons"
 import { usePathname } from "next/navigation"
 
-export default function Sidebar({ sessionType }): JSX.Element {
+export default function Sidebar({ sessionType }) {
   const pathname = usePathname()
   return (
     <div className="absolute left-0 top-0 flex h-full w-[50px] flex-col items-center bg-black text-white">

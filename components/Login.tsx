@@ -1,63 +1,49 @@
 "use client"
+import type { FormEvent } from "react"
 import { checkSessionTimeout, login } from "../lib/session"
 import { getUsersByName } from "../actions/serverRequests"
-import { useFormState } from "react-dom"
-import { useEffect, useRef, useState } from "react"
+import {
+  useEffect,
+  useRef,
+  useState,
+  useActionState,
+  startTransition,
+} from "react"
 import ReCAPTCHA from "react-google-recaptcha"
 
-export default function Login(): JSX.Element {
+export default function Login() {
   const recaptchaSiteKey = "6LeBoQsqAAAAAPgRejKkDo695uUkDlPre8Os5MyB"
-  const recaptcha = useRef<ReCAPTCHA>()
-  const currentForm = useRef<HTMLFormElement>()
-  const [formResponse, formAction] = useFormState(login, null)
-  const [formState, setFormState] = useState({
-    error: null,
-    disabled: false,
-    text: "Login",
-  })
+  const recaptcha = useRef<ReCAPTCHA>(null)
+  const currentForm = useRef<HTMLFormElement>(null)
+  const [formResponse, formAction, isPending] = useActionState(login, null)
+  const [formError, setFormError] = useState<string>()
 
-  const handleFormSubmit = async (event) => {
+  const handleFormSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
     await recaptcha.current.executeAsync()
-    const formData = new FormData(event.target)
+    const formData = new FormData(event.target as HTMLFormElement)
     if (!formData.get("username")) {
-      setFormState((prevState) => ({
-        ...prevState,
-        error: "username is empty",
-      }))
+      setFormError("username is empty")
     } else if (!formData.get("password")) {
-      setFormState((prevState) => ({
-        ...prevState,
-        error: "password is empty",
-      }))
+      setFormError("password is empty")
     } else {
-      formAction(formData)
-      setFormState((prevState) => ({
-        ...prevState,
-        disabled: true,
-        text: "loading...",
-      }))
+      startTransition(() => {
+        formAction(formData)
+      })
     }
   }
 
   useEffect(() => {
     if (formResponse?.error) {
       currentForm.current.reset()
-      setFormState({
-        disabled: false,
-        text: "Login",
-        error: formResponse?.error,
-      })
+      setFormError(formResponse?.error)
     }
   }, [formResponse])
 
   useEffect(() => {
     checkSessionTimeout().then((response) => {
       if (response === "session timeout") {
-        setFormState((prevState) => ({
-          ...prevState,
-          error: response,
-        }))
+        setFormError(response)
       }
     })
     // remove localstorage for deleted users
@@ -87,6 +73,7 @@ export default function Login(): JSX.Element {
       ref={currentForm}
       className="absolute left-1 top-1/2 box-border w-[calc(100vw-50px-20px)] -translate-y-1/2 bg-white p-5 shadow-md sm:left-1/2 sm:w-[500px] sm:-translate-x-1/2"
       onSubmit={handleFormSubmit}
+      action={formAction}
     >
       <h2 className="text-xl font-bold text-[#007bff]">Login</h2>
       <label className="mb-1 mt-1 block text-left text-sm md:text-base">
@@ -113,14 +100,12 @@ export default function Login(): JSX.Element {
       />
       <input
         type="submit"
-        disabled={formState.disabled}
-        value={formState.text}
+        disabled={isPending}
+        value={isPending ? "Loading..." : "Login"}
         className="mb-1 mt-3 block w-full cursor-pointer rounded-md border-none bg-[#007bff] p-[10px] text-white hover:bg-blue-400"
       />
       <ReCAPTCHA ref={recaptcha} sitekey={recaptchaSiteKey} size="invisible" />
-      {formState?.error && (
-        <span className="text-red-500">{formState?.error}</span>
-      )}
+      {formError !== "" && <span className="text-red-500">{formError}</span>}
     </form>
   )
 }

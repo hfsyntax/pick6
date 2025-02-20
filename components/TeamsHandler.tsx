@@ -27,7 +27,7 @@ export default function TeamsHandler({
   const [selectedTeams, setSelectedTeams] = useState<{
     [key: string]: boolean
   }>({})
-  const currentForm = useRef()
+  const currentForm = useRef<HTMLFormElement>(null)
   const updateCountdown = (timeUntilReset: number, paused: boolean) => {
     // Convert the time until reset to days, hours, minutes, and seconds
     const days = Math.floor(timeUntilReset / (1000 * 60 * 60 * 24))

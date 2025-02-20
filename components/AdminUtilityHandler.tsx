@@ -1,10 +1,15 @@
 "use client"
 import type { QueryResultRow } from "@vercel/postgres"
 import type { ChangeEvent, MouseEvent, FormEvent } from "react"
-import { useState, useRef, useEffect } from "react"
+import {
+  useState,
+  useRef,
+  useEffect,
+  useActionState,
+  startTransition,
+} from "react"
 import Link from "next/link"
 import { handleAdminForm, revalidateCache } from "../actions/adminRequests"
-import { useFormState } from "react-dom"
 import { clearUserCredentialsFile } from "../actions/serverRequests"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 import { faXmark } from "@fortawesome/free-solid-svg-icons"
@@ -21,21 +26,24 @@ export default function AdminUtilityHandler({
   week,
   timerStatus,
   resetTime,
-}: ComponentProps): JSX.Element {
+}: ComponentProps) {
   const [option, setOption] = useState("Upload Games")
   const [fromFile, setFromFile] = useState(false)
+  // used for modal message
   const [message, showMessage] = useState({ display: "none", text: null })
   const [refreshButton, setRefreshButton] = useState({
     disabled: false,
     text: "Refresh Data",
   })
-  const [submitButton, setSubmitButton] = useState({
-    disabled: false,
-    text: "Submit",
-  })
-  const [formResponse, formAction] = useFormState(handleAdminForm, null)
+
+  const [formResponse, formAction, isPending] = useActionState(
+    handleAdminForm,
+    null,
+  )
+
+  // used for form responses
   const [formMessage, setFormMessage] = useState({ message: null, error: null })
-  const currentForm = useRef<HTMLFormElement>()
+  const currentForm = useRef<HTMLFormElement>(null)
   const formMessageSet = useRef(false)
 
   const selectHandler = async (event: ChangeEvent<HTMLSelectElement>) => {
@@ -53,10 +61,8 @@ export default function AdminUtilityHandler({
     const formData = new FormData(event.target as HTMLFormElement)
     formData.append("option", option)
     formMessageSet.current = false
-    formAction(formData)
-    setSubmitButton({
-      disabled: true,
-      text: "Loading...",
+    startTransition(() => {
+      formAction(formData)
     })
   }
 
@@ -84,7 +90,6 @@ export default function AdminUtilityHandler({
   }
 
   useEffect(() => {
-    setSubmitButton({ disabled: false, text: "Submit" })
     if (formResponse?.message) {
       if (option === "Upload Picks" && isValidURL(formResponse.message)) {
         fetch(formResponse.message, {
@@ -223,6 +228,7 @@ export default function AdminUtilityHandler({
         ref={currentForm}
         className="ml-auto mr-auto flex w-full flex-col items-center"
         onSubmit={submitHandler}
+        action={formAction}
       >
         <div className="mt-3 flex items-center">
           <label className="text-sm font-bold sm:text-base lg:text-xl">
@@ -448,8 +454,8 @@ export default function AdminUtilityHandler({
         <input
           className="mb-2 mt-[10px] block w-fit cursor-pointer rounded-md bg-black p-2 text-xs text-white hover:bg-gray-500 sm:text-sm md:text-base"
           type="submit"
-          value={submitButton.text}
-          disabled={submitButton.disabled}
+          value={isPending ? "Loading..." : "Submit"}
+          disabled={isPending}
         />
         <ul>
           {formMessage?.message &&

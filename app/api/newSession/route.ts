@@ -6,7 +6,7 @@ import { headers } from "next/headers";
 
 export async function GET(request: NextRequest) {
   try {
-    const headersList = headers()
+    const headersList = await headers()
     const referer = headersList?.get("referer")
     if (!referer) return NextResponse.json({ error: "401 Unauthorized" }, { status: 401 })
     const refererPath = new URL(headersList.get("referer")).pathname

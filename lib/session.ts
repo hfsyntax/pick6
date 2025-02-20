@@ -31,7 +31,7 @@ export async function decrypt(input: string): Promise<any> {
 
 async function validateRecaptcha(token: string) {
   const recaptchaResponse = await fetch(
-    `https://www.google.com/recaptcha/api/siteverify?secret=${process.env.RECAPTCHA_SECRET_KEY}&response=${token}`
+    `https://www.google.com/recaptcha/api/siteverify?secret=${process.env.RECAPTCHA_SECRET_KEY}&response=${token}`,
   )
   const responseBody = await recaptchaResponse.json()
   return responseBody?.success && responseBody?.score >= 0.3
@@ -81,7 +81,8 @@ export async function login(prevState: any, formData: FormData) {
         }
         const expires = new Date(Date.now() + 60 * 60 * 1000)
         const session = await encrypt({ user, expires })
-        cookies().set("session", session, { expires, httpOnly: true })
+        const cookieStore = await cookies()
+        cookieStore.set("session", session, { expires, httpOnly: true })
         return redirect("/teams")
       } else {
         revalidatePath("/")
@@ -99,27 +100,32 @@ export async function login(prevState: any, formData: FormData) {
 
 export async function logout() {
   // Destroy the session
-  cookies().delete("session")
-  cookies().delete("error")
-  cookies().delete("edgestore-ctx")
-  cookies().delete("edgestore-token")
+  const cookieStore = await cookies()
+  cookieStore
+    .delete("session")
+    .delete("session")
+    .delete("error")
+    .delete("edgestore-ctx")
+    .delete("edgestore-token")
   revalidatePath("/")
   return redirect("/")
 }
 
 // session timeout idle on page
 export async function redirectToLogin() {
-  if (!cookies().get("error")) {
+  const cookieStore = await cookies()
+  if (!cookieStore.get("error")) {
     const expires = new Date(Date.now() + 60 * 60 * 1000)
-    cookies().set("error", "session timeout", { expires, httpOnly: true })
+    cookieStore.set("error", "session timeout", { expires, httpOnly: true })
   }
-  cookies().delete("session")
+  cookieStore.delete("session")
   revalidatePath("/")
   return redirect("/")
 }
 
 export async function getSession() {
-  const session = cookies().get("session")?.value
+  const cookieStore = await cookies()
+  const session = cookieStore.get("session")?.value
   if (!session) return null
   return await decrypt(session)
 }
@@ -143,9 +149,10 @@ export async function updateSession(request: NextRequest) {
     return res
   } catch (error) {
     if (error.name === "JWTExpired") {
-      if (!cookies().get("error")) {
+      const cookieStore = await cookies()
+      if (!cookieStore.get("error")) {
         const expires = new Date(Date.now() + 60 * 60 * 1000)
-        cookies().set("error", "session timeout", { expires, httpOnly: true })
+        cookieStore.set("error", "session timeout", { expires, httpOnly: true })
       }
       revalidatePath("/")
       return redirect("/")
@@ -156,9 +163,10 @@ export async function updateSession(request: NextRequest) {
 }
 
 export async function checkSessionTimeout() {
-  const errorMessage = cookies().get("error")?.value
+  const cookieStore = await cookies()
+  const errorMessage = cookieStore.get("error")?.value
   if (errorMessage === "session timeout") {
-    cookies().delete("error")
+    cookieStore.delete("error")
     return errorMessage
   }
   return null

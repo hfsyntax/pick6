@@ -6,11 +6,7 @@ import {
 } from "../actions/serverRequests"
 import FixedTable from "./FixedTable"
 
-export default async function ProfileHandler({
-  id,
-}: {
-  id: string
-}): Promise<JSX.Element> {
+export default async function ProfileHandler({ id }: { id: string }) {
   const currentSeason = await getConfigValue("CURRENT_SEASON")
   const currentWeek = await getConfigValue("CURRENT_WEEK")
   const user = await getUser(id)

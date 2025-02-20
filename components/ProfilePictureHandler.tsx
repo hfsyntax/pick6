@@ -11,8 +11,8 @@ export default function ProfilePictureHandler({
   pictureURL,
 }: {
   pictureURL: string
-}): JSX.Element {
-  const fileInput = useRef<HTMLInputElement>()
+}) {
+  const fileInput = useRef<HTMLInputElement>(null)
   const [url, setUrl] = useState(pictureURL)
   const { edgestore } = useEdgeStore()
   const [message, setMessage] = useState({ message: null, error: null })
