@@ -45,6 +45,10 @@ export default function SeasonWeeksHandler({
     dataHeaders: headers,
   })
 
+  // updated rowheights for dynamic table (specific to week/season)
+  const [currentRowHeights, setCurrentRowHeights] =
+    useState<number[]>(rowHeights)
+
   const [sorts, setSorts] = useState({
     order: "asc",
     rank: true,
@@ -106,6 +110,19 @@ export default function SeasonWeeksHandler({
         ...prevState,
         currentData: weekResults,
       }))
+      const rowHeights = [
+        35,
+        ...weekResults.map((week) => {
+          const maxPlayers = Math.max(
+            week["winners_count"],
+            week["losers_count"],
+            1,
+          )
+          // 35px row height + gap of 10px between each row
+          return maxPlayers * 35 + (maxPlayers - 1) * 10
+        }),
+      ]
+      setCurrentRowHeights(rowHeights)
     }
   }
 
@@ -253,8 +270,8 @@ export default function SeasonWeeksHandler({
             data={[{ ...data.currentData[0] }, ...data.currentData]}
             columns={data.dataHeaders}
             columnWidths={columnWidths}
-            rowHeights={rowHeights}
-            height={`min(${rowHeights.reduce(
+            rowHeights={currentRowHeights}
+            height={`min(${currentRowHeights.reduce(
               (accumulator, currentValue) => accumulator + currentValue,
               0,
             )}px, 65vh)`}

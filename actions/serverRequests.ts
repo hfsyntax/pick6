@@ -23,7 +23,8 @@ export async function getConfigValue(
 
 export const getSeasons = cache(async (): Promise<QueryResultRow[]> => {
   try {
-    const queryResult = await sql`SELECT * FROM Seasons`
+    const queryResult =
+      await sql`SELECT * FROM Seasons ORDER BY season_number ASC`
     return queryResult?.rows
   } catch (error) {
     return []
@@ -32,7 +33,8 @@ export const getSeasons = cache(async (): Promise<QueryResultRow[]> => {
 
 export const getWeeks = cache(async (): Promise<QueryResultRow[]> => {
   try {
-    const queryResult = await sql`SELECT * FROM weeks`
+    const queryResult =
+      await sql`SELECT * FROM weeks ORDER BY season_number, week_number ASC`
     return queryResult?.rows
   } catch (error) {
     return []
