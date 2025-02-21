@@ -1088,7 +1088,7 @@ async function handleWeekResults(formData: FormData): Promise<FormResult> {
                 )`
       if (playersWithNoPicks.rowCount > 0) {
         message.push(
-          `Created new player week stat entries for players who did not make selections for week ${currentWeek}<br/>`,
+          `Created new player week stat entries for week ${weekNumber} who have not made selections<br/>`,
         )
       }
 
@@ -1126,7 +1126,7 @@ async function handleWeekResults(formData: FormData): Promise<FormResult> {
 
       if (playersWithPicks.rowCount > 0) {
         message.push(
-          `Created new player week stats entries for next week week ${weekNumber} who have made selections<br/>`,
+          `Created new player week stats entries for week ${weekNumber} who have made selections<br/>`,
         )
       }
 
@@ -1153,7 +1153,7 @@ async function handleWeekResults(formData: FormData): Promise<FormResult> {
 
       if (nextWeekRanks.rowCount > 0) {
         message.push(
-          `Updated player ranks for next weeks stats week ${weekNumber}<br/>`,
+          `Updated ranks for player week stats entries for week ${weekNumber}<br/>`,
         )
       }
 
@@ -1266,15 +1266,13 @@ async function handleWeekResults(formData: FormData): Promise<FormResult> {
 
       if (losersWithNoPicks.rowCount > 0) {
         message.push(
-          `Inserted losers for week ${currentWeek} who didn't make selections<br/>`,
+          `Inserted losers for week ${currentWeek} who did not make selections<br/>`,
         )
       }
 
       // update week env
       await setConfigValue("CURRENT_WEEK", weekNumber)
-      message.push(
-        `Updated the current week to the next week ${weekNumber}<br/>`,
-      )
+      message.push(`Updated the current week to week ${weekNumber}<br/>`)
       revalidatePath("/teams")
       revalidatePath("/weekly")
       revalidatePath("/season")
@@ -1530,46 +1528,52 @@ async function uploadPicks(formData: FormData): Promise<FormResult> {
     if (currentWeek === "1") {
       await sql`DELETE from playerseasonstats WHERE season_number = ${currentSeason}`
       await sql`DELETE from playerweekstats WHERE season_number = ${currentSeason} AND week_number = ${currentWeek}`
+
+      for (let row of newUsersQuery.rows) {
+        const user = row["username"]
+        createdUsers[user]["new"] = true
+        const userPassword = createdUsers[user]["password"]
+        newUsers.push({ username: user, password: userPassword })
+      }
+
+      // insert new players
+      await sql`INSERT INTO playerauth (type, username, password, sha256)
+      SELECT 'user', ta.username, ta.password, true
+      FROM tempplayerauth ta
+      LEFT JOIN playerauth pa ON ta.username = pa.username
+      WHERE pa.username IS NULL`
     }
 
-    for (let row of newUsersQuery.rows) {
-      const user = row["username"]
-      createdUsers[user]["new"] = true
-      const userPassword = createdUsers[user]["password"]
-      newUsers.push({ username: user, password: userPassword })
-    }
-
-    // insert new players
-    await sql`INSERT INTO playerauth (type, username, password, sha256)
-            SELECT 'user', ta.username, ta.password, true
-            FROM tempplayerauth ta
-            LEFT JOIN playerauth pa ON ta.username = pa.username
-            WHERE pa.username IS NULL`
-
-    // get auth id for all newly inserted players
+    // get auth id for all players
     const authIDQuery = await sql`SELECT username, auth_id, sha256
-            FROM playerauth
-            WHERE (username) IN (
-                SELECT username
-                FROM tempplayerauth
-            )`
+      FROM playerauth
+      WHERE (username) IN (
+          SELECT username
+          FROM tempplayerauth
+      )`
+
     for (let row of authIDQuery.rows) {
       const user = row["username"]
       const authID = row["auth_id"]
       createdUsers[user]["authID"] = authID
       const groupNumber = createdUsers[user]["groupNumber"]
       const group = createdUsers[user]["group"]
-      if (createdUsers[user]["new"]) {
-        createPlayerValues.push(
-          `('${authID}', '${user}', '${group}', '${groupNumber}')`,
+
+      if (currentWeek === "1") {
+        if (createdUsers[user]["new"]) {
+          createPlayerValues.push(
+            `('${authID}', '${user}', '${group}', '${groupNumber}')`,
+          )
+        }
+
+        createStatValues.push(
+          `('${authID}', '${currentSeason}', '0', '0', '0', '0', '0', '${group}', '${groupNumber}')`,
+        )
+
+        createWeekStatValues.push(
+          `('${authID}', '${currentSeason}', '${currentWeek}', '0', '0', '0', '0', '0', '${group}', '${groupNumber}')`,
         )
       }
-      createStatValues.push(
-        `('${authID}', '${currentSeason}', '0', '0', '0', '0', '0', '${group}', '${groupNumber}')`,
-      )
-      createWeekStatValues.push(
-        `('${authID}', '${currentSeason}', '${currentWeek}', '0', '0', '0', '0', '0', '${group}', '${groupNumber}')`,
-      )
     }
 
     // batch insert new users

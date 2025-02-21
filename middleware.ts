@@ -2,7 +2,8 @@ import { NextRequest, NextResponse } from "next/server"
 import { updateSession, getSession } from "./lib/session"
 
 export const config = {
-  matcher: "/((?!api|_next/static|_next/image|p6.png|static-assets).*)",
+  matcher:
+    "/((?!api|_next/static|_next/image|p6.png|default.png|static-assets).*)",
 }
 
 export async function middleware(request: NextRequest) {

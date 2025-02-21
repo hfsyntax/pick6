@@ -61,7 +61,7 @@ function Row({
                     : columnWidths[field].large,
             }}
             className={`relative flex flex-col gap-[5px] ${
-              index === 0 ? "mb-2 bg-black text-white" : "bg-white text-black"
+              index === 0 ? "bg-black text-white" : "bg-white text-black"
             } flex-shrink-0 leading-[35px]`}
           >
             {index === 0
