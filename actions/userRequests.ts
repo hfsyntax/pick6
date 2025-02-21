@@ -1,5 +1,5 @@
 "use server"
-import type { FormResult } from "./adminRequests"
+import type { FormResult } from "../types"
 import { getSession } from "../lib/session"
 import { getConfigValue } from "../actions/serverRequests"
 import { revalidatePath } from "next/cache"
@@ -175,7 +175,7 @@ export async function handlePicks(formData: FormData): Promise<FormResult> {
 
 export async function changePassword(
   prevState: any,
-  formData: FormData
+  formData: FormData,
 ): Promise<FormResult> {
   try {
     const currentPassword = String(formData.get("currentPassword"))

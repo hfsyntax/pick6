@@ -1,7 +1,7 @@
 "use client"
 import type { FormEvent } from "react"
 import type { QueryResultRow } from "@vercel/postgres"
-import type { FormResult } from "../actions/adminRequests"
+import type { FormResult } from "../types"
 import { useEffect, useRef, useState } from "react"
 import { handlePicks } from "../actions/userRequests"
 import { getSession } from "../lib/session"

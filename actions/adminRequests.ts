@@ -1,4 +1,5 @@
 "use server"
+import type { FormResult } from "../types"
 import { getConfigValue } from "./serverRequests"
 import { getSession } from "../lib/session"
 import { redirect } from "next/navigation"
@@ -36,11 +37,6 @@ async function setConfigValue(
     newError.name = "AppConfigError"
     throw newError
   }
-}
-
-export interface FormResult {
-  message?: string
-  error?: string
 }
 
 async function toggleTimer(): Promise<FormResult> {
