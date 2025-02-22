@@ -169,14 +169,18 @@ export const getSeasonStats = cache(
     fields: Array<string>,
   ): Promise<QueryResultRow[]> => {
     try {
+      const allowedFields = ["rank", "gp", "group_number"]
+      const safeOrder = order.toUpperCase() === "DESC" ? "DESC" : "ASC"
+      const safeFields = fields.filter((f) => allowedFields.includes(f))
       const orderQuery =
-        fields.length > 0
-          ? `ORDER BY ${fields.map((f) => `ps.${f} ${order}`).join(", ")}`
+        safeFields.length > 0
+          ? `ORDER BY ${safeFields.map((f) => `ps.${f} ${safeOrder}`).join(", ")}`
           : ""
 
-      const seasonNumber = isNaN(parseInt(season)) ? 0 : season
+      const seasonNumber = isNaN(parseInt(season)) ? 0 : parseInt(season)
 
-      const queryResult = await sql.query(`SELECT
+      const queryResult = await sql.query(
+        `SELECT
         ps.rank,
         ps.group_number,
         ps.gp,
@@ -188,9 +192,11 @@ export const getSeasonStats = cache(
         ps.win_percentage
         FROM PlayerSeasonStats ps
         JOIN Players p ON ps.player_id = p.player_id
-        WHERE ps.season_number = ${seasonNumber}
+        WHERE ps.season_number = $1
         GROUP BY ps.rank, ps.group_number, ps.gp, p.player_id, p.name, ps.won, ps.played, ps.win_percentage
-        ${orderQuery}`)
+        ${orderQuery}`,
+        [seasonNumber],
+      )
       return queryResult.rows
     } catch (error) {
       return []
@@ -211,13 +217,17 @@ export const getPicks = cache(
     fields: Array<string>,
   ): Promise<PickResult> => {
     try {
+      const safeOrder = order.toUpperCase() === "DESC" ? "DESC" : "ASC"
+      const allowedFields = ["rank", "gp", "group_number"]
+      const safeFields = fields.filter((f) => allowedFields.includes(f))
       const orderQuery =
-        fields.length > 0
-          ? `ORDER BY ${fields.map((f) => `subquery.${f} ${order}`).join(", ")}`
+        safeFields.length > 0
+          ? `ORDER BY ${safeFields.map((f) => `subquery.${f} ${safeOrder}`).join(", ")}`
           : ""
-      const seasonNumber = isNaN(parseInt(season)) ? 0 : season
-      const weekNumber = isNaN(parseInt(week)) ? 0 : week
-      const queryResult = await sql.query(`SELECT DISTINCT
+      const seasonNumber = isNaN(parseInt(season)) ? 0 : parseInt(season)
+      const weekNumber = isNaN(parseInt(week)) ? 0 : parseInt(week)
+      const queryResult = await sql.query(
+        `SELECT DISTINCT
         subquery.player_id,
         subquery.rank,
         subquery.group_number,
@@ -281,16 +291,18 @@ export const getPicks = cache(
         INNER JOIN
             Players p ON pw.player_id = p.player_id
         WHERE
-            pw.season_number = ${seasonNumber}
-            AND pw.week_number = ${weekNumber}
+            pw.season_number = $1
+            AND pw.week_number = $2
     ) AS subquery
     INNER JOIN PlayerSelections AS ps ON subquery.player_id = ps.player_id
     INNER JOIN Games AS g ON ps.game_id = g.game_id
     WHERE
-    g.season_number = ${seasonNumber}
-    AND g.week_number = ${weekNumber}
+    g.season_number = $1
+    AND g.week_number = $2
     ${orderQuery}
-    `)
+    `,
+        [seasonNumber, weekNumber],
+      )
 
       const gameCount = await getGameCountForWeek(season, week)
       const picks = queryResult.rows.map((row: Object) => {
@@ -339,10 +351,23 @@ export async function getUsersByName(
     if (users.length > 10) {
       throw new Error("too many users to parse")
     }
+
+    const sanitizedUsers = users
+      .map((username) =>
+        String(username)
+          .trim()
+          .replace(/[^a-zA-Z0-9]/, "")
+          .toLowerCase(),
+      )
+      .filter((username) => username.length > 0)
+
+    if (sanitizedUsers.length === 0) return []
+
+    const placeholders = sanitizedUsers.map((_, i) => `$${i + 1}`).join(", ")
+
     const queryResult = await sql.query(
-      `SELECT username from playerauth where username IN (${users
-        .map((user) => `'${user}'`)
-        .join()})`,
+      `SELECT username from playerauth where username IN (${placeholders})`,
+      [sanitizedUsers],
     )
     return queryResult.rows
   } catch (error) {

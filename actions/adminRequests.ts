@@ -312,16 +312,16 @@ async function insertUser(formData: FormData): Promise<FormResult> {
       const createdUsers = {}
       const createTempUserSql =
         "INSERT INTO tempplayerauth (type, username, password, sha256, gp, group_number) VALUES "
-      const createTempValues = [] as String[]
+      const createTempValues = [] as String[][]
       const createPlayerSql =
         "INSERT INTO players (player_id, name, gp, group_number) VALUES "
-      const createPlayerValues = [] as String[]
+      const createPlayerValues = [] as String[][]
 
       //username,password,gp,type,group_number
       for (let line of lines) {
         if (
           line.match(
-            /^[a-zA-Z0-9]+\s*,\s*[a-zA-Z0-9]+\s*,\s*[a-zA-Z0-9]+\s*,\s*(admin|user)\s*,\s*[0-9]+\s*$/,
+            /^[a-zA-Z0-9]{3,50}\s*,.{6,128},\s*[a-zA-Z]{2}\s*,\s*(admin|user)\s*,\s*\d{1,4}\s*$/,
           )
         ) {
           const userData = line.split(",")
@@ -365,9 +365,14 @@ async function insertUser(formData: FormData): Promise<FormResult> {
               authID: null,
             }
             groups[group].add(groupNumber)
-            createTempValues.push(
-              `('${userType}', '${username}', '${hashed_password}', '0', '${group}', '${groupNumber}')`,
-            )
+
+            createTempValues.push([
+              userType,
+              username,
+              hashed_password,
+              group,
+              groupNumber,
+            ])
           }
         } else {
           skippedLines.push(`Line: ${line} (invalid format)<br/>`)
@@ -379,7 +384,14 @@ async function insertUser(formData: FormData): Promise<FormResult> {
         const batchSize = 1000000
         for (let i = 0; i < createTempValues.length; i += batchSize) {
           const batch = createTempValues.slice(i, i + batchSize)
-          await sql.query(`${createTempUserSql} ${batch.join()}`)
+          const placeholders = batch
+            .map(
+              (_, index) =>
+                `($${index * 5 + 1}, $${index * 5 + 2}, $${index * 5 + 3}, '0', $${index * 5 + 4}, $${index * 5 + 5})`,
+            )
+            .join(", ")
+          const flatValues = batch.flat()
+          await sql.query(`${createTempUserSql} ${placeholders}`, flatValues)
         }
 
         // identify users to be inserted that already exist
@@ -410,7 +422,7 @@ async function insertUser(formData: FormData): Promise<FormResult> {
           revalidatePath("/admin_utility")
           return {
             error: `Error: found new users with duplicate group and group numbers: ${duplicateGroupIdQuery.rows
-              .map((user) => user)
+              .map((user) => user.username)
               .join(", ")}`,
           }
         }
@@ -438,9 +450,7 @@ async function insertUser(formData: FormData): Promise<FormResult> {
             createdUsers[user]["auth_id"] = authID
             const group = createdUsers[user]["group"]
             const groupNumber = createdUsers[user]["groupNumber"]
-            createPlayerValues.push(
-              `('${authID}', '${user}', '${group}', '${groupNumber}')`,
-            )
+            createPlayerValues.push([authID, user, group, groupNumber])
             successfulEntires++
           }
         }
@@ -448,11 +458,17 @@ async function insertUser(formData: FormData): Promise<FormResult> {
         // empty out temp inserts after processing users
         await sql`TRUNCATE TABLE tempplayerauth`
 
-        // start batch sql insers
+        // start batch sql inserts
         for (let i = 0; i < createPlayerValues.length; i += batchSize) {
           const batch = createPlayerValues.slice(i, batchSize)
-          const query = `${createPlayerSql} ${batch.join()} ON CONFLICT (name) DO NOTHING`
-          await sql.query(query)
+          const placeholders = batch
+            .map(
+              (_, index) =>
+                `($${index * 4 + 1}, $${index * 4 + 2}, $${index * 4 + 3}, $${index * 4 + 4})`,
+            )
+            .join(", ")
+          const flatValues = batch.flat()
+          await sql.query(`${createPlayerSql} ${placeholders}`, flatValues)
         }
       }
 
@@ -479,6 +495,7 @@ async function insertUser(formData: FormData): Promise<FormResult> {
     if (error?.name === "AppConfigError") {
       return { error: "Error: failed to set/get app configuration variables" }
     } else {
+      console.error(error)
       return { error: "Error: database connection/operation error" }
     }
   }
@@ -539,9 +556,9 @@ async function deleteUser(formData: FormData): Promise<FormResult> {
       const deletedUsers = []
       const createTempUserSql =
         "INSERT INTO tempplayerauth (username, is_active) VALUES "
-      const createTempValues = []
+      const createTempValues = [] as string[][]
       const deleteUserSql = "DELETE FROM playerauth WHERE username IN"
-      const deleteUserValues = []
+      const deleteUserValues = [] as string[]
       const batchSize = 1000000
       const users = fileText.split(",")
 
@@ -549,14 +566,17 @@ async function deleteUser(formData: FormData): Promise<FormResult> {
         user = user.trim()
         if (user && !deletedUsers[user]) {
           deletedUsers[user] = user
-          createTempValues.push(`('${user}', 'false')`)
+          createTempValues.push([user, "false"])
         }
       }
 
       for (let i = 0; i < createTempValues.length; i += batchSize) {
         const batch = createTempValues.slice(i, i + batchSize)
-        const query = createTempUserSql + batch.join()
-        await sql.query(query)
+        const placeholders = batch
+          .map((_, index) => `($${index * 2 + 1}, $${index * 2 + 2})`)
+          .join(", ")
+        const flatValues = batch.flat()
+        await sql.query(`${createTempUserSql} ${placeholders}`, flatValues)
       }
 
       const nonExistingUsers = await sql`SELECT ta.username
@@ -574,14 +594,17 @@ async function deleteUser(formData: FormData): Promise<FormResult> {
       }
 
       for (let user of Object.keys(deletedUsers)) {
-        deleteUserValues.push(`'${deletedUsers[user]}'`)
+        deleteUserValues.push(deletedUsers[user])
         successfulEntires++
       }
 
       if (formData.get("hardDelete")) {
         for (let i = 0; i < deleteUserValues.length; i += batchSize) {
           const batch = deleteUserValues.slice(i, i + batchSize)
-          await sql.query(`${deleteUserSql} (${batch.join()})`)
+          const placeholders = batch
+            .map((_, index) => `($${index + 1})`)
+            .join(", ")
+          await sql.query(`${deleteUserSql} ${placeholders}`, batch)
         }
       } else {
         await sql`UPDATE playerauth AS pa
@@ -717,7 +740,7 @@ async function uploadGames(formData: FormData): Promise<FormResult> {
 
     const createGamesSql =
       "INSERT INTO games (season_number, week_number, favorite, spread, underdog) VALUES"
-    const createGamesValues = []
+    const createGamesValues = [] as string[][]
     const skippedLines = []
     let successfulEntries = 0
 
@@ -757,9 +780,13 @@ async function uploadGames(formData: FormData): Promise<FormResult> {
           } else {
             const favoriteID = teamIDs[favorite]
             const underdogID = teamIDs[underdog]
-            createGamesValues.push(
-              `('${currentSeason}', '${currentWeek}', '${favoriteID}', '${spread}', '${underdogID}')`,
-            )
+            createGamesValues.push([
+              currentSeason,
+              currentWeek,
+              favoriteID,
+              spread,
+              underdogID,
+            ])
             successfulEntries++
           }
         }
@@ -789,7 +816,14 @@ async function uploadGames(formData: FormData): Promise<FormResult> {
     const batchSize = 1000000
     for (let i = 0; i < createGamesValues.length; i += batchSize) {
       const batch = createGamesValues.slice(i, i + batchSize)
-      await sql.query(`${createGamesSql} ${batch.join()}`)
+      const placeholders = batch
+        .map(
+          (_, index) =>
+            `($${index * 5 + 1}, $${index * 5 + 2}, $${index * 5 + 3}, $${index * 5 + 4}, $${index * 5 + 5})`,
+        )
+        .join(", ")
+      const flatValues = batch.flat()
+      await sql.query(`${createGamesSql} ${placeholders}`, flatValues)
     }
 
     revalidatePath("/teams")
@@ -900,7 +934,7 @@ async function handleWeekResults(formData: FormData): Promise<FormResult> {
 
     const createTempGamesSql =
       "INSERT INTO tempgames (season_number, week_number, favorite, underdog, winner, favorite_score, underdog_score) VALUES "
-    const createTempValues = [] as String[]
+    const createTempValues = [] as String[][]
     const skippedLines = [] as String[]
     const createdGames = {}
 
@@ -957,9 +991,15 @@ async function handleWeekResults(formData: FormData): Promise<FormResult> {
               const favoriteID = teamIDs[favorite]
               const underdogID = teamIDs[underdog]
               const winnerID = teamIDs[winner]
-              createTempValues.push(
-                `('${currentSeason}', '${currentWeek}', '${favoriteID}', '${underdogID}', '${winnerID}', '${favoriteScore}', '${underdogScore}')`,
-              )
+              createTempValues.push([
+                currentSeason,
+                currentWeek,
+                favoriteID,
+                underdogID,
+                winnerID,
+                favoriteScore,
+                underdogScore,
+              ])
             }
           }
         }
@@ -971,7 +1011,14 @@ async function handleWeekResults(formData: FormData): Promise<FormResult> {
 
       for (let i = 0; i < createTempValues.length; i += batchSize) {
         const batch = createTempValues.slice(i, i + batchSize)
-        await sql.query(`${createTempGamesSql}  ${batch.join()}`)
+        const placeholders = batch
+          .map(
+            (_, index) =>
+              `($${index * 7 + 1}, $${index * 7 + 2}, $${index * 7 + 3}, $${index * 7 + 4}, $${index * 7 + 5}, $${index * 7 + 6}, $${index * 7 + 7})`,
+          )
+          .join(", ")
+        const flatValues = batch.flat()
+        await sql.query(`${createTempGamesSql} ${placeholders}`, flatValues)
       }
 
       // identify which games don't exist
@@ -1371,16 +1418,16 @@ async function uploadPicks(formData: FormData): Promise<FormResult> {
     const createdUsers = {}
     const createTempUserSql =
       "INSERT INTO tempplayerauth (username, password, sha256, gp, group_number) VALUES "
-    const createTempUserValues = []
+    const createTempUserValues = [] as string[][]
     const createPlayerSql =
       "INSERT INTO players (player_id, name, gp, group_number) VALUES "
-    const createPlayerValues = []
+    const createPlayerValues = [] as string[][]
     const createStatSql =
       "INSERT INTO playerseasonstats (player_id, season_number, rank, won, lost, played, win_percentage, gp, group_number) VALUES "
-    const createStatValues = []
+    const createStatValues = [] as string[][]
     const createWeekStatSql =
       "INSERT INTO playerweekstats (player_id, season_number, week_number, rank, won, lost, played, win_percentage, gp, group_number) VALUES "
-    const createWeekStatValues = []
+    const createWeekStatValues = [] as string[][]
     const skippedLines = []
     const groups = {}
     const fileTextByLine = fileText.trim().split(/\r?\n|\r/)
@@ -1432,9 +1479,13 @@ async function uploadPicks(formData: FormData): Promise<FormResult> {
             new: false,
           }
           groups[group].add(groupNumber)
-          createTempUserValues.push(
-            `('${playerName}', '${hashedPassword}', '1', '${group}', '${groupNumber}')`,
-          )
+          createTempUserValues.push([
+            playerName,
+            hashedPassword,
+            "1",
+            group,
+            groupNumber,
+          ])
         } else {
           skippedLines.push(
             `player ${line[2]} skipped due to no alphanumeric characters or is a duplicate<br/>`,
@@ -1458,7 +1509,14 @@ async function uploadPicks(formData: FormData): Promise<FormResult> {
     const batchSize = 1000000
     for (let i = 0; i < createTempUserValues.length; i += batchSize) {
       const batch = createTempUserValues.slice(i, i + batchSize)
-      await sql.query(`${createTempUserSql} ${batch.join()}`)
+      const placeholders = batch
+        .map(
+          (_, index) =>
+            `($${index * 5 + 1}, $${index * 5 + 2}, $${index * 5 + 3}, $${index * 5 + 4}, $${index * 5 + 5})`,
+        )
+        .join(", ")
+      const flatValues = batch.flat()
+      await sql.query(`${createTempUserSql} ${placeholders}`, flatValues)
     }
 
     // mark new players
@@ -1557,37 +1615,71 @@ async function uploadPicks(formData: FormData): Promise<FormResult> {
 
       if (currentWeek === "1") {
         if (createdUsers[user]["new"]) {
-          createPlayerValues.push(
-            `('${authID}', '${user}', '${group}', '${groupNumber}')`,
-          )
+          createPlayerValues.push([authID, user, group, groupNumber])
         }
 
-        createStatValues.push(
-          `('${authID}', '${currentSeason}', '0', '0', '0', '0', '0', '${group}', '${groupNumber}')`,
-        )
+        createStatValues.push([
+          authID,
+          currentSeason,
+          "0",
+          "0",
+          "0",
+          "0",
+          "0",
+          group,
+          groupNumber,
+        ])
 
-        createWeekStatValues.push(
-          `('${authID}', '${currentSeason}', '${currentWeek}', '0', '0', '0', '0', '0', '${group}', '${groupNumber}')`,
-        )
+        createWeekStatValues.push([
+          authID,
+          currentSeason,
+          currentWeek,
+          "0",
+          "0",
+          "0",
+          "0",
+          "0",
+          group,
+          groupNumber,
+        ])
       }
     }
 
     // batch insert new users
     for (let i = 0; i < createPlayerValues.length; i += batchSize) {
       const batch = createPlayerValues.slice(i, i + batchSize)
-      await sql.query(
-        `${createPlayerSql} ${batch.join()} ON CONFLICT(name) DO NOTHING`,
-      )
+      const placeholders = batch
+        .map(
+          (_, index) =>
+            `($${index * 4 + 1}, $${index * 4 + 2}, $${index * 4 + 3}, $${index * 4 + 4})`,
+        )
+        .join(", ")
+      const flatValues = batch.flat()
+      await sql.query(`${createPlayerSql} ${placeholders}`, flatValues)
     }
 
     for (let i = 0; i < createStatValues.length; i += batchSize) {
       const batch = createStatValues.slice(i, i + batchSize)
-      await sql.query(`${createStatSql} ${batch.join()}`)
+      const placeholders = batch
+        .map(
+          (_, index) =>
+            `($${index * 9 + 1}, $${index * 9 + 2}, $${index * 9 + 3}, $${index * 9 + 4}, $${index * 9 + 5}, $${index * 9 + 6}, $${index * 9 + 7}, $${index * 9 + 8}, $${index * 9 + 9})`,
+        )
+        .join(", ")
+      const flatValues = batch.flat()
+      await sql.query(`${createStatSql} ${placeholders}`, flatValues)
     }
 
     for (let i = 0; i < createWeekStatValues.length; i += batchSize) {
       const batch = createWeekStatValues.slice(i, i + batchSize)
-      await sql.query(`${createWeekStatSql} ${batch.join()}`)
+      const placeholders = batch
+        .map(
+          (_, index) =>
+            `($${index * 10 + 1}, $${index * 10 + 2}, $${index * 10 + 3}, $${index * 10 + 4}, $${index * 10 + 5}, $${index * 10 + 6}, $${index * 10 + 7}, $${index * 10 + 8}, $${index * 10 + 9}, $${index * 10 + 10})`,
+        )
+        .join(", ")
+      const flatValues = batch.flat()
+      await sql.query(`${createWeekStatSql} ${placeholders}`, flatValues)
     }
 
     // empty out temp inserts after creating new users
@@ -1636,7 +1728,7 @@ async function uploadPicks(formData: FormData): Promise<FormResult> {
     // bulk inserts
     const createPicksSql =
       "INSERT INTO playerselections (player_id, game_id, selected_team_id) VALUES "
-    const createPicksValues = []
+    const createPicksValues = [] as string[][]
     const playerSelections = [] // track duplicates
 
     for (let i = 1; i < fileTextByLine.length; i++) {
@@ -1672,9 +1764,7 @@ async function uploadPicks(formData: FormData): Promise<FormResult> {
               }
               if (!playerSelections[playerID][gameID]) {
                 playerSelections[playerID][gameID] = teamID
-                createPicksValues.push(
-                  `('${playerID}', '${gameID}', '${teamID}')`,
-                )
+                createPicksValues.push([playerID, gameID, teamID])
               }
             }
           }
@@ -1709,7 +1799,15 @@ async function uploadPicks(formData: FormData): Promise<FormResult> {
     // batch insert picks
     for (let i = 0; i < createPicksValues.length; i += batchSize) {
       const batch = createPicksValues.slice(i, i + batchSize)
-      await sql.query(`${createPicksSql} ${batch.join()}`)
+      const placeholders = batch
+        .map(
+          (_, index) =>
+            `($${index * 3 + 1}, $${index * 3 + 2}, $${index * 3 + 3})`,
+        )
+        .join(", ")
+      const flatValues = batch.flat()
+      //await sql.query(`${createPicksSql} ${batch.join()}`)
+      await sql.query(`${createPicksSql} ${placeholders}`, flatValues)
     }
 
     let responseJson
