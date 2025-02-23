@@ -170,14 +170,16 @@ export default function TeamsHandler({
 
   return (
     <>
-      <h2 className="text-xs sm:text-sm md:text-lg lg:text-xl">
-        Time Remaining: {countdown}
-      </h2>
+      {weekGames?.length > 0 && (
+        <h2 className="text-xs sm:text-sm md:text-lg lg:text-xl">
+          Time Remaining: {countdown}
+        </h2>
+      )}
       <form
         className="ml-auto mr-auto flex w-full flex-col items-center"
         onSubmit={submitHandler}
       >
-        {!timerPaused && (
+        {!timerPaused && weekGames?.length > 0 && (
           <input
             type="submit"
             value="submit"
