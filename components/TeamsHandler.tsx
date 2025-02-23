@@ -168,40 +168,34 @@ export default function TeamsHandler({
     }
   }, [formResponse])
 
-  return (
+  return weekGames?.length > 0 ? (
     <>
-      {weekGames?.length > 0 && (
-        <h2 className="text-xs sm:text-sm md:text-lg lg:text-xl">
-          Time Remaining: {countdown}
-        </h2>
-      )}
+      <h2 className="text-xs sm:text-sm md:text-lg lg:text-xl">
+        Time Remaining: {countdown}
+      </h2>
       <form
         className="ml-auto mr-auto flex w-full flex-col items-center"
         onSubmit={submitHandler}
       >
-        {!timerPaused && weekGames?.length > 0 && (
+        {!timerPaused && (
           <input
             type="submit"
             value="submit"
             className="mt-[10px] block cursor-pointer rounded-md bg-black p-2 text-xs text-white hover:bg-gray-500 sm:text-sm md:text-base"
           />
         )}
-        {weekGames?.length > 0 ? (
-          <MemoizedFixedTable
-            data={[weekGames[0], ...weekGames]}
-            columns={["Game", "Favorite", "Spread", "Underdog"]}
-            columnWidths={{
-              game_counter: { small: 50, medium: 100, large: 200 },
-              favorite_team: { small: 100, medium: 200, large: 300 },
-              spread: { small: 50, medium: 100, large: 165 },
-              underdog_team: { small: 100, medium: 200, large: 300 },
-            }}
-            selectedCheckboxes={selectedTeams}
-            onCheckboxChange={handleCheckboxChange}
-          />
-        ) : (
-          <h3 className="text-red-500">no data</h3>
-        )}
+        <MemoizedFixedTable
+          data={[weekGames[0], ...weekGames]}
+          columns={["Game", "Favorite", "Spread", "Underdog"]}
+          columnWidths={{
+            game_counter: { small: 50, medium: 100, large: 200 },
+            favorite_team: { small: 100, medium: 200, large: 300 },
+            spread: { small: 50, medium: 100, large: 165 },
+            underdog_team: { small: 100, medium: 200, large: 300 },
+          }}
+          selectedCheckboxes={selectedTeams}
+          onCheckboxChange={handleCheckboxChange}
+        />
         <ul>
           {formResponse?.message &&
             (formResponse?.message.includes("<br/>") ? (
@@ -236,5 +230,7 @@ export default function TeamsHandler({
         </ul>
       </form>
     </>
+  ) : (
+    <h3 className="text-red-500">no data</h3>
   )
 }
