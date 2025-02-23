@@ -2,10 +2,22 @@
 import type { FormEvent } from "react"
 import type { QueryResultRow } from "@vercel/postgres"
 import type { FormResult } from "../types"
-import { useEffect, useRef, useState } from "react"
+import { useEffect, useRef, useState, memo } from "react"
 import { handlePicks } from "../actions/userRequests"
 import { getSession } from "../lib/session"
 import FixedTable from "./FixedTable"
+
+// only re-render the child table when the selected teams change
+const MemoizedFixedTable = memo(FixedTable, (prevProps, nextProps) => {
+  const previousCheckboxes = Object.keys(prevProps.selectedCheckboxes)
+  const nextCheckboxes = Object.keys(nextProps.selectedCheckboxes)
+
+  if (previousCheckboxes.length !== nextCheckboxes.length) return false
+
+  return previousCheckboxes.every(
+    (checkbox) => previousCheckboxes[checkbox] === nextCheckboxes[checkbox],
+  )
+})
 
 interface ComponentProps {
   weekGames: QueryResultRow[]
@@ -22,13 +34,7 @@ export default function TeamsHandler({
   currentSeason,
   currentWeek,
 }: ComponentProps) {
-  const [countdown, setCountdown] = useState<string>()
-  const [formResponse, setFormResponse] = useState<FormResult>()
-  const [selectedTeams, setSelectedTeams] = useState<{
-    [key: string]: boolean
-  }>({})
-  const currentForm = useRef<HTMLFormElement>(null)
-  const updateCountdown = (timeUntilReset: number, paused: boolean) => {
+  const getTime = (timeUntilReset: number) => {
     // Convert the time until reset to days, hours, minutes, and seconds
     const days = Math.floor(timeUntilReset / (1000 * 60 * 60 * 24))
     const hours = Math.floor(
@@ -38,26 +44,43 @@ export default function TeamsHandler({
       (timeUntilReset % (1000 * 60 * 60)) / (1000 * 60),
     )
     const seconds = Math.floor((timeUntilReset % (1000 * 60)) / 1000)
+    return `${days} days, ${hours} hours, ${minutes} minutes, ${seconds} seconds`
+  }
 
+  const [countdown, setCountdown] = useState<string>(getTime(timerTime))
+  const countdownRef = useRef<NodeJS.Timeout>(null)
+
+  const [formResponse, setFormResponse] = useState<FormResult>()
+  const [selectedTeams, setSelectedTeams] = useState<{
+    [key: string]: string
+  }>({})
+
+  const updateCountdown = (timeUntilReset: number, paused: boolean) => {
     // Update the countdown display
     if (!paused) {
-      setCountdown(
-        `${days} days, ${hours} hours, ${minutes} minutes, ${seconds} seconds`,
-      )
-      setTimeout(() => {
+      if (countdownRef.current) return
+
+      countdownRef.current = setInterval(() => {
         timeUntilReset -= 1000
-        updateCountdown(timeUntilReset, paused)
+        setCountdown(getTime(timeUntilReset))
       }, 1000)
     } else {
       setCountdown("Paused")
+      if (countdownRef.current) {
+        clearInterval(countdownRef.current)
+      }
     }
   }
 
-  const handleCheckboxChange = (teamId: string, checked: boolean) => {
+  const handleCheckboxChange = (
+    teamId: string,
+    gameId: string,
+    checked: boolean,
+  ) => {
     setSelectedTeams((prev) => {
       const updatedTeams = { ...prev }
       if (checked) {
-        updatedTeams[teamId] = true
+        updatedTeams[teamId] = gameId
       } else {
         delete updatedTeams[teamId]
       }
@@ -67,8 +90,10 @@ export default function TeamsHandler({
 
   const submitHandler = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
-
-    const formData = new FormData(currentForm.current)
+    const formData = new FormData()
+    Object.entries(selectedTeams).forEach(([teamId, gameId]) => {
+      formData.append(teamId, gameId)
+    })
     const response = await handlePicks(formData)
     setFormResponse(response)
   }
@@ -80,21 +105,26 @@ export default function TeamsHandler({
         localStorage.getItem(`${username}_picks`),
       )
       if (picks) {
-        // every pick matches current week
-        const picksCurrentWeek = Object.values(picks).every((value: string) => {
-          const [season, week] = value.split("-")
-          return season === currentSeason && week === currentWeek
-        })
+        // every pick with a team id with an associated game id matches current week
+        const picksCurrentWeek = Object.values(picks).every(
+          (gameId: object) => {
+            return Object.values(gameId).every((value: string) => {
+              const [season, week] = value.split("-")
+              return season === currentSeason && week === currentWeek
+            })
+          },
+        )
         if (!picksCurrentWeek) {
           localStorage.removeItem(`${username}_picks`)
         } else {
           // restore checkbox state for selected teams
           const restoredTeams = Object.keys(picks).reduce(
-            (acc, key) => {
-              acc[key] = true
+            (acc, teamId) => {
+              const gameId = picks[teamId]
+              acc[teamId] = gameId
               return acc
             },
-            {} as { [key: string]: boolean },
+            {} as { [key: string]: string },
           )
           setSelectedTeams(restoredTeams)
         }
@@ -102,6 +132,12 @@ export default function TeamsHandler({
     })
 
     updateCountdown(timerTime, timerPaused)
+
+    return () => {
+      if (countdownRef.current) {
+        clearInterval(countdownRef.current)
+      }
+    }
   }, [])
 
   useEffect(() => {
@@ -112,8 +148,16 @@ export default function TeamsHandler({
         if (username) {
           const selections = {}
           const teamIds = Object.keys(selectedTeams)
-          for (let teamId of teamIds) {
-            selections[teamId] = `${currentSeason}-${currentWeek}`
+          const gameIds = Object.values(selectedTeams)
+          for (let i = 0; i < teamIds.length; i++) {
+            const teamId = teamIds[i]
+            const gameId = gameIds[i]
+
+            if (!selections[teamId]) {
+              selections[teamId] = {}
+            }
+
+            selections[teamId][gameId] = `${currentSeason}-${currentWeek}`
           }
           localStorage.setItem(
             `${username}_picks`,
@@ -130,7 +174,6 @@ export default function TeamsHandler({
         Time Remaining: {countdown}
       </h2>
       <form
-        ref={currentForm}
         className="ml-auto mr-auto flex w-full flex-col items-center"
         onSubmit={submitHandler}
       >
@@ -142,7 +185,7 @@ export default function TeamsHandler({
           />
         )}
         {weekGames?.length > 0 ? (
-          <FixedTable
+          <MemoizedFixedTable
             data={[weekGames[0], ...weekGames]}
             columns={["Game", "Favorite", "Spread", "Underdog"]}
             columnWidths={{

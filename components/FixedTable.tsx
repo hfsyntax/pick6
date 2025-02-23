@@ -33,8 +33,8 @@ function Row({
   columns: {}
   columnWidths: columnSettings
   data: any
-  onCheckboxChange: (teamId: string, checked: boolean) => void
-  selectedCheckboxes: { [key: string]: boolean }
+  onCheckboxChange: (teamId: string, gameId: string, checked: boolean) => void
+  selectedCheckboxes: { [key: string]: string }
 }) {
   const row = data[index]
 
@@ -91,8 +91,8 @@ function Row({
                   }
                   checked={
                     field === "favorite_team"
-                      ? selectedCheckboxes[row["favorite_id"]]
-                      : selectedCheckboxes[row["underdog_id"]]
+                      ? selectedCheckboxes[row["favorite_id"]] !== undefined
+                      : selectedCheckboxes[row["underdog_id"]] !== undefined
                   }
                   onChange={(event) =>
                     onCheckboxChange(
@@ -101,6 +101,7 @@ function Row({
                           ? "favorite_id"
                           : "underdog_id"
                       ],
+                      row["game_id"],
                       event.target.checked,
                     )
                   }
@@ -129,8 +130,8 @@ export default function FixedTable({
   data: any
   columns: string[]
   columnWidths: columnSettings
-  onCheckboxChange?: (teamId: string, checked: boolean) => void
-  selectedCheckboxes?: { [key: string]: boolean }
+  onCheckboxChange?: (teamId: string, gameId: string, checked: boolean) => void
+  selectedCheckboxes?: { [key: string]: string }
   height?: string
 }) {
   const pathname = usePathname()
