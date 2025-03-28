@@ -1531,14 +1531,15 @@ async function uploadPicks(formData: FormData): Promise<FormResult> {
         FROM tempplayerauth t
         WHERE EXISTS (
             SELECT 1
-            FROM players p
-            JOIN playerauth pa ON p.player_id = pa.auth_id
-            WHERE p.group_number = t.group_number
-            AND p.gp = t.gp
+            FROM playerseasonstats ps
+            JOIN playerauth pa ON ps.player_id = pa.auth_id
+            WHERE ps.group_number = t.group_number
+            AND ps.gp = t.gp
             AND pa.username <> t.username
+            AND ps.season_number = ${currentSeason}
         )`
 
-    if (currentWeek === "1" && duplicateGroupIdQuery.rowCount > 0) {
+    if (duplicateGroupIdQuery.rowCount > 0) {
       revalidatePath("/admin_utility")
       return {
         error: `Error: found new players with duplicate group and group numbers: ${duplicateGroupIdQuery.rows
@@ -1547,55 +1548,26 @@ async function uploadPicks(formData: FormData): Promise<FormResult> {
       }
     }
 
-    if (currentWeek !== "1" && newUsersQuery.rowCount > 0) {
-      revalidatePath("/admin_utility")
-      return {
-        error: `Error: found new players after the first week: ${newUsersQuery.rows
-          .map((user) => user.username)
-          .join(" ")}`,
-      }
-    }
-
-    // check any insertions that do not match an existing player after the first week
-    const invalidPlayer = await sql`
-        SELECT t.username
-        FROM tempplayerauth t
-        JOIN playerauth a ON t.username = a.username
-        WHERE NOT EXISTS (
-            SELECT 1
-            FROM players p
-            WHERE p.player_id = a.auth_id
-            AND p.group_number = t.group_number
-            AND p.gp = t.gp
-        )`
-
-    if (currentWeek !== "1" && invalidPlayer.rowCount > 0) {
-      revalidatePath("/admin_utility")
-      return {
-        error: `Error: found existing players after the first week without the same username group and group number: ${invalidPlayer.rows
-          .map((user) => user.username)
-          .join(" ")}`,
-      }
-    }
-
-    // clear previously inserted players
-    if (currentWeek === "1") {
-      await sql`DELETE from playerseasonstats WHERE season_number = ${currentSeason}`
-      await sql`DELETE from playerweekstats WHERE season_number = ${currentSeason} AND week_number = ${currentWeek}`
-
+    // insert new players
+    if (newUsersQuery.rows.length > 0) {
       for (let row of newUsersQuery.rows) {
         const user = row["username"]
         createdUsers[user]["new"] = true
         const userPassword = createdUsers[user]["password"]
         newUsers.push({ username: user, password: userPassword })
       }
-
       // insert new players
       await sql`INSERT INTO playerauth (type, username, password, sha256)
       SELECT 'user', ta.username, ta.password, true
       FROM tempplayerauth ta
       LEFT JOIN playerauth pa ON ta.username = pa.username
       WHERE pa.username IS NULL`
+    }
+
+    // clear previously inserted players
+    if (currentWeek === "1") {
+      await sql`DELETE from playerseasonstats WHERE season_number = ${currentSeason}`
+      await sql`DELETE from playerweekstats WHERE season_number = ${currentSeason} AND week_number = ${currentWeek}`
     }
 
     // get auth id for all players
@@ -1613,10 +1585,8 @@ async function uploadPicks(formData: FormData): Promise<FormResult> {
       const groupNumber = createdUsers[user]["groupNumber"]
       const group = createdUsers[user]["group"]
 
-      if (currentWeek === "1") {
-        if (createdUsers[user]["new"]) {
-          createPlayerValues.push([authID, user, group, groupNumber])
-        }
+      if (createdUsers[user]["new"]) {
+        createPlayerValues.push([authID, user, group, groupNumber])
 
         createStatValues.push([
           authID,
@@ -1629,7 +1599,9 @@ async function uploadPicks(formData: FormData): Promise<FormResult> {
           group,
           groupNumber,
         ])
+      }
 
+      if (currentWeek === "1") {
         createWeekStatValues.push([
           authID,
           currentSeason,
