@@ -45,7 +45,7 @@ function Row({
         .map((field: string, rowIndex: number) => (
           <span
             id={`${field}_${index}`}
-            key={rowIndex}
+            key={`table_row_${rowIndex}`}
             style={{
               width:
                 windowWidth < 768
@@ -81,7 +81,7 @@ function Row({
                 </Link>
               </span>
             ) : field === "favorite_team" || field === "underdog_team" ? (
-              <Fragment key={`${field}_${index}`}>
+              <Fragment key={`checkbox_container_${field}_${index}`}>
                 <input
                   type="checkbox"
                   name={

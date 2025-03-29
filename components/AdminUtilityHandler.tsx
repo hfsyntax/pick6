@@ -461,30 +461,30 @@ export default function AdminUtilityHandler({
           {formMessage?.message &&
             (formMessage?.message.includes("<br/>") ? (
               formMessage?.message.split("<br/>").map(
-                (text, index) =>
+                (text: string, index: number) =>
                   text !== "" && (
-                    <li key={index}>
+                    <li key={`form_message_${index}`}>
                       <b className="text-green-500">{text}</b>
                     </li>
                   ),
               )
             ) : (
-              <li key={"0"}>
+              <li key={"single_form_message"}>
                 <b className="text-green-500">{formMessage?.message}</b>
               </li>
             ))}
           {formMessage?.error &&
             (formMessage?.error.includes("<br/>") ? (
               formMessage?.error.split("<br/>").map(
-                (text, index) =>
+                (text: string, index: number) =>
                   text !== "" && (
-                    <li key={index}>
+                    <li key={`form_message_error_${index}`}>
                       <b className="text-red-500">{text}</b>
                     </li>
                   ),
               )
             ) : (
-              <li key={"0"}>
+              <li key={"single_form_message_error"}>
                 <b className="text-red-500">{formMessage?.error}</b>
               </li>
             ))}

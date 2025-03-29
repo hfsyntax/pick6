@@ -87,7 +87,7 @@ export default function ProfilePictureHandler({
     <>
       <div className="group relative ml-auto mr-auto h-[200px] w-[200px]">
         <Image
-          key={Date.now()}
+          key={`user_profile_picture_${Date.now()}`}
           className="absolute left-0 top-0 h-full w-full rounded-[50%] bg-[#bbb] bg-cover"
           src={url}
           priority

@@ -195,7 +195,7 @@ export default function SeasonWeeksHandler({
             {selectOptions.map((row) =>
               pathname === "/weekly" || pathname === "/games" ? (
                 <option
-                  key={row["week_id"]}
+                  key={`week_option_${row["week_id"]}`}
                   value={row["week_id"]}
                   data-season={row["season_number"]}
                   data-week={row["week_number"]}
@@ -204,7 +204,7 @@ export default function SeasonWeeksHandler({
                 </option>
               ) : (
                 <option
-                  key={row["season_id"]}
+                  key={`season_option_${row["season_id"]}`}
                   value={row["season_id"]}
                   data-season={row["season_number"]}
                 >

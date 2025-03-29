@@ -202,13 +202,13 @@ export default function TeamsHandler({
               formResponse?.message.split("<br/>").map(
                 (text, index) =>
                   text !== "" && (
-                    <li key={index}>
+                    <li key={`teams_form_message_${index}`}>
                       <b className="text-green-500">{text}</b>
                     </li>
                   ),
               )
             ) : (
-              <li key={"0"}>
+              <li key={"single_teams_form_message"}>
                 <b className="text-green-500">{formResponse?.message}</b>
               </li>
             ))}
@@ -217,13 +217,13 @@ export default function TeamsHandler({
               formResponse?.error.split("<br/>").map(
                 (text, index) =>
                   text !== "" && (
-                    <li key={index}>
+                    <li key={`teams_form_message_error_${index}`}>
                       <b className="text-red-500">{text}</b>
                     </li>
                   ),
               )
             ) : (
-              <li key={"0"}>
+              <li key={"single_teams_form_message_error"}>
                 <b className="text-red-500">{formResponse?.error}</b>
               </li>
             ))}

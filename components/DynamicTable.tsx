@@ -74,7 +74,7 @@ function Row({
                       return (
                         <div
                           className={`flex items-center`}
-                          key={entry.split(" ")[2]}
+                          key={`group_${index}_${entry.split(" ")[2]}`}
                         >
                           <Link
                             href={`/profile/${entry.split(" ")[2]}`}

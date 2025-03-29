@@ -1,5 +1,5 @@
 import ProfileHandler from "../../../components/ProfileHandler"
-import { getUser, getProfilePictureURL } from "../../../actions/serverRequests"
+import { getProfilePictureURL } from "../../../actions/serverRequests"
 import Image from "next/image"
 
 export const metadata = {
@@ -18,7 +18,7 @@ export default async function profileID({
     <div className="absolute left-[50px] top-0 flex min-h-full w-[calc(100%-50px)] flex-col items-center overflow-x-hidden text-center">
       <div className="relative ml-auto mr-auto h-[200px] w-[200px]">
         <Image
-          key={Date.now()}
+          key={`user_${id}_profile_picture_${Date.now()}`}
           className="absolute left-0 top-0 h-full w-full rounded-[50%] bg-[#bbb] bg-cover"
           src={profilePicURL ? profilePicURL : `/default.png`}
           priority
