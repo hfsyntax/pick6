@@ -225,9 +225,11 @@ async function insertUser(formData: FormData): Promise<FormResult> {
       group = String(group).toUpperCase().trim()
       groupNumber = String(groupNumber).trim()
 
-      if (isNaN(parseInt(groupNumber))) {
+      if (isNaN(parseInt(groupNumber)) || groupNumber.includes(".")) {
         revalidatePath("/admin_utility")
-        return { error: "Error: group number must be a number" }
+        return {
+          error: "Error: group number must be a number and not a decimal",
+        }
       }
 
       if (userType !== "user" && userType !== "admin") {
@@ -350,8 +352,10 @@ async function insertUser(formData: FormData): Promise<FormResult> {
           const hashed_password = await hash(password, salt)
           const userType = userData[3].toLowerCase().trim()
 
-          if (isNaN(parseInt(groupNumber))) {
-            skippedLines.push(`Line: ${line} (group number must be a number)`)
+          if (isNaN(parseInt(groupNumber)) || groupNumber.includes(".")) {
+            skippedLines.push(
+              `Line: ${line} (group number must be a number and not a decimal)`,
+            )
             continue
           }
 
@@ -1437,7 +1441,7 @@ async function uploadPicks(formData: FormData): Promise<FormResult> {
       if (line.length >= firstLine.length) {
         const groupNumber = line[0].trim()
 
-        if (isNaN(parseInt(groupNumber))) {
+        if (isNaN(parseInt(groupNumber)) || groupNumber.includes(".")) {
           skippedLines.push(
             `found invalid group number for player ${line[2]}<br/>`,
           )
