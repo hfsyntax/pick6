@@ -121,10 +121,19 @@ export default function DynamicTable({
   rowHeights: number[]
   height: string
 }) {
+  const currentList = useRef<VariableSizeList>(null)
   const getItemSize = (index: number) => rowHeights[index]
   const pathname = usePathname()
   const [windowWidth, setWindowWidth] = useState(0)
   const debounceTimeout = useRef(null)
+
+  // recalculate dynamic row heights when rowHeights prop changes
+  useEffect(() => {
+    if (currentList.current) {
+      currentList.current.resetAfterIndex(0)
+    }
+  }, [rowHeights])
+
   const debounce = (func: (...args: any[]) => void, delay: number) => {
     return function (...args: any[]) {
       if (debounceTimeout.current) {
@@ -153,6 +162,7 @@ export default function DynamicTable({
   useEffect(() => {
     setWindowWidth(window.innerWidth)
   }, [pathname])
+
   const totalFixedWidth = Object.values(columnWidths).reduce((acc, width) => {
     acc +=
       windowWidth < 768
@@ -165,7 +175,7 @@ export default function DynamicTable({
   return (
     <div className="mt-3 w-full overflow-auto" style={{ height: height }}>
       <div
-        className={`ml-auto mr-auto h-full text-[10px] md:text-[14px] lg:text-[14px]`}
+        className={`ml-auto mr-auto h-full overflow-hidden text-[10px] md:text-[14px] lg:text-[14px]`}
         style={{
           width: `${totalFixedWidth + 18}px`,
         }}
@@ -173,6 +183,7 @@ export default function DynamicTable({
         <AutoSizer>
           {({ height, width }: Size) => (
             <VariableSizeList
+              ref={currentList}
               height={height}
               itemCount={data.length}
               itemSize={getItemSize}

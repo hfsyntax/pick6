@@ -12,3 +12,10 @@ export type FormResult = {
   message?: string
   error?: string
 }
+
+export type PickResult = {
+  picks: QueryResultRow[]
+  headers: string[]
+}
+
+export type SortFields = "gp" | "group_number" | "rank" | "none"

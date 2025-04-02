@@ -8,6 +8,7 @@ import { usePathname } from "next/navigation"
 import AutoSizer from "react-virtualized-auto-sizer"
 import Image from "next/image"
 import Link from "next/link"
+import SearchBar from "./Searchbar"
 
 const nonDisplayedCols = [
   "player_id",
@@ -180,36 +181,40 @@ export default function FixedTable({
   return (
     <div className="w-full overflow-auto" style={{ height: height }}>
       <div
-        className={`ml-auto mr-auto h-full text-[10px] md:text-[14px] lg:text-[14px]`}
-        /* 20px scrollbar */
+        className={`${(pathname === "/weekly" || pathname === "/season") && "flex flex-col"} ml-auto mr-auto h-full overflow-hidden text-[10px] md:text-[14px] lg:text-[14px]`}
         style={{
-          width: `${totalFixedWidth + 18 /*+ (windowWidth < 768 ? 5 : 20)*/}px`,
+          width: `${totalFixedWidth}px`,
         }}
       >
-        <AutoSizer>
-          {({ height, width }: Size) => (
-            <FixedSizeList
-              height={height}
-              itemCount={data.length}
-              itemSize={50}
-              width={width}
-              className="ml-auto mr-auto"
-            >
-              {({ index, style }) => (
-                <Row
-                  index={index}
-                  style={style}
-                  windowWidth={windowWidth}
-                  columns={columns}
-                  columnWidths={columnWidths}
-                  data={data}
-                  selectedCheckboxes={selectedCheckboxes}
-                  onCheckboxChange={onCheckboxChange}
-                />
-              )}
-            </FixedSizeList>
-          )}
-        </AutoSizer>
+        {(pathname === "/weekly" || pathname === "/season") && <SearchBar />}
+        {data.length > 1 ? (
+          <AutoSizer>
+            {({ height, width }: Size) => (
+              <FixedSizeList
+                height={height}
+                itemCount={data.length}
+                itemSize={50}
+                width={width}
+                className="ml-auto mr-auto"
+              >
+                {({ index, style }) => (
+                  <Row
+                    index={index}
+                    style={style}
+                    windowWidth={windowWidth}
+                    columns={columns}
+                    columnWidths={columnWidths}
+                    data={data}
+                    selectedCheckboxes={selectedCheckboxes}
+                    onCheckboxChange={onCheckboxChange}
+                  />
+                )}
+              </FixedSizeList>
+            )}
+          </AutoSizer>
+        ) : (
+          <span className="text-red-500">no data</span>
+        )}
       </div>
     </div>
   )

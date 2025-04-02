@@ -1,4 +1,5 @@
 "use server"
+import type { SortFields, PickResult } from "../types"
 import { cache } from "react"
 import { getSession } from "../lib/session"
 import type { QueryResultRow } from "@vercel/postgres"
@@ -165,13 +166,15 @@ export const getWeekResults = cache(
 export const getSeasonStats = cache(
   async (
     season: string,
-    order: string,
-    fields: Array<string>,
+    order: "asc" | "desc",
+    fields: Array<SortFields>,
   ): Promise<QueryResultRow[]> => {
     try {
-      const allowedFields = ["rank", "gp", "group_number"]
       const safeOrder = order.toUpperCase() === "DESC" ? "DESC" : "ASC"
-      const safeFields = fields.filter((f) => allowedFields.includes(f))
+      const safeFields: Array<SortFields> = fields.filter(
+        (field) =>
+          field === "gp" || field === "group_number" || field === "rank",
+      )
       const orderQuery =
         safeFields.length > 0
           ? `ORDER BY ${safeFields.map((f) => `ps.${f} ${safeOrder}`).join(", ")}`
@@ -204,22 +207,19 @@ export const getSeasonStats = cache(
   },
 )
 
-interface PickResult {
-  picks: QueryResultRow[]
-  headers: string[]
-}
-
 export const getPicks = cache(
   async (
     season: string,
     week: string,
     order: string = "",
-    fields: Array<string>,
+    fields: Array<SortFields>,
   ): Promise<PickResult> => {
     try {
       const safeOrder = order.toUpperCase() === "DESC" ? "DESC" : "ASC"
-      const allowedFields = ["rank", "gp", "group_number"]
-      const safeFields = fields.filter((f) => allowedFields.includes(f))
+      const safeFields: Array<SortFields> = fields.filter(
+        (field) =>
+          field === "gp" || field === "group_number" || field === "rank",
+      )
       const orderQuery =
         safeFields.length > 0
           ? `ORDER BY ${safeFields.map((f) => `subquery.${f} ${safeOrder}`).join(", ")}`
