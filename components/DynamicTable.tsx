@@ -125,7 +125,20 @@ export default function DynamicTable({
   const getItemSize = (index: number) => rowHeights[index]
   const pathname = usePathname()
   const [windowWidth, setWindowWidth] = useState(0)
+  const [scrollbarWidth, setScrollbarWidth] = useState(0)
   const debounceTimeout = useRef(null)
+
+  const getScrollbarWidth = () => {
+    const outer = document.createElement("div")
+    outer.style.visibility = "hidden"
+    outer.style.overflow = "scroll"
+    document.body.appendChild(outer)
+    const inner = document.createElement("div")
+    outer.appendChild(inner)
+    const calculatedScrollbarWidth = outer.offsetWidth - inner.offsetWidth
+    outer.parentNode.removeChild(outer)
+    return calculatedScrollbarWidth
+  }
 
   // recalculate dynamic row heights when rowHeights prop changes
   useEffect(() => {
@@ -150,6 +163,8 @@ export default function DynamicTable({
   }, 200)
 
   useEffect(() => {
+    const currentScrollbarWidth = getScrollbarWidth()
+    setScrollbarWidth(currentScrollbarWidth)
     window.addEventListener("resize", handleResize)
     return () => {
       window.removeEventListener("resize", handleResize)
@@ -177,7 +192,7 @@ export default function DynamicTable({
       <div
         className={`ml-auto mr-auto h-full overflow-hidden text-[10px] md:text-[14px] lg:text-[14px]`}
         style={{
-          width: `${totalFixedWidth + 18}px`,
+          width: `${totalFixedWidth + scrollbarWidth}px`,
         }}
       >
         <AutoSizer>
