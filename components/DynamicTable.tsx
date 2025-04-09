@@ -44,7 +44,7 @@ function Row({
       }}
     >
       {index !== 0 && (
-        <div className="absolute bottom-0 h-[1px] w-[93%] bg-black md:w-[97%]"></div>
+        <div className="absolute bottom-0 z-[1] h-[1px] w-[93%] bg-black md:w-[97%]"></div>
       )}
       {Object.keys(row)
         .filter((field) => !nonDisplayedCols.includes(field))
