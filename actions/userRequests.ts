@@ -158,6 +158,11 @@ export async function handlePicks(formData: FormData): Promise<FormResult> {
             ON CONFLICT(player_id, game_id) DO UPDATE SET selected_team_id = ${teamID};`
     }
 
+    await sql`
+        INSERT INTO app_settings (key, value) 
+        VALUES (weekStatsUpdated, ${Date.now().toString()}) 
+        ON CONFLICT(key) 
+        DO UPDATE SET value = ${Date.now().toString()}, updated_at = CURRENT_TIMESTAMP`
     revalidatePath("/teams")
     revalidatePath("/weekly")
     return {

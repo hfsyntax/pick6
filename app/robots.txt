@@ -1,0 +1,13 @@
+User-Agent: *
+Allow: /
+Allow: /teams
+Allow: /weekly
+Allow: /games
+Allow: /results
+Allow: /season
+Disallow: /admin_guide
+Disallow: /admin_utility
+Disallow: /api/
+Disallow: /profile/
+
+Sitemap: https://pick6.vercel.app/sitemap.xml

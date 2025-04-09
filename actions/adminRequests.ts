@@ -830,6 +830,7 @@ async function uploadGames(formData: FormData): Promise<FormResult> {
       await sql.query(`${createGamesSql} ${placeholders}`, flatValues)
     }
 
+    await setConfigValue("weekGamesUpdated", Date.now().toString())
     revalidatePath("/teams")
     revalidatePath("/games")
     revalidatePath("/admin_utility")
@@ -1087,6 +1088,7 @@ async function handleWeekResults(formData: FormData): Promise<FormResult> {
       const timerPaused = await getConfigValue("TIMER_PAUSED")
 
       if (timerPaused !== "1") {
+        await setConfigValue("weekGamesUpdated", Date.now().toString())
         revalidatePath("/games")
         revalidatePath("/admin_utility")
         return {
@@ -1317,8 +1319,12 @@ async function handleWeekResults(formData: FormData): Promise<FormResult> {
         )
       }
 
-      // update week env
+      // update week in db
       await setConfigValue("CURRENT_WEEK", weekNumber)
+      await setConfigValue("weekGamesUpdated", Date.now().toString())
+      await setConfigValue("weekStatsUpdated", Date.now().toString())
+      await setConfigValue("seasonStatsUpdated", Date.now().toString())
+      await setConfigValue("weekResultsUpdated", Date.now().toString())
       message.push(`Updated the current week to week ${weekNumber}<br/>`)
       revalidatePath("/teams")
       revalidatePath("/weekly")
@@ -1807,9 +1813,11 @@ async function uploadPicks(formData: FormData): Promise<FormResult> {
     }
 
     if (currentWeek === "1") {
+      await setConfigValue("seasonStatsUpdated", Date.now().toString())
       revalidatePath("/season")
     }
 
+    await setConfigValue("weekStatsUpdated", Date.now().toString())
     revalidatePath("/weekly")
     revalidatePath("/admin_utility")
     return {
@@ -1831,6 +1839,10 @@ async function uploadPicks(formData: FormData): Promise<FormResult> {
 export async function revalidateCache(): Promise<string> {
   const session = await getSession()
   if (session?.user?.type !== "admin") return
+  await setConfigValue("weekGamesUpdated", Date.now().toString())
+  await setConfigValue("weekStatsUpdated", Date.now().toString())
+  await setConfigValue("seasonStatsUpdated", Date.now().toString())
+  await setConfigValue("weekResultsUpdated", Date.now().toString())
   revalidatePath("/teams")
   revalidatePath("/weekly")
   revalidatePath("/season")
