@@ -1,6 +1,6 @@
 "use client"
 import type { columnSettings } from "../types"
-import type { CSSProperties, ChangeEvent, FormEvent } from "react"
+import type { CSSProperties } from "react"
 import type { Size } from "react-virtualized-auto-sizer"
 import { useState, useEffect, useRef, Fragment } from "react"
 import { FixedSizeList } from "react-window"
@@ -9,6 +9,7 @@ import AutoSizer from "react-virtualized-auto-sizer"
 import Image from "next/image"
 import Link from "next/link"
 import SearchBar from "./Searchbar"
+import getScrollbarWidth from "../utils/getScrollbarWidth"
 
 const nonDisplayedCols = [
   "player_id",
@@ -137,6 +138,7 @@ export default function FixedTable({
 }) {
   const pathname = usePathname()
   const [windowWidth, setWindowWidth] = useState(0)
+  const [scrollbarWidth, setScrollbarWidth] = useState(0)
   const debounceTimeout = useRef(null)
 
   const debounce = (func: (...args: any[]) => void, delay: number) => {
@@ -155,6 +157,8 @@ export default function FixedTable({
   }, 200)
 
   useEffect(() => {
+    const currentScrollbarWidth = getScrollbarWidth()
+    setScrollbarWidth(currentScrollbarWidth)
     window.addEventListener("resize", handleResize)
     return () => {
       window.removeEventListener("resize", handleResize)
@@ -183,7 +187,7 @@ export default function FixedTable({
       <div
         className={`${(pathname === "/weekly" || pathname === "/season") && "flex flex-col"} ml-auto mr-auto h-full overflow-hidden text-[10px] md:text-[14px] lg:text-[14px]`}
         style={{
-          width: `${totalFixedWidth}px`,
+          width: `${totalFixedWidth + scrollbarWidth}px`,
         }}
       >
         {(pathname === "/weekly" || pathname === "/season") && <SearchBar />}

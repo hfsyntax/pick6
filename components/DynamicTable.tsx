@@ -8,6 +8,7 @@ import { usePathname } from "next/navigation"
 import AutoSizer from "react-virtualized-auto-sizer"
 import Image from "next/image"
 import Link from "next/link"
+import getScrollbarWidth from "../utils/getScrollbarWidth"
 
 const nonDisplayedCols = [
   "player_id",
@@ -127,18 +128,6 @@ export default function DynamicTable({
   const [windowWidth, setWindowWidth] = useState(0)
   const [scrollbarWidth, setScrollbarWidth] = useState(0)
   const debounceTimeout = useRef(null)
-
-  const getScrollbarWidth = () => {
-    const outer = document.createElement("div")
-    outer.style.visibility = "hidden"
-    outer.style.overflow = "scroll"
-    document.body.appendChild(outer)
-    const inner = document.createElement("div")
-    outer.appendChild(inner)
-    const calculatedScrollbarWidth = outer.offsetWidth - inner.offsetWidth
-    outer.parentNode.removeChild(outer)
-    return calculatedScrollbarWidth
-  }
 
   // recalculate dynamic row heights when rowHeights prop changes
   useEffect(() => {
