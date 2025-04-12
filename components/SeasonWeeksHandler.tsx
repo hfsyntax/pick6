@@ -8,8 +8,8 @@ import FixedTable from "./FixedTable"
 import DynamicTable from "./DynamicTable"
 
 interface ComponentProps {
-  currentSeason: QueryResultRow[string]
-  currentWeek: QueryResultRow[string] | undefined
+  currentSeason: number
+  currentWeek: number | undefined
   sort?: "asc" | "desc"
   sortFields?: Array<SortFields>
   selectedId: QueryResultRow[string]
@@ -62,8 +62,8 @@ export default function SeasonWeeksHandler({
   const handleSelection = async (event: ChangeEvent<HTMLSelectElement>) => {
     const currentOption = event.target.options[event.target.selectedIndex]
     const selectedOptionId = currentOption.value
-    const selectedSeason = currentOption.getAttribute("data-season")
-    const selectedWeek = currentOption.getAttribute("data-week")
+    const selectedSeason = Number(currentOption.getAttribute("data-season"))
+    const selectedWeek = Number(currentOption.getAttribute("data-week"))
 
     // do not update state if the same option is selected
     if (pathname === "/weekly" || pathname === "/games") {
@@ -90,7 +90,7 @@ export default function SeasonWeeksHandler({
           "?" +
           createQueryString(
             ["season", "week", "sort", "fields"],
-            [selectedSeason, selectedWeek, "asc", "rank"],
+            [String(selectedSeason), String(selectedWeek), "asc", "rank"],
             false,
           ),
       )
@@ -100,7 +100,7 @@ export default function SeasonWeeksHandler({
           "?" +
           createQueryString(
             ["season", "sort", "fields"],
-            [selectedSeason, "asc", "rank"],
+            [String(selectedSeason), "asc", "rank"],
             false,
           ),
       )
@@ -108,11 +108,16 @@ export default function SeasonWeeksHandler({
       router.push(
         pathname +
           "?" +
-          createQueryString(["season", "week"], [selectedSeason, selectedWeek]),
+          createQueryString(
+            ["season", "week"],
+            [String(selectedSeason), String(selectedWeek)],
+          ),
       )
     } else {
       router.push(
-        pathname + "?" + createQueryString(["season"], [selectedSeason]),
+        pathname +
+          "?" +
+          createQueryString(["season"], [String(selectedSeason)]),
       )
     }
   }

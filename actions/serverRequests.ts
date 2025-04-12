@@ -43,7 +43,7 @@ export const getWeeks = cache(async (): Promise<QueryResultRow[]> => {
 })
 
 export const getWeekGames = cache(
-  async (season: string, week: string): Promise<QueryResultRow[]> => {
+  async (season: number, week: number): Promise<QueryResultRow[]> => {
     try {
       const queryResult = await sql`SELECT 
         ROW_NUMBER() OVER (ORDER BY G.game_id) AS game_counter,
@@ -59,8 +59,8 @@ export const getWeekGames = cache(
         INNER JOIN Teams T2 ON G.underdog = T2.team_id
         INNER JOIN Weeks W ON G.week_number = W.week_number AND G.season_number = W.season_number
     WHERE 
-        W.week_number = ${week} 
-        AND W.season_number = ${season}
+        W.week_number = ${Number(week)} 
+        AND W.season_number = ${Number(season)}
     ORDER BY 
         G.game_id ASC;
         `
@@ -72,7 +72,7 @@ export const getWeekGames = cache(
 )
 
 export const getWeekGameResults = cache(
-  async (season: string, week: string): Promise<QueryResultRow[]> => {
+  async (season: number, week: number): Promise<QueryResultRow[]> => {
     try {
       const queryResult = await sql`SELECT 
         ROW_NUMBER() OVER (ORDER BY G.game_id) AS game_counter,
@@ -92,8 +92,8 @@ export const getWeekGameResults = cache(
         LEFT JOIN Teams T3 on G.winner = T3.team_id
         INNER JOIN Weeks W ON G.week_number = W.week_number AND G.season_number = W.season_number
     WHERE 
-        W.week_number = ${week} 
-        AND W.season_number = ${season}
+        W.week_number = ${Number(week)} 
+        AND W.season_number = ${Number(season)}
     ORDER BY 
         G.game_id ASC;
         `
@@ -105,10 +105,10 @@ export const getWeekGameResults = cache(
 )
 
 export const getGameCountForWeek = cache(
-  async (season: string, week: string): Promise<number> => {
+  async (season: number, week: number): Promise<number> => {
     try {
       const queryResult =
-        await sql`SELECT COUNT(game_id) AS game_count FROM Games WHERE season_number = ${season} AND week_number = ${week}`
+        await sql`SELECT COUNT(game_id) AS game_count FROM Games WHERE season_number = ${Number(season)} AND week_number = ${Number(week)}`
       return queryResult?.rows?.[0]?.game_count
     } catch (error) {
       return 0
@@ -118,9 +118,9 @@ export const getGameCountForWeek = cache(
 
 export const getWeekResults = cache(
   async (
-    season: string,
-    currentSeason: string,
-    week: string,
+    season: number,
+    currentSeason: number,
+    week: number,
   ): Promise<QueryResultRow[]> => {
     try {
       const queryResult = await sql`
@@ -138,7 +138,7 @@ export const getWeekResults = cache(
         LEFT JOIN Players pw ON wn.player_id = pw.player_id
         LEFT JOIN Players pl ON ls.player_id = pl.player_id
         WHERE
-            (w.season_number = ${season} AND w.week_number < ${week}) OR (w.season_number = ${season} AND w.season_number != ${currentSeason})
+            (w.season_number = ${Number(season)} AND w.week_number < ${Number(week)}) OR (w.season_number = ${Number(season)} AND w.season_number != ${Number(currentSeason)})
         )
         SELECT
             week_number,
@@ -165,7 +165,7 @@ export const getWeekResults = cache(
 
 export const getSeasonStats = cache(
   async (
-    season: string,
+    season: number,
     order: "asc" | "desc",
     fields: Array<SortFields>,
   ): Promise<QueryResultRow[]> => {
@@ -179,8 +179,6 @@ export const getSeasonStats = cache(
         safeFields.length > 0
           ? `ORDER BY ${safeFields.map((f) => `ps.${f} ${safeOrder}`).join(", ")}`
           : ""
-
-      const seasonNumber = isNaN(parseInt(season)) ? 0 : parseInt(season)
 
       const queryResult = await sql.query(
         `SELECT
@@ -198,7 +196,7 @@ export const getSeasonStats = cache(
         WHERE ps.season_number = $1
         GROUP BY ps.rank, ps.group_number, ps.gp, p.player_id, p.name, ps.won, ps.played, ps.win_percentage
         ${orderQuery}`,
-        [seasonNumber],
+        [Number(season)],
       )
       return queryResult.rows
     } catch (error) {
@@ -209,8 +207,8 @@ export const getSeasonStats = cache(
 
 export const getPicks = cache(
   async (
-    season: string,
-    week: string,
+    season: number,
+    week: number,
     order: string = "",
     fields: Array<SortFields>,
   ): Promise<PickResult> => {
@@ -224,8 +222,8 @@ export const getPicks = cache(
         safeFields.length > 0
           ? `ORDER BY ${safeFields.map((f) => `subquery.${f} ${safeOrder}`).join(", ")}`
           : ""
-      const seasonNumber = isNaN(parseInt(season)) ? 0 : parseInt(season)
-      const weekNumber = isNaN(parseInt(week)) ? 0 : parseInt(week)
+      const seasonNumber = Number(season)
+      const weekNumber = Number(week)
       const queryResult = await sql.query(
         `SELECT DISTINCT
         subquery.player_id,
@@ -377,8 +375,8 @@ export async function getUsersByName(
 
 export async function getUserWeekPicks(id: string): Promise<PickResult> {
   try {
-    const currentSeason = await getConfigValue("CURRENT_SEASON")
-    const currentWeek = await getConfigValue("CURRENT_WEEK")
+    const currentSeason = Number(await getConfigValue("CURRENT_SEASON"))
+    const currentWeek = Number(await getConfigValue("CURRENT_WEEK"))
     const queryResult = await sql`SELECT DISTINCT
         subquery.name,
         CASE

@@ -16,10 +16,11 @@ export default async function results(props: {
   }>
 }) {
   const searchParams = await props.searchParams
-  const currentSeason = await getConfigValue("CURRENT_SEASON")
-  const selectedSeason =
-    searchParams.season ?? (await getConfigValue("CURRENT_SEASON"))
-  const currentWeek = await getConfigValue("CURRENT_WEEK")
+  const currentSeason = Number(await getConfigValue("CURRENT_SEASON"))
+  const selectedSeason = Number(
+    searchParams.season ?? (await getConfigValue("CURRENT_SEASON")),
+  )
+  const currentWeek = Number(await getConfigValue("CURRENT_WEEK"))
   const results = await getWeekResults(
     selectedSeason,
     currentSeason,

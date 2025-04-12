@@ -12,8 +12,8 @@ export const metadata = {
 }
 
 export default async function Teams() {
-  const currentSeason = await getConfigValue("CURRENT_SEASON")
-  const currentWeek = await getConfigValue("CURRENT_WEEK")
+  const currentSeason = Number(await getConfigValue("CURRENT_SEASON"))
+  const currentWeek = Number(await getConfigValue("CURRENT_WEEK"))
   const weekGames = await getWeekGames(currentSeason, currentWeek)
   const timerPaused = await isTimerPaused()
   const timerTime = await calculateTimeUntilReset()

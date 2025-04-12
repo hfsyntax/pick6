@@ -22,10 +22,12 @@ export default async function Weekly(props: {
 }) {
   const searchParams = await props.searchParams
   const searchTerm = searchParams.search ?? ""
-  const currentSeason =
-    searchParams.season ?? (await getConfigValue("CURRENT_SEASON"))
-  const currentWeek =
-    searchParams.week ?? (await getConfigValue("CURRENT_WEEK"))
+  const currentSeason = Number(
+    searchParams.season ?? (await getConfigValue("CURRENT_SEASON")),
+  )
+  const currentWeek = Number(
+    searchParams.week ?? (await getConfigValue("CURRENT_WEEK")),
+  )
   const sort = searchParams.sort
     ? searchParams.sort === "asc" || searchParams.sort === "desc"
       ? searchParams.sort

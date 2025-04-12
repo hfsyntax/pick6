@@ -17,10 +17,12 @@ export default async function Games(props: {
   }>
 }) {
   const searchParams = await props.searchParams
-  const currentSeason =
-    searchParams.season ?? (await getConfigValue("CURRENT_SEASON"))
-  const currentWeek =
-    searchParams.week ?? (await getConfigValue("CURRENT_WEEK"))
+  const currentSeason = Number(
+    searchParams.season ?? (await getConfigValue("CURRENT_SEASON")),
+  )
+  const currentWeek = Number(
+    searchParams.week ?? (await getConfigValue("CURRENT_WEEK")),
+  )
   const headers = [
     "#",
     "Pts",

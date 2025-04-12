@@ -9,7 +9,6 @@ export async function GET(request: NextRequest) {
     const referer = headersList?.get("referer")
     if (!referer)
       return NextResponse.json({ error: "401 Unauthorized" }, { status: 401 })
-    const refererPath = new URL(headersList.get("referer")).pathname
     const session = request.cookies.get("session")?.value
     if (!session)
       return NextResponse.json({ error: "401 Unauthorized" }, { status: 401 })

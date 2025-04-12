@@ -21,8 +21,9 @@ export default async function Season(props: {
 }) {
   const searchParams = await props.searchParams
   const searchTerm = searchParams.search ?? ""
-  const currentSeason =
-    searchParams.season ?? (await getConfigValue("CURRENT_SEASON"))
+  const currentSeason = Number(
+    searchParams.season ?? (await getConfigValue("CURRENT_SEASON")),
+  )
   const sort = searchParams.sort
     ? searchParams.sort === "asc" || searchParams.sort === "desc"
       ? searchParams.sort
