@@ -1,5 +1,3 @@
-"use cache"
-
 import SessionTimeout from "../../components/SessionTimeout"
 
 export const metadata = {

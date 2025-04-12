@@ -2,7 +2,6 @@
 import type { FormResult } from "../types"
 import { getSession } from "../lib/session"
 import { getConfigValue } from "../actions/serverRequests"
-import { revalidatePath } from "next/cache"
 import { redirect } from "next/navigation"
 import { hash, compare, genSalt } from "bcryptjs"
 import { sql } from "@vercel/postgres"
@@ -12,7 +11,6 @@ export async function handlePicks(formData: FormData): Promise<FormResult> {
     const session = await getSession()
 
     if (!session) {
-      revalidatePath("/teams")
       return { error: "Error: unauthorized to make picks" }
     }
 
@@ -20,7 +18,6 @@ export async function handlePicks(formData: FormData): Promise<FormResult> {
     const currentWeek = Number(await getConfigValue("CURRENT_WEEK"))
 
     if (!currentSeason || !currentWeek) {
-      revalidatePath("/teams")
       return {
         error:
           "Error: the week/season needs to be set to a value greater than 0 before picks can be made",
@@ -33,7 +30,6 @@ export async function handlePicks(formData: FormData): Promise<FormResult> {
     const timerTime = Number(await getConfigValue("TARGET_RESET_TIME"))
 
     if (!timerTime || isNaN(timerTime) || now > timerTime || timerPaused) {
-      revalidatePath("/teams")
       return {
         error:
           "Error: the timer needs to be unpaused or non-negative before picks can be made.",
@@ -44,7 +40,6 @@ export async function handlePicks(formData: FormData): Promise<FormResult> {
       await sql`SELECT season_number FROM weeks WHERE season_number = ${currentSeason} AND week_number = ${currentWeek}`
 
     if (queryResult.rowCount === 0) {
-      revalidatePath("/teams")
       return {
         error: `Error: the season/week need to be set to a value greater than 0 before picks can be made.`,
       }
@@ -53,7 +48,6 @@ export async function handlePicks(formData: FormData): Promise<FormResult> {
     const gameCount =
       await sql`SELECT COUNT(game_id) AS game_count FROM games WHERE season_number = ${currentSeason} AND week_number = ${currentWeek}`
     if (gameCount.rowCount === 0) {
-      revalidatePath("/teams")
       return {
         error: `Error: no games are available for week ${currentWeek} of season ${currentSeason}`,
       }
@@ -63,7 +57,6 @@ export async function handlePicks(formData: FormData): Promise<FormResult> {
     const authID = session?.user?.authID
 
     if (username === "root") {
-      revalidatePath("/teams")
       return { error: "Error: the root user cannot make picks" }
     }
 
@@ -98,7 +91,6 @@ export async function handlePicks(formData: FormData): Promise<FormResult> {
       const playerExists =
         await sql`SELECT player_id FROM playerseasonstats WHERE player_id = ${authID}`
       if (playerExists.rowCount === 0) {
-        revalidatePath("/teams")
         return { error: "Error: you are not a player in the current season" }
       }
     }
@@ -106,14 +98,12 @@ export async function handlePicks(formData: FormData): Promise<FormResult> {
     const pickCount = Array.from(formData.keys()).length
 
     if (pickCount === 0) {
-      revalidatePath("/teams")
       return { error: `Error: no picks selected` }
     }
 
     const minPicks = Math.min(gameCount?.rows?.[0]?.game_count, 6)
 
     if (pickCount !== minPicks) {
-      revalidatePath("/teams")
       return {
         error: `"Error: the number of picks you selected is not ${minPicks} picks`,
       }
@@ -129,7 +119,6 @@ export async function handlePicks(formData: FormData): Promise<FormResult> {
       if (!picks[String(gameID)]) {
         picks[String(gameID)] = teamID
       } else {
-        revalidatePath("/teams")
         return {
           error:
             "Error: multiple teams were selected for one or more of your picks",
@@ -138,7 +127,6 @@ export async function handlePicks(formData: FormData): Promise<FormResult> {
     }
 
     if (!picks[String(maxGameID)]) {
-      revalidatePath("/teams")
       return { error: "Error: no pick was made for the last game" }
     }
 
@@ -163,13 +151,10 @@ export async function handlePicks(formData: FormData): Promise<FormResult> {
         VALUES (weekStatsUpdated, ${Date.now().toString()}) 
         ON CONFLICT(key) 
         DO UPDATE SET value = ${Date.now().toString()}, updated_at = CURRENT_TIMESTAMP`
-    revalidatePath("/teams")
-    revalidatePath("/weekly")
     return {
       message: `Sucessfully set picks for week ${currentWeek} of season ${currentSeason}`,
     }
   } catch (error) {
-    revalidatePath("/teams")
     if (error?.name === "AppConfigError") {
       return { error: "Error: failed to set/get app configuration variables" }
     } else {
@@ -193,17 +178,14 @@ export async function changePassword(
     }
 
     if (!currentPassword || !newPassword || !confirmNewPassword) {
-      revalidatePath("/profile")
       return { error: "Error: form inputs cannot be empty" }
     }
 
     if (newPassword.length > 255) {
-      revalidatePath("/profile")
       return { error: "Error: password must be 255 characters or less" }
     }
 
     if (!newPassword.match(/^(?=.*[A-Z])(?=.*\d).{6,}$/)) {
-      revalidatePath("/profile")
       return {
         error:
           "Error: new password must contain at least 6 characters, 1 uppercase letter and 1 number",
@@ -211,7 +193,6 @@ export async function changePassword(
     }
 
     if (newPassword !== confirmNewPassword) {
-      revalidatePath("/profile")
       return {
         error: "Error: new password does not match the confirmed new password",
       }
@@ -230,18 +211,14 @@ export async function changePassword(
       const newPasswordQuery =
         await sql`UPDATE playerauth set password = ${newHashedPassword} WHERE username = ${username}`
       if (newPasswordQuery.rowCount > 0) {
-        revalidatePath("/profile")
         return { message: "Password change success" }
       } else {
-        revalidatePath("/profile")
         return { error: "Error: Failed to change password" }
       }
     } else {
-      revalidatePath("/profile")
       return { error: "Error: the current password you entered is incorrect" }
     }
   } catch (error) {
-    revalidatePath("/profile")
     return { error: "Error: database connection/operation error" }
   }
 }
@@ -252,10 +229,8 @@ export async function updateProfilePictureURL(url: string) {
     if (!session) return redirect("/")
     const authID = session?.user?.authID
     await sql`UPDATE players SET picture_url = ${url} WHERE player_id = ${authID}`
-    revalidatePath("/profile")
     return { url: url }
   } catch (error) {
-    revalidatePath("/profile")
     throw error
   }
 }

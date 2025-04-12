@@ -3,7 +3,6 @@ import type { FormResult } from "../types"
 import { getConfigValue } from "./serverRequests"
 import { getSession } from "../lib/session"
 import { redirect } from "next/navigation"
-import { revalidatePath } from "next/cache"
 import ms from "ms"
 import { genSalt, hash } from "bcryptjs"
 import { sql } from "@vercel/postgres"
@@ -48,11 +47,8 @@ async function toggleTimer(): Promise<FormResult> {
     )
     if (setTimerState) {
       const timerStatus = timerPaused === "1" ? "unpaused" : "paused"
-      revalidatePath("/teams")
-      revalidatePath("/admin_utility")
       return { message: `Successfully ${timerStatus} the timer.` }
     } else {
-      revalidatePath("/admin_utility")
       return { error: "Error: could not toggle timer state" }
     }
   } catch (error) {
@@ -66,11 +62,8 @@ async function setTimer(time: FormDataEntryValue = ""): Promise<FormResult> {
     const addedTime = time ? ms(time.toString().trim()) : ms("7d")
     const newTime = new Date(Date.now() + addedTime)
     await setConfigValue("TARGET_RESET_TIME", newTime.getTime())
-    revalidatePath("/teams")
-    revalidatePath("/admin_utility")
     return { message: `Successfully set the timer to ${newTime.toString()}.` }
   } catch (error) {
-    revalidatePath("/admin_utility")
     return { error: "Error: failed setting the timers new time" }
   }
 }
@@ -90,7 +83,6 @@ async function setSeasonAndWeek(
     let message = ""
 
     if (timerPaused !== "1") {
-      revalidatePath("/admin_utility")
       return {
         error:
           "Error: the timer needs to be paused before setting a new season/week",
@@ -100,7 +92,6 @@ async function setSeasonAndWeek(
     // set current season if left empty
     if (!season) {
       if (currentSeason <= 0) {
-        revalidatePath("/admin_utility")
         return { error: "Error: the season is currently 0 and needs to be set" }
       } else {
         const queryResult =
@@ -112,7 +103,6 @@ async function setSeasonAndWeek(
       // update current season
     } else {
       if (targetSeason <= 0) {
-        revalidatePath("/admin_utility")
         return { error: "Error: the specified season must be greater than 0" }
       }
       const queryResult =
@@ -129,7 +119,6 @@ async function setSeasonAndWeek(
     // set current week if left empty
     if (!week) {
       if (currentWeek <= 0) {
-        revalidatePath("/admin_utility")
         return { error: "Error: the week is currently 0 and needs to be set." }
       }
       const queryResult =
@@ -140,7 +129,6 @@ async function setSeasonAndWeek(
       // update week
     } else {
       if (targetWeek <= 0) {
-        revalidatePath("/admin_utility")
         return { error: "Error: the specified week must be greater than 0" }
       }
 
@@ -152,15 +140,8 @@ async function setSeasonAndWeek(
       await setConfigValue("CURRENT_WEEK", targetWeek)
       message += `Set Week to ${targetWeek} for Season ${currentSeason}<br/>`
     }
-    revalidatePath("/teams")
-    revalidatePath("/weekly")
-    revalidatePath("/season")
-    revalidatePath("/results")
-    revalidatePath("/games")
-    revalidatePath("/admin_utility")
     return { message: message ? message : "No updates needed." }
   } catch (error) {
-    revalidatePath("/admin_utility")
     if (error?.name === "AppConfigError") {
       return { error: "Error: failed to set/get app configuration variables" }
     } else {
@@ -175,7 +156,6 @@ async function insertUser(formData: FormData): Promise<FormResult> {
     const currentWeek = Number(await getConfigValue("CURRENT_WEEK"))
 
     if (currentSeason === 0 || currentWeek === 0) {
-      revalidatePath("/admin_utility")
       return {
         error: `Error: the season/week need to be set to a value greater than 0 before users can be created`,
       }
@@ -185,14 +165,12 @@ async function insertUser(formData: FormData): Promise<FormResult> {
       await sql`SELECT season_number FROM weeks WHERE season_number = ${currentSeason} AND week_number = ${currentWeek}`
 
     if (queryResult.rowCount === 0) {
-      revalidatePath("/admin_utility")
       return {
         error: `Error: the season/week need to be set to a value greater than 0 before users can be created.`,
       }
     }
 
     if (currentWeek !== 1) {
-      revalidatePath("/admin_utility")
       return {
         error: `Error: new users cannot be created after week 1 of the season`,
       }
@@ -226,24 +204,20 @@ async function insertUser(formData: FormData): Promise<FormResult> {
       groupNumber = String(groupNumber).trim()
 
       if (isNaN(parseInt(groupNumber)) || groupNumber.includes(".")) {
-        revalidatePath("/admin_utility")
         return {
           error: "Error: group number must be a number and not a decimal",
         }
       }
 
       if (userType !== "user" && userType !== "admin") {
-        revalidatePath("/admin_utility")
         return { error: "Error: user type must be either user or admin" }
       }
 
       if (password.length > 255) {
-        revalidatePath("/admin_utility")
         return { error: "Error: password must be 255 characters or less" }
       }
 
       if (!password.match(/^(?=.*[A-Z])(?=.*\d).{6,}$/)) {
-        revalidatePath("/admin_utility")
         return {
           error:
             "Error: password must contain at least 6 characters, 1 uppercase letter and 1 number",
@@ -251,7 +225,6 @@ async function insertUser(formData: FormData): Promise<FormResult> {
       }
 
       if (password !== confirmPassword) {
-        revalidatePath("/admin_utility")
         return {
           error: "Error: password confirmation must match the password",
         }
@@ -261,14 +234,12 @@ async function insertUser(formData: FormData): Promise<FormResult> {
         await sql`SELECT username FROM playerauth WHERE username = ${username}`
 
       if (queryResult.rowCount > 0) {
-        revalidatePath("/admin_utility")
         return { error: "Error: username already exists." }
       }
 
       queryResult =
         await sql`SELECT group_number from players where gp = ${group} AND group_number = ${groupNumber}`
       if (queryResult.rowCount > 0) {
-        revalidatePath("/admin_utility")
         return {
           error: `Error: group number ${groupNumber} already exists for group ${group}.`,
         }
@@ -286,7 +257,6 @@ async function insertUser(formData: FormData): Promise<FormResult> {
       await sql`INSERT INTO players (player_id, name, gp, group_number) 
             VALUES (${authID}, ${username}, ${group}, ${groupNumber})`
 
-      revalidatePath("/admin_utility")
       return { message: `Successfully created user ${username}` }
     }
     // user(s) from file
@@ -296,7 +266,6 @@ async function insertUser(formData: FormData): Promise<FormResult> {
       const groups = {}
 
       if (type !== "text/plain" && type !== "text/csv") {
-        revalidatePath("/admin_utility")
         return {
           error:
             "Error: invalid file format. Only .txt and .csv files are allowed",
@@ -304,7 +273,6 @@ async function insertUser(formData: FormData): Promise<FormResult> {
       }
 
       if (text === "") {
-        revalidatePath("/admin_utility")
         return { error: "Error: file cannot be emtpy" }
       }
 
@@ -423,7 +391,6 @@ async function insertUser(formData: FormData): Promise<FormResult> {
                 )`
 
         if (duplicateGroupIdQuery.rowCount > 0) {
-          revalidatePath("/admin_utility")
           return {
             error: `Error: found new users with duplicate group and group numbers: ${duplicateGroupIdQuery.rows
               .map((user) => user.username)
@@ -476,8 +443,6 @@ async function insertUser(formData: FormData): Promise<FormResult> {
         }
       }
 
-      revalidatePath("/admin_utility")
-
       if (skippedLines.length === 0) {
         return { message: "All users from file created" }
       } else {
@@ -495,7 +460,6 @@ async function insertUser(formData: FormData): Promise<FormResult> {
       return { error: "not every required input was filled" }
     }
   } catch (error) {
-    revalidatePath("/admin_utility")
     if (error?.name === "AppConfigError") {
       return { error: "Error: failed to set/get app configuration variables" }
     } else {
@@ -514,7 +478,6 @@ async function deleteUser(formData: FormData): Promise<FormResult> {
         await sql`SELECT auth_id, is_active FROM playerauth WHERE username = ${username}`
 
       if (authIDRow.rowCount === 0) {
-        revalidatePath("/admin_utility")
         return { error: "Error: user does not exist" }
       }
 
@@ -522,24 +485,22 @@ async function deleteUser(formData: FormData): Promise<FormResult> {
 
       if (formData.get("hardDelete")) {
         await sql`DELETE FROM playerauth WHERE auth_id = ${authID}`
-        revalidatePath("/admin_utility")
+
         return { message: `Successfully deleted ${username}` }
       }
 
       const isActive = authIDRow?.rows?.[0]?.["is_active"]
       if (!isActive) {
-        revalidatePath("/admin_utility")
         return { error: "Error: user is already set as inactive" }
       }
 
       await sql`UPDATE playerauth SET is_active = false WHERE auth_id = ${authID}`
-      revalidatePath("/admin_utility")
+
       return { message: `Successfully set ${username} as inactive` }
     } else if (formData.get("fileInput")) {
       const file = formData.get("fileInput") as File
 
       if (file.type !== "text/plain" && file.type !== "text/csv") {
-        revalidatePath("/admin_utility")
         return {
           error:
             "Error: invalid file format. Only .txt and .csv files are allowed",
@@ -549,7 +510,6 @@ async function deleteUser(formData: FormData): Promise<FormResult> {
       const fileText = await file.text()
 
       if (fileText === "") {
-        revalidatePath("/admin_utility")
         return { error: "Error: file cannot be empty" }
       }
 
@@ -617,7 +577,6 @@ async function deleteUser(formData: FormData): Promise<FormResult> {
         WHERE pa.username = ta.username`
       }
 
-      revalidatePath("/admin_utility")
       const operation = formData.get("hardDelete")
         ? "hard deleted"
         : "soft deleted"
@@ -640,7 +599,6 @@ async function deleteUser(formData: FormData): Promise<FormResult> {
       return { error: "not every required input was filled" }
     }
   } catch (error) {
-    revalidatePath("/admin_utility")
     return { error: "Error: database connection/operation error" }
   }
 }
@@ -650,12 +608,10 @@ async function uploadGames(formData: FormData): Promise<FormResult> {
     const fileInput = formData.get("fileInput") as File
 
     if (!fileInput) {
-      revalidatePath("/admin_utility")
       return { error: "Error: file cannot be empty" }
     }
 
     if (fileInput.type !== "text/plain" && fileInput.type !== "text/csv") {
-      revalidatePath("/admin_utility")
       return {
         error:
           "Error: invalid file format. Only .txt and .csv files are allowed",
@@ -665,7 +621,6 @@ async function uploadGames(formData: FormData): Promise<FormResult> {
     const fileText = await fileInput.text()
 
     if (fileText === "") {
-      revalidatePath("/admin_utility")
       return { error: "Error: file cannot be empty" }
     }
 
@@ -673,7 +628,6 @@ async function uploadGames(formData: FormData): Promise<FormResult> {
     const currentWeek = await getConfigValue("CURRENT_WEEK")
 
     if (!currentSeason || !currentWeek) {
-      revalidatePath("/admin_utility")
       return {
         error:
           "Error: the week/season needs to be set to a value greater than 0 before games can be created",
@@ -685,7 +639,6 @@ async function uploadGames(formData: FormData): Promise<FormResult> {
     const timerTime = Number(await getConfigValue("TARGET_RESET_TIME"))
 
     if (now < timerTime && timerPaused !== "1") {
-      revalidatePath("/admin_utility")
       return {
         error:
           "Error: the timer needs to be paused or negative before games can be created.",
@@ -695,7 +648,6 @@ async function uploadGames(formData: FormData): Promise<FormResult> {
     const queryResult =
       await sql`SELECT * FROM weeks WHERE season_number = ${currentSeason} AND week_number = ${currentWeek}`
     if (queryResult.rowCount === 0) {
-      revalidatePath("/admin_utility")
       return {
         error:
           "Error: the week/season needs to be set to a value greater than 0 before games can be created.",
@@ -798,7 +750,6 @@ async function uploadGames(formData: FormData): Promise<FormResult> {
     }
 
     if (skippedLines.length > 0) {
-      revalidatePath("/admin_utility")
       return {
         error: `Error: (need to reprocess) some games not created, skipped lines:<br/>${skippedLines.join(
           "",
@@ -831,12 +782,9 @@ async function uploadGames(formData: FormData): Promise<FormResult> {
     }
 
     await setConfigValue("weekGamesUpdated", Date.now().toString())
-    revalidatePath("/teams")
-    revalidatePath("/games")
-    revalidatePath("/admin_utility")
+
     return { message: "All games from file created" }
   } catch (error) {
-    revalidatePath("/admin_utility")
     return { error: "Error: database connection/operation error" }
   }
 }
@@ -846,12 +794,10 @@ async function handleWeekResults(formData: FormData): Promise<FormResult> {
     const fileInput = formData.get("fileInput") as File
 
     if (!fileInput) {
-      revalidatePath("/admin_utility")
       return { error: "Error: file cannot be empty" }
     }
 
     if (fileInput.type !== "text/plain" && fileInput.type !== "text/csv") {
-      revalidatePath("/admin_utility")
       return {
         error:
           "Error: invalid file format. Only .txt and .csv files are allowed",
@@ -861,7 +807,6 @@ async function handleWeekResults(formData: FormData): Promise<FormResult> {
     const fileText = await fileInput.text()
 
     if (fileText === "") {
-      revalidatePath("/admin_utility")
       return { error: "Error: file cannot be empty" }
     }
 
@@ -869,7 +814,6 @@ async function handleWeekResults(formData: FormData): Promise<FormResult> {
     const currentWeek = Number(await getConfigValue("CURRENT_WEEK"))
 
     if (currentSeason === 0 || currentWeek === 0) {
-      revalidatePath("/admin_utility")
       return {
         error:
           "Error: the week/season needs to be set to a value greater than 0 before game results can be created",
@@ -879,7 +823,6 @@ async function handleWeekResults(formData: FormData): Promise<FormResult> {
     const queryResult =
       await sql`SELECT * FROM weeks WHERE season_number = ${currentSeason} AND week_number = ${currentWeek}`
     if (queryResult.rowCount === 0) {
-      revalidatePath("/admin_utility")
       return {
         error:
           "Error: the week/season needs to be set to a value greater than 0 before games can be created.",
@@ -889,7 +832,6 @@ async function handleWeekResults(formData: FormData): Promise<FormResult> {
     const gameCount =
       await sql`SELECT COUNT(game_id) AS game_count FROM games WHERE season_number = ${currentSeason} AND week_number = ${currentWeek}`
     if (gameCount.rowCount === 0) {
-      revalidatePath("/admin_utility")
       return {
         error: `Error: no games are available for week ${currentWeek} of season ${currentSeason}`,
       }
@@ -1074,7 +1016,6 @@ async function handleWeekResults(formData: FormData): Promise<FormResult> {
                 AND g.underdog = tg.underdog`
 
       if (insertedGames.rowCount !== Object.keys(createdGames).length) {
-        revalidatePath("/admin_utility")
         return {
           error: `Error: the number of game results to update does not match the number of games for the week (need to reprocess)<br/>Skipped lines: ${skippedLines.join(
             "",
@@ -1089,8 +1030,7 @@ async function handleWeekResults(formData: FormData): Promise<FormResult> {
 
       if (timerPaused !== "1") {
         await setConfigValue("weekGamesUpdated", Date.now().toString())
-        revalidatePath("/games")
-        revalidatePath("/admin_utility")
+
         return {
           message: message.join(""),
         }
@@ -1326,15 +1266,9 @@ async function handleWeekResults(formData: FormData): Promise<FormResult> {
       await setConfigValue("seasonStatsUpdated", Date.now().toString())
       await setConfigValue("weekResultsUpdated", Date.now().toString())
       message.push(`Updated the current week to week ${weekNumber}<br/>`)
-      revalidatePath("/teams")
-      revalidatePath("/weekly")
-      revalidatePath("/season")
-      revalidatePath("/results")
-      revalidatePath("/games")
-      revalidatePath("/admin_utility")
+
       return { message: message.join("") }
     } else {
-      revalidatePath("/admin_utility")
       return {
         error: `Error: game results from file could not be parsed.<br/>Skipped lines: ${skippedLines.join(
           "",
@@ -1342,7 +1276,6 @@ async function handleWeekResults(formData: FormData): Promise<FormResult> {
       }
     }
   } catch (error) {
-    revalidatePath("/admin_utility")
     if (error?.name === "AppConfigError") {
       return { error: "Error: failed to set/get app configuration variables" }
     } else {
@@ -1356,12 +1289,10 @@ async function uploadPicks(formData: FormData): Promise<FormResult> {
     const file = formData.get("fileInput") as File
 
     if (!file) {
-      revalidatePath("/admin_utility")
       return { error: "Error: no file found" }
     }
 
     if (file.type !== "text/plain" && file.type !== "text/csv") {
-      revalidatePath("/admin_utility")
       return {
         error:
           "Error: invalid file format. Only .txt and .csv files are allowed",
@@ -1371,7 +1302,6 @@ async function uploadPicks(formData: FormData): Promise<FormResult> {
     const fileText = await file.text()
 
     if (fileText === "") {
-      revalidatePath("/admin_utility")
       return { error: "Error: file cannot be empty" }
     }
 
@@ -1379,7 +1309,6 @@ async function uploadPicks(formData: FormData): Promise<FormResult> {
     const currentWeek = await getConfigValue("CURRENT_WEEK")
 
     if (!currentSeason || !currentWeek) {
-      revalidatePath("/admin_utility")
       return {
         error:
           "Error: the week/season needs to be set to a value greater than 0 before picks can be uploaded.",
@@ -1390,7 +1319,6 @@ async function uploadPicks(formData: FormData): Promise<FormResult> {
     const queryResult =
       await sql`SELECT * FROM weeks WHERE season_number = ${currentSeason} AND week_number = ${currentWeek}`
     if (queryResult.rowCount === 0) {
-      revalidatePath("/admin_utility")
       return {
         error:
           "Error: the week/season needs to be set to a value greater than 0 before games can be created.",
@@ -1419,7 +1347,6 @@ async function uploadPicks(formData: FormData): Promise<FormResult> {
         gamesArray[underdogID] = gameID
       }
     } else {
-      revalidatePath("/admin_utility")
       return {
         error: `Error: no games have been uploaded for week ${currentWeek} of season ${currentSeason}`,
       }
@@ -1506,7 +1433,6 @@ async function uploadPicks(formData: FormData): Promise<FormResult> {
     }
 
     if (skippedLines.length > 0) {
-      revalidatePath("/admin_utility")
       return {
         error: `Error: need to reprocess picks due to skipped lines:<br/>${skippedLines.join(
           "",
@@ -1550,7 +1476,6 @@ async function uploadPicks(formData: FormData): Promise<FormResult> {
         )`
 
     if (duplicateGroupIdQuery.rowCount > 0) {
-      revalidatePath("/admin_utility")
       return {
         error: `Error: found new players with duplicate group and group numbers: ${duplicateGroupIdQuery.rows
           .map((user) => user.username)
@@ -1755,7 +1680,6 @@ async function uploadPicks(formData: FormData): Promise<FormResult> {
     }
 
     if (skippedLines.length > 0) {
-      revalidatePath("/admin_utility")
       return {
         error: `Error: need to reprocess picks due to skipped lines:<br/>${skippedLines.join(
           "",
@@ -1764,7 +1688,6 @@ async function uploadPicks(formData: FormData): Promise<FormResult> {
     }
 
     if (createPicksValues.length === 0) {
-      revalidatePath("/admin_utility")
       return {
         error: `Error: no picks were created due to all lines not containing the exact field values`,
       }
@@ -1814,12 +1737,10 @@ async function uploadPicks(formData: FormData): Promise<FormResult> {
 
     if (currentWeek === "1") {
       await setConfigValue("seasonStatsUpdated", Date.now().toString())
-      revalidatePath("/season")
     }
 
     await setConfigValue("weekStatsUpdated", Date.now().toString())
-    revalidatePath("/weekly")
-    revalidatePath("/admin_utility")
+
     return {
       message: responseJson
         ? responseJson.downloadUrl
@@ -1827,7 +1748,7 @@ async function uploadPicks(formData: FormData): Promise<FormResult> {
     }
   } catch (error) {
     console.error(error)
-    revalidatePath("/admin_utility")
+
     if (error?.name === "AppConfigError") {
       return { error: "Error: failed to set/get app configuration variables" }
     } else {
@@ -1843,12 +1764,6 @@ export async function revalidateCache(): Promise<string> {
   await setConfigValue("weekStatsUpdated", Date.now().toString())
   await setConfigValue("seasonStatsUpdated", Date.now().toString())
   await setConfigValue("weekResultsUpdated", Date.now().toString())
-  revalidatePath("/teams")
-  revalidatePath("/weekly")
-  revalidatePath("/season")
-  revalidatePath("/results")
-  revalidatePath("/games")
-  revalidatePath("/admin_utility")
   return "Successfully refreshed data"
 }
 
@@ -1887,7 +1802,6 @@ export async function handleAdminForm(
   } else if (option === "Upload Game Results") {
     return await handleWeekResults(formData)
   } else {
-    revalidatePath("/admin_utility")
     return { error: "Invalid or unsupported option selected" }
   }
 }
