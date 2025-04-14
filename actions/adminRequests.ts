@@ -1162,31 +1162,19 @@ async function handleWeekResults(formData: FormData): Promise<FormResult> {
       }
 
       //update playerseasonstats
-      const seasonStats = await sql`UPDATE playerseasonstats pss
-            SET
-                won = week_data.won,
-                lost = week_data.lost,
-                played = week_data.played,
-                rank = week_data.rank,
-                win_percentage = week_data.win_percentage
-            FROM (
-                SELECT
-                    pws.player_id,
-                    pws.season_number,
-                    SUM(pws.won) AS won,
-                    SUM(pws.lost) AS lost,
-                    SUM(pws.played) AS played,
-                    MAX(pws.rank) AS rank,
-                    CASE WHEN SUM(pws.played) > 0 THEN SUM(pws.won) / SUM(pws.played)::float ELSE 0 END AS win_percentage
-                FROM playerweekstats pws
-                WHERE pws.season_number = ${currentSeason}
-                AND pws.week_number = ${weekNumber} -- next week_number
-                GROUP BY pws.player_id, pws.season_number
-            ) AS week_data
-            WHERE pss.player_id = week_data.player_id
-            AND pss.season_number = week_data.season_number
-            AND pss.season_number = ${currentSeason};
-            `
+      const seasonStats = await sql`
+      UPDATE playerseasonstats pss
+      SET
+        won = pws.won,
+        lost = pws.lost,
+        played = pws.played,
+        rank = pws.rank,
+        win_percentage = pws.win_percentage
+      FROM playerweekstats pws
+      WHERE pws.player_id = pss.player_id
+        AND pws.season_number = pss.season_number
+        AND pws.season_number = ${currentSeason}
+        AND pws.week_number = ${weekNumber}`
 
       if (seasonStats.rowCount > 0) {
         message.push(
