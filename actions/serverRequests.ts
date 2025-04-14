@@ -1,10 +1,10 @@
 "use server"
 import type { SortFields, PickResult } from "../types"
-import { cache } from "react"
 import { getSession } from "../lib/session"
 import type { QueryResultRow } from "@vercel/postgres"
 import { sql } from "@vercel/postgres"
 import { list, del } from "@vercel/blob"
+import { unstable_cacheTag as cacheTag } from "next/cache"
 
 export async function getConfigValue(
   key: string,
@@ -22,7 +22,9 @@ export async function getConfigValue(
   }
 }
 
-export const getSeasons = cache(async (): Promise<QueryResultRow[]> => {
+export async function getSeasons(): Promise<QueryResultRow[]> {
+  "use cache"
+  cacheTag("seasons")
   try {
     const queryResult =
       await sql`SELECT * FROM Seasons ORDER BY season_number ASC`
@@ -30,9 +32,11 @@ export const getSeasons = cache(async (): Promise<QueryResultRow[]> => {
   } catch (error) {
     return []
   }
-})
+}
 
-export const getWeeks = cache(async (): Promise<QueryResultRow[]> => {
+export async function getWeeks(): Promise<QueryResultRow[]> {
+  "use cache"
+  cacheTag("weeks")
   try {
     const queryResult =
       await sql`SELECT * FROM weeks ORDER BY season_number, week_number ASC`
@@ -40,192 +44,200 @@ export const getWeeks = cache(async (): Promise<QueryResultRow[]> => {
   } catch (error) {
     return []
   }
-})
+}
 
-export const getWeekGames = cache(
-  async (season: number, week: number): Promise<QueryResultRow[]> => {
-    try {
-      const queryResult = await sql`SELECT 
-        ROW_NUMBER() OVER (ORDER BY G.game_id) AS game_counter,
-        T1.team_name AS favorite_team,
-        T1.team_id AS favorite_id,
-        G.game_id,
-        G.spread,
-        T2.team_name AS underdog_team,
-        T2.team_id AS underdog_id
-    FROM 
-        Games G
-        INNER JOIN Teams T1 ON G.favorite = T1.team_id
-        INNER JOIN Teams T2 ON G.underdog = T2.team_id
-        INNER JOIN Weeks W ON G.week_number = W.week_number AND G.season_number = W.season_number
-    WHERE 
-        W.week_number = ${Number(week)} 
-        AND W.season_number = ${Number(season)}
-    ORDER BY 
-        G.game_id ASC;
-        `
-      return queryResult?.rows
-    } catch (error) {
-      return []
-    }
-  },
-)
+export async function getWeekGames(
+  season: number,
+  week: number,
+): Promise<QueryResultRow[]> {
+  "use cache"
+  cacheTag("weekGames")
+  try {
+    const queryResult = await sql`SELECT 
+      ROW_NUMBER() OVER (ORDER BY G.game_id) AS game_counter,
+      T1.team_name AS favorite_team,
+      T1.team_id AS favorite_id,
+      G.game_id,
+      G.spread,
+      T2.team_name AS underdog_team,
+      T2.team_id AS underdog_id
+  FROM 
+      Games G
+      INNER JOIN Teams T1 ON G.favorite = T1.team_id
+      INNER JOIN Teams T2 ON G.underdog = T2.team_id
+      INNER JOIN Weeks W ON G.week_number = W.week_number AND G.season_number = W.season_number
+  WHERE 
+      W.week_number = ${Number(week)} 
+      AND W.season_number = ${Number(season)}
+  ORDER BY 
+      G.game_id ASC;
+      `
+    return queryResult?.rows
+  } catch (error) {
+    return []
+  }
+}
 
-export const getWeekGameResults = cache(
-  async (season: number, week: number): Promise<QueryResultRow[]> => {
-    try {
-      const queryResult = await sql`SELECT 
-        ROW_NUMBER() OVER (ORDER BY G.game_id) AS game_counter,
-        G.favorite_score,
-        T1.team_name AS favorite,
-        T1.team_id AS favorite_id,
-        G.game_id,
-        G.spread,
-        T2.team_name AS underdog,
-        G.underdog_score,
-        T3.team_name as winner,
-        T2.team_id AS underdog_id
-    FROM 
-        Games G
-        INNER JOIN Teams T1 ON G.favorite = T1.team_id
-        INNER JOIN Teams T2 ON G.underdog = T2.team_id
-        LEFT JOIN Teams T3 on G.winner = T3.team_id
-        INNER JOIN Weeks W ON G.week_number = W.week_number AND G.season_number = W.season_number
-    WHERE 
-        W.week_number = ${Number(week)} 
-        AND W.season_number = ${Number(season)}
-    ORDER BY 
-        G.game_id ASC;
-        `
-      return queryResult?.rows
-    } catch (error) {
-      return []
-    }
-  },
-)
+export async function getWeekGameResults(
+  season: number,
+  week: number,
+): Promise<QueryResultRow[]> {
+  "use cache"
+  cacheTag("weekGamesResults")
+  try {
+    const queryResult = await sql`SELECT 
+      ROW_NUMBER() OVER (ORDER BY G.game_id) AS game_counter,
+      G.favorite_score,
+      T1.team_name AS favorite,
+      T1.team_id AS favorite_id,
+      G.game_id,
+      G.spread,
+      T2.team_name AS underdog,
+      G.underdog_score,
+      T3.team_name as winner,
+      T2.team_id AS underdog_id
+  FROM 
+      Games G
+      INNER JOIN Teams T1 ON G.favorite = T1.team_id
+      INNER JOIN Teams T2 ON G.underdog = T2.team_id
+      LEFT JOIN Teams T3 on G.winner = T3.team_id
+      INNER JOIN Weeks W ON G.week_number = W.week_number AND G.season_number = W.season_number
+  WHERE 
+      W.week_number = ${Number(week)} 
+      AND W.season_number = ${Number(season)}
+  ORDER BY 
+      G.game_id ASC;
+      `
+    return queryResult?.rows
+  } catch (error) {
+    return []
+  }
+}
 
-export const getGameCountForWeek = cache(
-  async (season: number, week: number): Promise<number> => {
-    try {
-      const queryResult =
-        await sql`SELECT COUNT(game_id) AS game_count FROM Games WHERE season_number = ${Number(season)} AND week_number = ${Number(week)}`
-      return queryResult?.rows?.[0]?.game_count
-    } catch (error) {
-      return 0
-    }
-  },
-)
+export async function getGameCountForWeek(
+  season: number,
+  week: number,
+): Promise<number> {
+  "use cache"
+  cacheTag("weekGames")
+  try {
+    const queryResult =
+      await sql`SELECT COUNT(game_id) AS game_count FROM Games WHERE season_number = ${Number(season)} AND week_number = ${Number(week)}`
+    return queryResult?.rows?.[0]?.game_count
+  } catch (error) {
+    return 0
+  }
+}
 
-export const getWeekResults = cache(
-  async (
-    season: number,
-    currentSeason: number,
-    week: number,
-  ): Promise<QueryResultRow[]> => {
-    try {
-      const queryResult = await sql`
-        WITH players_info AS (
-        SELECT
-            w.week_number,
-            COALESCE(pl.picture_url, '') || ' ' || pl.name || ' ' || pl.player_id AS loser_info,
-            COALESCE(pw.picture_url, '') || ' ' || pw.name || ' ' || pw.player_id AS winner_info,
-            ls.player_id AS loser_id,
-            wn.player_id AS winner_id
-        FROM
-            Weeks w
-        LEFT JOIN Winners wn ON w.season_number = wn.season_number AND w.week_number = wn.week_number
-        LEFT JOIN Losers ls ON w.season_number = ls.season_number AND w.week_number = ls.week_number
-        LEFT JOIN Players pw ON wn.player_id = pw.player_id
-        LEFT JOIN Players pl ON ls.player_id = pl.player_id
-        WHERE
-            (w.season_number = ${Number(season)} AND w.week_number < ${Number(week)}) OR (w.season_number = ${Number(season)} AND w.season_number != ${Number(currentSeason)})
-        )
-        SELECT
-            week_number,
-            COALESCE(
-                string_agg(DISTINCT loser_info, '<br>' ORDER BY loser_info), 'NONE!!!'
-            ) AS loser_names,
-            COALESCE(
-                string_agg(DISTINCT winner_info, '<br>' ORDER BY winner_info), 'ROLL-OVER!!!'
-            ) AS winner_names,
-            COUNT(DISTINCT loser_id) AS losers_count,
-            COUNT(DISTINCT winner_id) AS winners_count
-        FROM
-            players_info
-        GROUP BY
-            week_number
-        ORDER BY
-            week_number ASC;`
-      return queryResult.rows
-    } catch (error) {
-      return []
-    }
-  },
-)
-
-export const getSeasonStats = cache(
-  async (
-    season: number,
-    order: "asc" | "desc",
-    fields: Array<SortFields>,
-  ): Promise<QueryResultRow[]> => {
-    try {
-      const safeOrder = order.toUpperCase() === "DESC" ? "DESC" : "ASC"
-      const safeFields: Array<SortFields> = fields.filter(
-        (field) =>
-          field === "gp" || field === "group_number" || field === "rank",
+export async function getWeekResults(
+  season: number,
+  currentSeason: number,
+  week: number,
+): Promise<QueryResultRow[]> {
+  "use cache"
+  cacheTag("weekResults")
+  try {
+    const queryResult = await sql`
+      WITH players_info AS (
+      SELECT
+          w.week_number,
+          COALESCE(pl.picture_url, '') || ' ' || pl.name || ' ' || pl.player_id AS loser_info,
+          COALESCE(pw.picture_url, '') || ' ' || pw.name || ' ' || pw.player_id AS winner_info,
+          ls.player_id AS loser_id,
+          wn.player_id AS winner_id
+      FROM
+          Weeks w
+      LEFT JOIN Winners wn ON w.season_number = wn.season_number AND w.week_number = wn.week_number
+      LEFT JOIN Losers ls ON w.season_number = ls.season_number AND w.week_number = ls.week_number
+      LEFT JOIN Players pw ON wn.player_id = pw.player_id
+      LEFT JOIN Players pl ON ls.player_id = pl.player_id
+      WHERE
+          (w.season_number = ${Number(season)} AND w.week_number < ${Number(week)}) OR (w.season_number = ${Number(season)} AND w.season_number != ${Number(currentSeason)})
       )
-      const orderQuery =
-        safeFields.length > 0
-          ? `ORDER BY ${safeFields.map((f) => `ps.${f} ${safeOrder}`).join(", ")}`
-          : ""
+      SELECT
+          week_number,
+          COALESCE(
+              string_agg(DISTINCT loser_info, '<br>' ORDER BY loser_info), 'NONE!!!'
+          ) AS loser_names,
+          COALESCE(
+              string_agg(DISTINCT winner_info, '<br>' ORDER BY winner_info), 'ROLL-OVER!!!'
+          ) AS winner_names,
+          COUNT(DISTINCT loser_id) AS losers_count,
+          COUNT(DISTINCT winner_id) AS winners_count
+      FROM
+          players_info
+      GROUP BY
+          week_number
+      ORDER BY
+          week_number ASC;`
+    return queryResult.rows
+  } catch (error) {
+    return []
+  }
+}
 
-      const queryResult = await sql.query(
-        `SELECT
-        ps.rank,
-        ps.group_number,
-        ps.gp,
-        p.player_id,
-        p.picture_url,
-        p.name AS player_name,
-        ps.won,
-        ps.played,
-        ps.win_percentage
-        FROM PlayerSeasonStats ps
-        JOIN Players p ON ps.player_id = p.player_id
-        WHERE ps.season_number = $1
-        GROUP BY ps.rank, ps.group_number, ps.gp, p.player_id, p.name, ps.won, ps.played, ps.win_percentage
-        ${orderQuery}`,
-        [Number(season)],
-      )
-      return queryResult.rows
-    } catch (error) {
-      return []
-    }
-  },
-)
+export async function getSeasonStats(
+  season: number,
+  order: "asc" | "desc",
+  fields: Array<SortFields>,
+): Promise<QueryResultRow[]> {
+  "use cache"
+  cacheTag("seasonStats")
+  try {
+    const safeOrder = order.toUpperCase() === "DESC" ? "DESC" : "ASC"
+    const safeFields: Array<SortFields> = fields.filter(
+      (field) => field === "gp" || field === "group_number" || field === "rank",
+    )
+    const orderQuery =
+      safeFields.length > 0
+        ? `ORDER BY ${safeFields.map((f) => `ps.${f} ${safeOrder}`).join(", ")}`
+        : ""
 
-export const getPicks = cache(
-  async (
-    season: number,
-    week: number,
-    order: string = "",
-    fields: Array<SortFields>,
-  ): Promise<PickResult> => {
-    try {
-      const safeOrder = order.toUpperCase() === "DESC" ? "DESC" : "ASC"
-      const safeFields: Array<SortFields> = fields.filter(
-        (field) =>
-          field === "gp" || field === "group_number" || field === "rank",
-      )
-      const orderQuery =
-        safeFields.length > 0
-          ? `ORDER BY ${safeFields.map((f) => `subquery.${f} ${safeOrder}`).join(", ")}`
-          : ""
-      const seasonNumber = Number(season)
-      const weekNumber = Number(week)
-      const queryResult = await sql.query(
-        `SELECT DISTINCT
+    const queryResult = await sql.query(
+      `SELECT
+      ps.rank,
+      ps.group_number,
+      ps.gp,
+      p.player_id,
+      p.picture_url,
+      p.name AS player_name,
+      ps.won,
+      ps.played,
+      ps.win_percentage
+      FROM PlayerSeasonStats ps
+      JOIN Players p ON ps.player_id = p.player_id
+      WHERE ps.season_number = $1
+      GROUP BY ps.rank, ps.group_number, ps.gp, p.player_id, p.name, ps.won, ps.played, ps.win_percentage
+      ${orderQuery}`,
+      [Number(season)],
+    )
+    return queryResult.rows
+  } catch (error) {
+    return []
+  }
+}
+
+export async function getPicks(
+  season: number,
+  week: number,
+  order: string = "",
+  fields: Array<SortFields>,
+): Promise<PickResult> {
+  "use cache"
+  cacheTag("weekPicks")
+  try {
+    const safeOrder = order.toUpperCase() === "DESC" ? "DESC" : "ASC"
+    const safeFields: Array<SortFields> = fields.filter(
+      (field) => field === "gp" || field === "group_number" || field === "rank",
+    )
+    const orderQuery =
+      safeFields.length > 0
+        ? `ORDER BY ${safeFields.map((f) => `subquery.${f} ${safeOrder}`).join(", ")}`
+        : ""
+    const seasonNumber = Number(season)
+    const weekNumber = Number(week)
+    const queryResult = await sql.query(
+      `SELECT DISTINCT
         subquery.player_id,
         subquery.rank,
         subquery.group_number,
@@ -299,37 +311,28 @@ export const getPicks = cache(
     AND g.week_number = $2
     ${orderQuery}
     `,
-        [seasonNumber, weekNumber],
-      )
+      [seasonNumber, weekNumber],
+    )
 
-      const gameCount = await getGameCountForWeek(season, week)
-      const picks = queryResult.rows.map((row: Object) => {
-        let rowCopy = { ...row }
-        for (let i = 6; i > gameCount; i--) {
-          delete rowCopy[`pick${i}`]
-        }
-        return rowCopy
-      })
-      const headers = [
-        "Rank",
-        "#",
-        "GP",
-        "Player",
-        "Won",
-        "Played",
-        "%",
-      ].concat(
-        Array.from(
-          { length: Math.min(gameCount, 6) },
-          (_, i) => "pick" + (i + 1),
-        ),
-      )
-      return { picks: picks, headers: headers }
-    } catch (error) {
-      return { picks: [], headers: [] }
-    }
-  },
-)
+    const gameCount = await getGameCountForWeek(season, week)
+    const picks = queryResult.rows.map((row: Object) => {
+      let rowCopy = { ...row }
+      for (let i = 6; i > gameCount; i--) {
+        delete rowCopy[`pick${i}`]
+      }
+      return rowCopy
+    })
+    const headers = ["Rank", "#", "GP", "Player", "Won", "Played", "%"].concat(
+      Array.from(
+        { length: Math.min(gameCount, 6) },
+        (_, i) => "pick" + (i + 1),
+      ),
+    )
+    return { picks: picks, headers: headers }
+  } catch (error) {
+    return { picks: [], headers: [] }
+  }
+}
 
 export async function getUser(id: string): Promise<QueryResultRow[]> {
   try {

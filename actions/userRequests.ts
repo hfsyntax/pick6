@@ -5,6 +5,7 @@ import { getConfigValue } from "../actions/serverRequests"
 import { redirect } from "next/navigation"
 import { hash, compare, genSalt } from "bcryptjs"
 import { sql } from "@vercel/postgres"
+import { revalidateTag } from "next/cache"
 
 export async function handlePicks(formData: FormData): Promise<FormResult> {
   try {
@@ -145,6 +146,8 @@ export async function handlePicks(formData: FormData): Promise<FormResult> {
             VALUES (${authID}, ${gameID}, ${teamID}) 
             ON CONFLICT(player_id, game_id) DO UPDATE SET selected_team_id = ${teamID};`
     }
+
+    revalidateTag("weekPicks")
 
     await sql`
         INSERT INTO app_settings (key, value) 

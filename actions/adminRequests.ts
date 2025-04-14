@@ -6,6 +6,7 @@ import { redirect } from "next/navigation"
 import ms from "ms"
 import { genSalt, hash } from "bcryptjs"
 import { sql } from "@vercel/postgres"
+import { revalidateTag } from "next/cache"
 
 function randomPassword(): string {
   let str = ""
@@ -97,6 +98,7 @@ async function setSeasonAndWeek(
         const queryResult =
           await sql`INSERT INTO seasons (season_number) VALUES (${currentSeason}) ON CONFLICT (season_number) DO NOTHING`
         if (queryResult.rowCount > 0) {
+          revalidateTag("seasons")
           message += `Inserted Season Entry ${currentSeason}<br/>`
         }
       }
@@ -108,6 +110,7 @@ async function setSeasonAndWeek(
       const queryResult =
         await sql`INSERT INTO seasons (season_number) VALUES (${targetSeason}) ON CONFLICT (season_number) DO NOTHING`
       if (queryResult.rowCount > 0) {
+        revalidateTag("seasons")
         message += `Inserted Season Entry ${targetSeason}<br/>`
       }
       await setConfigValue("CURRENT_SEASON", targetSeason)
@@ -124,6 +127,7 @@ async function setSeasonAndWeek(
       const queryResult =
         await sql`INSERT INTO weeks (week_number, season_number) VALUES (${currentWeek}, ${currentSeason}) ON CONFLICT (week_number, season_number) DO NOTHING`
       if (queryResult.rowCount > 0) {
+        revalidateTag("weeks")
         message += `Inserted Week Entry ${currentWeek} for Season ${currentSeason}<br/>`
       }
       // update week
@@ -135,6 +139,7 @@ async function setSeasonAndWeek(
       const queryResult =
         await sql`INSERT INTO weeks (week_number, season_number) VALUES (${targetWeek}, ${currentSeason}) ON CONFLICT (week_number, season_number) DO NOTHING`
       if (queryResult.rowCount > 0) {
+        revalidateTag("weeks")
         message += `Inserted Week Entry ${targetWeek} for Season ${currentSeason}<br/>`
       }
       await setConfigValue("CURRENT_WEEK", targetWeek)
@@ -569,6 +574,12 @@ async function deleteUser(formData: FormData): Promise<FormResult> {
             .map((_, index) => `($${index + 1})`)
             .join(", ")
           await sql.query(`${deleteUserSql} ${placeholders}`, batch)
+          revalidateTag("weekResults")
+          revalidateTag("seasonStats")
+          revalidateTag("weekPicks")
+          await setConfigValue("weekResultsUpdated", Date.now())
+          await setConfigValue("seasonStatsUpdated", Date.now())
+          await setConfigValue("weekStatsUpdated", Date.now())
         }
       } else {
         await sql`UPDATE playerauth AS pa
@@ -781,7 +792,11 @@ async function uploadGames(formData: FormData): Promise<FormResult> {
       await sql.query(`${createGamesSql} ${placeholders}`, flatValues)
     }
 
-    await setConfigValue("weekGamesUpdated", Date.now().toString())
+    revalidateTag("weekGames")
+    revalidateTag("weekGamesResults")
+    revalidateTag("weekPicks")
+    await setConfigValue("weekGamesUpdated", Date.now())
+    await setConfigValue("weekStatsUpdated", Date.now())
 
     return { message: "All games from file created" }
   } catch (error) {
@@ -1029,8 +1044,8 @@ async function handleWeekResults(formData: FormData): Promise<FormResult> {
       const timerPaused = await getConfigValue("TIMER_PAUSED")
 
       if (timerPaused !== "1") {
+        revalidateTag("weekGamesResults")
         await setConfigValue("weekGamesUpdated", Date.now().toString())
-
         return {
           message: message.join(""),
         }
@@ -1261,11 +1276,17 @@ async function handleWeekResults(formData: FormData): Promise<FormResult> {
 
       // update week in db
       await setConfigValue("CURRENT_WEEK", weekNumber)
-      await setConfigValue("weekGamesUpdated", Date.now().toString())
-      await setConfigValue("weekStatsUpdated", Date.now().toString())
-      await setConfigValue("seasonStatsUpdated", Date.now().toString())
-      await setConfigValue("weekResultsUpdated", Date.now().toString())
       message.push(`Updated the current week to week ${weekNumber}<br/>`)
+      revalidateTag("weeks")
+      revalidateTag("weekGames")
+      revalidateTag("weekGamesResults")
+      revalidateTag("weekResults")
+      revalidateTag("seasonStats")
+      revalidateTag("weekPicks")
+      await setConfigValue("weekGamesUpdated", Date.now())
+      await setConfigValue("weekResultsUpdated", Date.now())
+      await setConfigValue("seasonStatsUpdated", Date.now())
+      await setConfigValue("weekStatsUpdated", Date.now())
 
       return { message: message.join("") }
     } else {
@@ -1736,9 +1757,11 @@ async function uploadPicks(formData: FormData): Promise<FormResult> {
     }
 
     if (currentWeek === "1") {
+      revalidateTag("seasonStats")
       await setConfigValue("seasonStatsUpdated", Date.now().toString())
     }
 
+    revalidateTag("weekPicks")
     await setConfigValue("weekStatsUpdated", Date.now().toString())
 
     return {
@@ -1760,6 +1783,13 @@ async function uploadPicks(formData: FormData): Promise<FormResult> {
 export async function revalidateCache(): Promise<string> {
   const session = await getSession()
   if (session?.user?.type !== "admin") return
+  revalidateTag("seasons")
+  revalidateTag("weeks")
+  revalidateTag("weekGames")
+  revalidateTag("weekGamesResults")
+  revalidateTag("weekResults")
+  revalidateTag("seasonStats")
+  revalidateTag("weekPicks")
   await setConfigValue("weekGamesUpdated", Date.now().toString())
   await setConfigValue("weekStatsUpdated", Date.now().toString())
   await setConfigValue("seasonStatsUpdated", Date.now().toString())
