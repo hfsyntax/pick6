@@ -19,7 +19,6 @@ export default async function Navbar() {
             src="/p6.png"
             width={50}
             height={50}
-            priority
             alt="site_logo"
             className="h-[50px] w-[50px]"
           />

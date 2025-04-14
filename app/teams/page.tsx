@@ -19,6 +19,9 @@ export default async function Teams() {
   const timerTime = await calculateTimeUntilReset()
   return (
     <div className="absolute left-[50px] top-0 flex min-h-full w-[calc(100%-50px)] flex-col items-center overflow-x-hidden text-center">
+      <h1 className="mt-1 text-2xl sm:text-3xl md:text-4xl lg:text-5xl">
+        Select Teams
+      </h1>
       {weekGames?.length > 0 && (
         <h1 className="mt-1 text-2xl sm:text-3xl md:text-4xl lg:text-5xl">
           Week {currentWeek ? currentWeek : "N/A"} of Season{" "}
