@@ -185,7 +185,7 @@ export default function SeasonWeeksHandler({
             {pathname === "/weekly" ? "Select Week" : "Select Season"}&nbsp;
           </label>
           <select
-            className="m-[10px] h-[25px] w-[155px] border border-black text-center text-xs focus:outline-none lg:w-[200px] lg:text-base"
+            className="m-[10px] h-[25px] w-[160px] border border-black text-center text-xs focus:outline-none lg:w-[210px] lg:text-base"
             onChange={handleSelection}
             defaultValue={selectedOption.id}
           >

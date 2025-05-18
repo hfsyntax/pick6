@@ -20,7 +20,7 @@ export default function SearchBar() {
     <input
       type="text"
       placeholder="search players"
-      className="h-[25px] w-[155px] border border-black pl-1 focus:outline-none lg:w-[200px]"
+      className="ml-1 h-[25px] w-[250px] border border-black pl-1 focus:outline-none md:ml-0"
       spellCheck={false}
       defaultValue={searchParams.get("search")?.toString()}
       onChange={(e: ChangeEvent<HTMLInputElement>) => {

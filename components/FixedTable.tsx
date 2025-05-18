@@ -183,9 +183,12 @@ export default function FixedTable({
   }, 0)
 
   return (
-    <div className="w-full overflow-auto" style={{ height: height }}>
+    <div
+      className="w-full overflow-x-auto overflow-y-hidden"
+      style={{ height: height }}
+    >
       <div
-        className={`${(pathname === "/weekly" || pathname === "/season") && "flex flex-col"} ml-auto mr-auto h-full overflow-hidden text-[10px] md:text-[14px] lg:text-[14px]`}
+        className={`${pathname === "/weekly" || pathname === "/season" ? "flex h-[calc(100%_-_25px)] flex-col" : "h-full"} ml-auto mr-auto text-[10px] md:text-[14px] lg:text-[14px]`}
         style={{
           width: `${totalFixedWidth + scrollbarWidth}px`,
         }}
